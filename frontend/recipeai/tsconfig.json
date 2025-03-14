@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "module": "esnext", // ? Ensure "esnext" is used
+    "moduleResolution": "node", // ? Required for Vite + TS
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "composite": true,
+    "noEmit": false
+  },
+  "include": ["src", "test/vitest.setup.ts"]
+}
