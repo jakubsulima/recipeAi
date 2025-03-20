@@ -1,6 +1,7 @@
 package org.jakub.backendapi.config;
 
 import lombok.RequiredArgsConstructor;
+import org.jakub.backendapi.config.JwtAuthFilter.JwtAuthFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -16,6 +17,7 @@ import org.springframework.security.web.authentication.www.BasicAuthenticationFi
 public class SecurityConfig {
 
     private final UserAuthenticationEntryPoint userAuthenticationEntryPoint;
+    private final UserAuthProvider userAuthProvider;
     private final JwtAuthFilter jwtAuthFilter; // Injecting JwtAuthFilter as a Bean
 
     @Bean
