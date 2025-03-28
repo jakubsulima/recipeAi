@@ -45,7 +45,7 @@ export const AJAX = async function (
 ) {
   try {
     let headers = {};
-    if (getAuthToken() !== null && getAuthToken() !== null) {
+    if (getAuthToken() !== null && getAuthToken() !== "null") {
       headers = {
         Authorization: `Bearer ${getAuthToken()}`,
       };

@@ -34,4 +34,5 @@ public class AuthController {
         user.setToken(userAuthProvider.createToken(user.getLogin()));
         return ResponseEntity.created(URI.create("/users/" + user.getId())).body(user);
     }
+
 }
