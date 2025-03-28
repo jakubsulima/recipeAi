@@ -1,7 +1,6 @@
 package org.jakub.backendapi.config;
 
 import lombok.RequiredArgsConstructor;
-import org.jakub.backendapi.config.JwtAuthFilter.JwtAuthFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;

@@ -1,4 +1,4 @@
-package org.jakub.backendapi.config.JwtAuthFilter;
+package org.jakub.backendapi.config;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -6,13 +6,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
 @RequiredArgsConstructor
-public class JwtAuthFilter implements OncePerRequestFilter {
+public class JwtAuthFilter extends OncePerRequestFilter {
 
     private UserAuthProvider userAuthProvider;
 

@@ -6,13 +6,12 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
-import lombok.Value;
-import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
 import org.jakub.backendapi.dto.UserDto;
 import org.jakub.backendapi.services.UserService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
-import org.springframework.web.bind.annotation.PostMapping;
 
 import java.util.Base64;
 import java.util.Collections;
@@ -22,10 +21,10 @@ import java.util.Date;
 @Component
 public class UserAuthProvider {
 
-    @Value("${secuirity.jwt.token.secret-key:secret-value")
+    @Value("${security.jwt.token.secret-key:secret-key}")
     private String secretKey;
 
-    private final UserService userService
+    private final UserService userService;
     @PostConstruct
     protected void init() {
         secretKey = Base64.getEncoder().encodeToString(secretKey.getBytes());
