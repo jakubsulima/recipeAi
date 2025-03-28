@@ -32,7 +32,7 @@ public class UserService {
     public UserDto login(CredentialsDto credentialsDto) {
         User user = userRepository.findByLogin(credentialsDto.getLogin())
                 .orElseThrow(() -> new AppException("Unknown user", HttpStatus.NOT_FOUND));
-        if (passwordEncoder.matches(CharBuffer.wrap(credentialsDto.getPassword() ), Arrays.toString(user.getPassword()))){
+        if (passwordEncoder.matches(CharBuffer.wrap(credentialsDto.getPassword() ), Arrays.toString(user.getPassword().toCharArray()))){
             return userMapper.toUserDto(user);
         }
 

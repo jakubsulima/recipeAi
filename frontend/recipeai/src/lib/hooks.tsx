@@ -1,6 +1,15 @@
 import axios from "axios";
 import { TIMEOUT } from "./const";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { get } from "http";
+
+export const getAuthToken = () => {
+  return window.localStorage.getItem("token");
+};
+
+export const setAuthToken = (token: string) => {
+  window.localStorage.setItem("token", token);
+};
 
 const genAI = new GoogleGenerativeAI(`${import.meta.env.VITE_AI_API_KEY}`);
 const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
@@ -35,6 +44,13 @@ export const AJAX = async function (
   body: any = null
 ) {
   try {
+    let headers = {};
+    if (getAuthToken() !== null && getAuthToken() !== null) {
+      headers = {
+        Authorization: `Bearer ${getAuthToken()}`,
+      };
+    }
+
     const fetch = uploadData
       ? axios.post(url, body, {
           headers: {

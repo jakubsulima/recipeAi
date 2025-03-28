@@ -4,10 +4,12 @@ package org.jakub.backendapi.entities;
 import jakarta.persistence.*;
 import lombok.*;
 
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Data
+@Entity
 @Table(name = "app_user")
 public class User {
     @Id
