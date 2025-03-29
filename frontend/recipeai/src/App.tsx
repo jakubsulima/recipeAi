@@ -11,6 +11,7 @@ import Recipes from "./pages/Recipes";
 import { Fridge } from "./pages/Fridge";
 import Login from "./pages/Login";
 import Recipe from "./pages/Recipe";
+import Register from "./pages/Register";
 
 function App() {
   const router = createBrowserRouter(
@@ -20,6 +21,7 @@ function App() {
         <Route path="/Recipes" element={<Recipes />} />
         <Route path="/Fridge" element={<Fridge />} />
         <Route path="/Login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route path="/Recipe" element={<Recipe />} />
         <Route path="/Recipe/:id" element={<Recipe />} />
         <Route path="*" element={<div>Not Found</div>} />

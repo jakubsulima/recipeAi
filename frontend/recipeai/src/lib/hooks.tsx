@@ -33,11 +33,6 @@ export const generateRecipe = async function (
   }
 };
 
-const client = axios.create({
-  baseURL: "http://127.0.0.1:3000",
-  timeout: TIMEOUT * 1000,
-});
-
 export const AJAX = async function (
   url: string,
   uploadData: boolean = false,
@@ -52,9 +47,8 @@ export const AJAX = async function (
     }
 
     const fetch = uploadData
-      ? axios.post(url, body, {
+      ? axios.post("http://localhost:8080/" + url, body, {
           headers: {
-            "withCredentials": "true",
             "Content-Type": "application/json",
           },
         })
