@@ -16,6 +16,7 @@ public class UserDto {
     private String login;
     private Long id;
     private String token;
+    private String refreshToken;
 
 
 }

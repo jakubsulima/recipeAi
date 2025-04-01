@@ -32,7 +32,7 @@ public class UserAuthProvider {
 
     public String createToken(String login) {
         Date now = new Date();
-        Date expirationDate = new Date(now.getTime() + 3_600_000);
+        Date expirationDate = new Date(now.getTime() + 1_800_000);
         return JWT.create()
                 .withIssuer(login)
                 .withIssuedAt(now)
@@ -42,10 +42,51 @@ public class UserAuthProvider {
 
     public Authentication validateToken(String token) {
         JWTVerifier verifier = JWT.require(Algorithm.HMAC256(secretKey)).build();
-        DecodedJWT decodedJWT = JWT.decode(token);
+        DecodedJWT decodedJWT = verifier.verify(token);
 
         UserDto user = userService.findByLogin(decodedJWT.getIssuer());
 
         return new UsernamePasswordAuthenticationToken(user, null, Collections.emptyList());
     }
+
+    public String createRefreshToken(String login) {
+        Date now = new Date();
+        Date expirationDate = new Date(now.getTime() + 3_600_000);
+        return JWT.create()
+                .withIssuer(login)
+                .withIssuedAt(now)
+                .withExpiresAt(expirationDate)
+                .sign(Algorithm.HMAC256(secretKey));
+
+    }
+
+    public boolean validateRefreshToken(String token) {
+        try{
+            JWTVerifier verifier = JWT.require(Algorithm.HMAC256(secretKey)).build();
+            DecodedJWT decodedJWT = verifier.verify(token);
+
+            return !decodedJWT.getExpiresAt().before(new Date());
+        } catch (Exception e){
+            return false;
+        }
+
+    }
+
+    public String refreshAccessToken(String token) {
+        if(!validateRefreshToken(token)) {
+            throw new RuntimeException("Invalid or expired refresh token");
+        }
+
+        DecodedJWT decodedJWT = JWT.decode(token);
+        return createToken(decodedJWT.getIssuer());
+    }
+
+    public String refreshRefreshToken(String refreshToken) {
+        if(!validateRefreshToken(refreshToken)) {
+            throw new RuntimeException("Invalid or expired refresh token");
+        }
+        DecodedJWT decodedJWT = JWT.decode(refreshToken);
+        return createRefreshToken(decodedJWT.getIssuer());
+    }
+
 }

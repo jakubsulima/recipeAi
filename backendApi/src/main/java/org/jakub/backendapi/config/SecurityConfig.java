@@ -17,7 +17,7 @@ import org.springframework.security.web.authentication.www.BasicAuthenticationFi
 public class SecurityConfig {
 
     private final UserAuthenticationEntryPoint userAuthenticationEntryPoint;
-    private final UserAuthProvider userAuthProvider;// Injecting JwtAuthFilter as a Bean
+    private final UserAuthProvider userAuthProvider; // Injecting UserAuthProvider
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -25,17 +25,18 @@ public class SecurityConfig {
                 .exceptionHandling(exceptionHandling ->
                         exceptionHandling.authenticationEntryPoint(userAuthenticationEntryPoint)
                 )
-                .addFilterBefore(new JwtAuthFilter(userAuthProvider), BasicAuthenticationFilter.class) // Injected properly
+                .addFilterBefore(new JwtAuthFilter(userAuthProvider), BasicAuthenticationFilter.class)
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(authorize ->
                         authorize
-                                .requestMatchers(HttpMethod.POST, "/login", "/register").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/login", "/register", "/refresh").permitAll()
                                 .anyRequest().authenticated()
                 );
 
         return http.build();
     }
 }
+

@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { AJAX } from "../lib/hooks";
-import { useNavigate } from "react-router";
 
 interface LoginProps {
   login: string;
@@ -12,9 +11,8 @@ const Login = () => {
     login: "",
     password: "",
   });
-  const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       AJAX("login", true, {
