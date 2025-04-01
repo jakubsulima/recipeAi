@@ -25,21 +25,25 @@ public class UserAuthProvider {
     private String secretKey;
 
     private final UserService userService;
+
     @PostConstruct
     protected void init() {
         secretKey = Base64.getEncoder().encodeToString(secretKey.getBytes());
     }
 
+    // **Create Access Token**
     public String createToken(String login) {
         Date now = new Date();
-        Date expirationDate = new Date(now.getTime() + 1_800_000);
+        Date expirationDate = new Date(now.getTime() + 1_800_000); // 30 minutes
         return JWT.create()
                 .withIssuer(login)
+                .withClaim("type", "access") // Custom claim to identify access token
                 .withIssuedAt(now)
                 .withExpiresAt(expirationDate)
                 .sign(Algorithm.HMAC256(secretKey));
     }
 
+    // **Validate Access Token**
     public Authentication validateToken(String token) {
         JWTVerifier verifier = JWT.require(Algorithm.HMAC256(secretKey)).build();
         DecodedJWT decodedJWT = verifier.verify(token);
@@ -49,44 +53,49 @@ public class UserAuthProvider {
         return new UsernamePasswordAuthenticationToken(user, null, Collections.emptyList());
     }
 
+    // **Create Refresh Token**
     public String createRefreshToken(String login) {
         Date now = new Date();
-        Date expirationDate = new Date(now.getTime() + 3_600_000);
+        Date expirationDate = new Date(now.getTime() + 3_600_000); // 1 hour
         return JWT.create()
                 .withIssuer(login)
+                .withClaim("type", "refresh") // Custom claim to identify refresh token
                 .withIssuedAt(now)
                 .withExpiresAt(expirationDate)
                 .sign(Algorithm.HMAC256(secretKey));
-
     }
 
+    // **Validate Refresh Token**
     public boolean validateRefreshToken(String token) {
-        try{
+        try {
             JWTVerifier verifier = JWT.require(Algorithm.HMAC256(secretKey)).build();
             DecodedJWT decodedJWT = verifier.verify(token);
 
-            return !decodedJWT.getExpiresAt().before(new Date());
-        } catch (Exception e){
+            // Ensure the token is not expired
+            return !decodedJWT.getExpiresAt().before(new Date()) && "refresh".equals(decodedJWT.getClaim("type").asString());
+        } catch (Exception e) {
             return false;
         }
-
     }
 
-    public String refreshAccessToken(String token) {
-        if(!validateRefreshToken(token)) {
+    // **Refresh Access Token using Refresh Token**
+    public String refreshAccessToken(String refreshToken) {
+        if (!validateRefreshToken(refreshToken)) {
             throw new RuntimeException("Invalid or expired refresh token");
         }
 
-        DecodedJWT decodedJWT = JWT.decode(token);
-        return createToken(decodedJWT.getIssuer());
-    }
-
-    public String refreshRefreshToken(String refreshToken) {
-        if(!validateRefreshToken(refreshToken)) {
-            throw new RuntimeException("Invalid or expired refresh token");
-        }
         DecodedJWT decodedJWT = JWT.decode(refreshToken);
-        return createRefreshToken(decodedJWT.getIssuer());
+        return createToken(decodedJWT.getIssuer()); // Generate a new access token
+    }
+
+    // **Refresh Refresh Token (Optional, if you want to issue a new refresh token)**
+    public String refreshRefreshToken(String refreshToken) {
+        if (!validateRefreshToken(refreshToken)) {
+            throw new RuntimeException("Invalid or expired refresh token");
+        }
+
+        DecodedJWT decodedJWT = JWT.decode(refreshToken);
+        return createRefreshToken(decodedJWT.getIssuer()); // Generate a new refresh token
     }
 
 }
