@@ -9,13 +9,12 @@ import lombok.RequiredArgsConstructor;
 import org.jakub.backendapi.dto.UserDto;
 import org.jakub.backendapi.services.UserService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
-import java.util.Base64;
-import java.util.Collections;
-import java.util.Date;
+import java.util.*;
 
 @RequiredArgsConstructor
 @Component
@@ -96,6 +95,25 @@ public class UserAuthProvider {
 
         DecodedJWT decodedJWT = JWT.decode(refreshToken);
         return createRefreshToken(decodedJWT.getIssuer()); // Generate a new refresh token
+    }
+
+    public ArrayList<ResponseCookie> setHttpOnlyCookie(String accessToken, String refreshToken) {
+            ResponseCookie accessCookie = ResponseCookie.from("access_token", accessToken)
+            .httpOnly(true)
+            .secure(false) // Set true in production (requires HTTPS)
+            .path("/")
+            .maxAge(60 * 15) // 15 minutes
+            .sameSite("Lax")
+            .build();
+
+        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
+            .httpOnly(true)
+            .secure(false)
+            .path("/")
+            .maxAge(60 * 30) // 7 days
+            .sameSite("Lax")
+            .build();
+        return new ArrayList<>(Arrays.asList(accessCookie, refreshCookie));
     }
 
 }

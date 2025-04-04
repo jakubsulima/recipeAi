@@ -15,8 +15,5 @@ public class UserDto {
     private String lastName;
     private String login;
     private Long id;
-    private String token;
-    private String refreshToken;
-
 
 }

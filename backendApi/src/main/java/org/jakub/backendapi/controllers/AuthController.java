@@ -1,15 +1,19 @@
 package org.jakub.backendapi.controllers;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.jakub.backendapi.config.UserAuthProvider;
 import org.jakub.backendapi.dto.CredentialsDto;
 import org.jakub.backendapi.dto.SignUpDto;
 import org.jakub.backendapi.dto.UserDto;
 import org.jakub.backendapi.services.UserService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Map;
 
 @RequiredArgsConstructor
@@ -21,43 +25,62 @@ public class AuthController {
 
     // Login endpoint: generates an access token and refresh token
     @PostMapping("/login")
-    public ResponseEntity<UserDto> login(@RequestBody CredentialsDto credentialsDto) {
+    public ResponseEntity<UserDto> login(@RequestBody CredentialsDto credentialsDto, HttpServletResponse response) {
         UserDto user = userService.login(credentialsDto);
 
-        user.setToken(userAuthProvider.createToken(user.getLogin()));  // Access token
-        user.setRefreshToken(userAuthProvider.createRefreshToken(user.getLogin()));  // Refresh token
+        String accessToken = userAuthProvider.createToken(user.getLogin());
+        String refreshToken = userAuthProvider.createRefreshToken(user.getLogin());
+
+        ArrayList<ResponseCookie> tokens = userAuthProvider.setHttpOnlyCookie(accessToken, refreshToken);
+
+        response.addHeader(HttpHeaders.SET_COOKIE, tokens.get(0).toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, tokens.get(1).toString());
+
         return ResponseEntity.ok(user);
     }
 
     // Register endpoint: generates an access token and refresh token
     @PostMapping("/register")
-    public ResponseEntity<UserDto> register(@RequestBody SignUpDto signUpDto) {
+    public ResponseEntity<UserDto> register(@RequestBody SignUpDto signUpDto, HttpServletResponse response) {
         UserDto user = userService.register(signUpDto);
-        user.setToken(userAuthProvider.createToken(user.getLogin()));  // Access token
-        user.setRefreshToken(userAuthProvider.createRefreshToken(user.getLogin()));  // Refresh token
+        String accessToken = userAuthProvider.createToken(user.getLogin());
+        String refreshToken = userAuthProvider.createRefreshToken(user.getLogin());
+
+        ArrayList<ResponseCookie> tokens = userAuthProvider.setHttpOnlyCookie(accessToken, refreshToken);
+
+        response.addHeader(HttpHeaders.SET_COOKIE, tokens.get(0).toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, tokens.get(1).toString());
+
         return ResponseEntity.created(URI.create("/users/" + user.getId())).body(user);
     }
 
     // Refresh token endpoint: Accepts refresh token from Authorization header and returns new tokens
     @PostMapping("/refresh")
-    public ResponseEntity<Map<String, String>> refreshToken(@RequestHeader("Authorization") String authHeader) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Authorization header is missing or invalid"));
+    public ResponseEntity<?> refreshToken(@CookieValue(value = "refresh_token", required = false) String refreshToken,
+                                          HttpServletResponse response) {
+        if (refreshToken == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Missing refresh token cookie"));
         }
-
-        // Extract the refresh token from the Authorization header
-        String refreshToken = authHeader.substring(7);  // Remove the "Bearer " prefix
 
         try {
-            // Generate new access and refresh tokens
             String newAccessToken = userAuthProvider.refreshAccessToken(refreshToken);
             String newRefreshToken = userAuthProvider.refreshRefreshToken(refreshToken);
-            return ResponseEntity.ok(Map.of("access_token", newAccessToken, "refresh_token", newRefreshToken));
+
+            ArrayList<ResponseCookie> tokens = userAuthProvider.setHttpOnlyCookie(newAccessToken, refreshToken);
+
+            response.addHeader(HttpHeaders.SET_COOKIE, tokens.get(0).toString());
+            response.addHeader(HttpHeaders.SET_COOKIE, tokens.get(1).toString());
+
+            return ResponseEntity.ok().build();
 
         } catch (Exception e) {
-            // Handle the invalid token case
             return ResponseEntity.badRequest().body(Map.of("error", "Invalid or expired refresh token"));
         }
+}
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletResponse response) {
+        return ResponseEntity.ok().body(Map.of("message", "Logged out successfully"));
     }
+
 }
 
