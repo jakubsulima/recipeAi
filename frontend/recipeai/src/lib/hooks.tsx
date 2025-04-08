@@ -1,5 +1,5 @@
 import axios from "axios";
-import { TIMEOUT } from "./const";
+import { API_URL, TIMEOUT } from "./const";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(`${import.meta.env.VITE_AI_API_KEY}`);
@@ -31,12 +31,17 @@ export const AJAX = async function (
 ) {
   try {
     const fetch = uploadData
-      ? axios.post("http://localhost:8080/" + url, body, {
+      ? axios.post(API_URL + url, body, {
           headers: {
             "Content-Type": "application/json",
           },
+          withCredentials: true,
         })
-      : axios.get(url, { timeout: TIMEOUT * 1000, withCredentials: true });
+      : axios.get(API_URL + url, {
+          timeout: TIMEOUT * 1000,
+          withCredentials: true,
+          headers: { "Content-Type": "application/json" },
+        });
 
     const res: any = await Promise.race([
       fetch,
@@ -47,7 +52,15 @@ export const AJAX = async function (
         )
       ),
     ]);
+    const contentType = res.headers["content-type"];
+    if (contentType && contentType.includes("text/html")) {
+      throw new Error(
+        "Received HTML instead of JSON. Backend endpoint may be incorrect."
+      );
+    }
+
     const data = await res.data;
+    console.log(data);
     return data;
   } catch (error: any) {
     console.error(
