@@ -20,6 +20,9 @@ public class Recipe {
     @GeneratedValue
     private Long id;
 
+    @Column(nullable = false)
+    private String name;
+
     @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RecipeIngredient> recipeIngredients;
 

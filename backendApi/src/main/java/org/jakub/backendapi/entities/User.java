@@ -1,6 +1,6 @@
 package org.jakub.backendapi.entities;
 
-
+import java.util.List;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -27,4 +27,7 @@ public class User {
 
     @Column(nullable = false)
     private String password;
+
+    @OneToMany(mappedBy = "User", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Recipe> recipes;
 }
