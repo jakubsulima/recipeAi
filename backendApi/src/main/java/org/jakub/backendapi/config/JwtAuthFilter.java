@@ -1,4 +1,5 @@
 package org.jakub.backendapi.config;
+import org.jakub.backendapi.config.JwtUtils;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -23,7 +24,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
 
         // ✅ Get token from HttpOnly cookie
-        String token = getTokenFromCookies(request, "access_token");
+        String token = JwtUtils.getTokenFromCookies(request, "access_token");
 
         if (token != null) {
             try {
@@ -39,14 +40,5 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    private String getTokenFromCookies(HttpServletRequest request, String name) {
-        if (request.getCookies() != null) {
-            return Arrays.stream(request.getCookies())
-                    .filter(cookie -> name.equals(cookie.getName()))
-                    .findFirst()
-                    .map(Cookie::getValue)
-                    .orElse(null);
-        }
-        return null;
-    }
+
 }

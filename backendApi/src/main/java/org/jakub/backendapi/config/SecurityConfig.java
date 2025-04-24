@@ -31,7 +31,7 @@ public class SecurityConfig {
 
             // Configure request authorization
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.POST, "/login", "/register", "/refresh").permitAll()
+                .requestMatchers(HttpMethod.POST, "/login", "/register", "/refresh", "/addRecipe").permitAll()
                 .anyRequest().authenticated()
             )
 

@@ -28,13 +28,7 @@ public class AuthController {
     public ResponseEntity<UserDto> login(@RequestBody CredentialsDto credentialsDto, HttpServletResponse response) {
         UserDto user = userService.login(credentialsDto);
 
-        String accessToken = userAuthProvider.createToken(user.getLogin());
-        String refreshToken = userAuthProvider.createRefreshToken(user.getLogin());
-
-        ArrayList<ResponseCookie> tokens = userAuthProvider.setHttpOnlyCookie(accessToken, refreshToken);
-
-        response.addHeader(HttpHeaders.SET_COOKIE, tokens.get(0).toString());
-        response.addHeader(HttpHeaders.SET_COOKIE, tokens.get(1).toString());
+        CreateToken(response, user);
 
         return ResponseEntity.ok(user);
     }
@@ -43,6 +37,12 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<UserDto> register(@RequestBody SignUpDto signUpDto, HttpServletResponse response) {
         UserDto user = userService.register(signUpDto);
+        CreateToken(response, user);
+
+        return ResponseEntity.created(URI.create("/users/" + user.getId())).body(user);
+    }
+
+    private void CreateToken(HttpServletResponse response, UserDto user) {
         String accessToken = userAuthProvider.createToken(user.getLogin());
         String refreshToken = userAuthProvider.createRefreshToken(user.getLogin());
 
@@ -50,8 +50,6 @@ public class AuthController {
 
         response.addHeader(HttpHeaders.SET_COOKIE, tokens.get(0).toString());
         response.addHeader(HttpHeaders.SET_COOKIE, tokens.get(1).toString());
-
-        return ResponseEntity.created(URI.create("/users/" + user.getId())).body(user);
     }
 
     // Refresh token endpoint: Accepts refresh token from Authorization header and returns new tokens

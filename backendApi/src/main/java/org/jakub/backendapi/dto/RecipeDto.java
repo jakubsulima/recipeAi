@@ -4,8 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.jakub.backendapi.entities.RecipeIngredient;
-
 import java.util.List;
 
 @Data
@@ -15,5 +13,5 @@ import java.util.List;
 public class RecipeDto {
     private Long id;
     private String name;
-    private List<RecipeIngredient> ingredients;
+    private List<RecipeIngredientDto> ingredients;
 }
