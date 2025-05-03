@@ -18,11 +18,11 @@ public class RecipesController {
     private final RecipeService recipeService;
 
     @PostMapping("/addRecipe")
-    public ResponseEntity<?> addRecipe(@RequestBody RecipeDto recipeDto, HttpServletRequest request) {
+    public ResponseEntity<RecipeDto> addRecipe(@RequestBody RecipeDto recipeDto, HttpServletRequest request) {
         System.out.println(recipeDto);
         String token = JwtUtils.getTokenFromCookies(request, "access_token");
         String login = JwtUtils.getLoginFromToken(token);
         recipeService.saveRecipe(recipeDto, login);
-        return ResponseEntity.ok("Added Recipe");
+        return ResponseEntity.ok(recipeDto);
     }
 }

@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -24,7 +25,7 @@ public class Recipe {
     private String name;
 
     @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<RecipeIngredient> recipeIngredients;
+    private List<RecipeIngredient> recipeIngredients = new ArrayList<>();
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)

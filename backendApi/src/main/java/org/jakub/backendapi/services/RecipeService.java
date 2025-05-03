@@ -1,14 +1,13 @@
 package org.jakub.backendapi.services;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.jakub.backendapi.dto.RecipeDto;
-import org.jakub.backendapi.dto.RecipeIngredientDto;
 import org.jakub.backendapi.entities.Ingredient;
 import org.jakub.backendapi.entities.Recipe;
 import org.jakub.backendapi.entities.RecipeIngredient;
 import org.jakub.backendapi.entities.User;
 import org.jakub.backendapi.exceptions.AppException;
-import org.jakub.backendapi.mappers.RecipeIngredientMapper;
 import org.jakub.backendapi.mappers.RecipeMapper;
 import org.jakub.backendapi.repositories.IngredientRepository;
 import org.jakub.backendapi.repositories.RecipeIngredientRepository;
@@ -19,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -28,7 +28,6 @@ public class RecipeService {
     private final RecipeIngredientRepository recipeIngredientRepository;
     private final RecipeMapper recipeMapper;
     private final UserRepository userRepository;
-    private final RecipeIngredientMapper recipeIngredientMapper;
 
     public RecipeDto getRecipe(Long id) {
         return recipeMapper.toRecipeDto(
@@ -43,31 +42,31 @@ public class RecipeService {
                 .toList();
     }
 
-   public Recipe saveRecipe(RecipeDto recipeDto, String login) {
+   @Transactional
+public Recipe saveRecipe(RecipeDto recipeDto, String login) {
     User user = userRepository.findByLogin(login)
             .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
 
-    // 1. Check if recipe already exists for this user
     recipeRepository.findByNameAndUser(recipeDto.getName(), user)
             .ifPresent(existing -> {
-                throw new AppException("Recipe already exists", HttpStatus.CONFLICT);
+                throw new AppException("Recipe '" + recipeDto.getName() + "' already exists for user '" + login + "'", HttpStatus.CONFLICT);
             });
 
-    // 2. Map basic recipe info (ingredients added later)
-    Recipe recipe = recipeMapper.toRecipeWithUser(recipeDto, user);
-    recipe = recipeRepository.save(recipe); // Save it first to get the ID (for FK in RecipeIngredient)
+    if (recipeDto.getIngredients() == null || recipeDto.getIngredients().isEmpty()) {
+        throw new AppException("Recipe must have at least one ingredient", HttpStatus.BAD_REQUEST);
+    }
 
-    // 3. Convert ingredients with Ingredient check
+    Recipe recipe = recipeMapper.toRecipeWithUser(recipeDto, user);
+    recipe = recipeRepository.save(recipe); // save to get an ID
+
        Recipe finalRecipe = recipe;
        List<RecipeIngredient> recipeIngredients = recipeDto.getIngredients().stream()
             .map(dto -> {
-                // Find or create Ingredient
                 Ingredient ingredient = ingredientRepository.findByNameIgnoreCase(dto.getName())
                         .orElseGet(() -> ingredientRepository.save(Ingredient.builder()
                                 .name(dto.getName())
                                 .build()));
 
-                // Map to RecipeIngredient
                 return RecipeIngredient.builder()
                         .recipe(finalRecipe)
                         .ingredient(ingredient)
@@ -75,14 +74,13 @@ public class RecipeService {
                         .unit(dto.getUnit())
                         .build();
             })
-            .toList();
+            .collect(Collectors.toCollection(ArrayList::new));
 
-    // 4. Save ingredients and set them on the recipe
     recipeIngredientRepository.saveAll(recipeIngredients);
-    recipe.setRecipeIngredients(recipeIngredients); // this assumes you have a `List<RecipeIngredient> ingredients` field in Recipe
-
-    return recipeRepository.save(recipe); // Update with ingredients
+    recipe.setRecipeIngredients(recipeIngredients);
+    return recipeRepository.save(recipe); // Save with ingredients
 }
+
 
 
 

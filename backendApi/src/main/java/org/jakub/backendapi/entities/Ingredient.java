@@ -6,6 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -25,7 +27,7 @@ public class Ingredient {
     private String name;
 
     @OneToMany(mappedBy = "ingredient", cascade = CascadeType.ALL)
-    private List<RecipeIngredient> recipeIngredients;
+    private List<RecipeIngredient> recipeIngredients = new ArrayList<>();
 
 
 }
