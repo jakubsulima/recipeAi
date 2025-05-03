@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -57,7 +58,7 @@ public class RecipeServiceTest {
         when(recipeRepository.findById(1L)).thenReturn(Optional.of(recipe));
         when(recipeMapper.toRecipeDto(recipe)).thenReturn(recipeDto);
 
-        RecipeDto result = recipeService.getRecipe(1L);
+        RecipeDto result = recipeService.getRecipeById(1L);
 
         assertNotNull(result);
         assertEquals(1L, result.getId());
@@ -69,7 +70,7 @@ public class RecipeServiceTest {
     void testGetRecipe_RecipeNotFound() {
         when(recipeRepository.findById(1L)).thenReturn(Optional.empty());
 
-        AppException ex = assertThrows(AppException.class, () -> recipeService.getRecipe(1L));
+        AppException ex = assertThrows(AppException.class, () -> recipeService.getRecipeById(1L));
         assertEquals("Error: Recipe not found (HTTP 404)", ex.getMessage());
         assertEquals(HttpStatus.NOT_FOUND, ex.getCode());
     }
@@ -135,7 +136,7 @@ public class RecipeServiceTest {
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
-        List<Recipe> result = recipeService.findRecipesByUserId(1L);
+        List<RecipeDto> result = recipeService.findRecipesByUserId(1L);
 
         assertNotNull(result);
         assertEquals(1, result.size());

@@ -3,6 +3,7 @@ package org.jakub.backendapi.services;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.jakub.backendapi.dto.RecipeDto;
+import org.jakub.backendapi.dto.RecipeResponseDto;
 import org.jakub.backendapi.entities.Ingredient;
 import org.jakub.backendapi.entities.Recipe;
 import org.jakub.backendapi.entities.RecipeIngredient;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -29,7 +31,7 @@ public class RecipeService {
     private final RecipeMapper recipeMapper;
     private final UserRepository userRepository;
 
-    public RecipeDto getRecipe(Long id) {
+    public RecipeDto getRecipeById(Long id) {
         return recipeMapper.toRecipeDto(
             recipeRepository.findById(id)
                 .orElseThrow(() -> new AppException("Recipe not found", HttpStatus.NOT_FOUND))
@@ -42,53 +44,72 @@ public class RecipeService {
                 .toList();
     }
 
-   @Transactional
-public Recipe saveRecipe(RecipeDto recipeDto, String login) {
-    User user = userRepository.findByLogin(login)
-            .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
+    @Transactional
+    public Recipe saveRecipe(RecipeDto recipeDto, String login) {
+        User user = userRepository.findByLogin(login)
+                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
 
-    recipeRepository.findByNameAndUser(recipeDto.getName(), user)
-            .ifPresent(existing -> {
-                throw new AppException("Recipe '" + recipeDto.getName() + "' already exists for user '" + login + "'", HttpStatus.CONFLICT);
-            });
+        recipeRepository.findByNameAndUser(recipeDto.getName(), user)
+                .ifPresent(existing -> {
+                    throw new AppException("Recipe '" + recipeDto.getName() + "' already exists for user '" + login + "'", HttpStatus.CONFLICT);
+                });
 
-    if (recipeDto.getIngredients() == null || recipeDto.getIngredients().isEmpty()) {
-        throw new AppException("Recipe must have at least one ingredient", HttpStatus.BAD_REQUEST);
+        if (recipeDto.getIngredients() == null || recipeDto.getIngredients().isEmpty()) {
+            throw new AppException("Recipe must have at least one ingredient", HttpStatus.BAD_REQUEST);
+        }
+
+        Recipe recipe = recipeMapper.toRecipeWithUser(recipeDto, user);
+        recipe = recipeRepository.save(recipe); // save to get an ID
+
+           Recipe finalRecipe = recipe;
+           List<RecipeIngredient> recipeIngredients = recipeDto.getIngredients().stream()
+                .map(dto -> {
+                    Ingredient ingredient = ingredientRepository.findByNameIgnoreCase(dto.getName())
+                            .orElseGet(() -> ingredientRepository.save(Ingredient.builder()
+                                    .name(dto.getName())
+                                    .build()));
+
+                    return RecipeIngredient.builder()
+                            .recipe(finalRecipe)
+                            .ingredient(ingredient)
+                            .amount(dto.getAmount())
+                            .unit(dto.getUnit())
+                            .build();
+                })
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        recipeIngredientRepository.saveAll(recipeIngredients);
+        recipe.setRecipeIngredients(recipeIngredients);
+        return recipeRepository.save(recipe); // Save with ingredients
     }
 
-    Recipe recipe = recipeMapper.toRecipeWithUser(recipeDto, user);
-    recipe = recipeRepository.save(recipe); // save to get an ID
-
-       Recipe finalRecipe = recipe;
-       List<RecipeIngredient> recipeIngredients = recipeDto.getIngredients().stream()
-            .map(dto -> {
-                Ingredient ingredient = ingredientRepository.findByNameIgnoreCase(dto.getName())
-                        .orElseGet(() -> ingredientRepository.save(Ingredient.builder()
-                                .name(dto.getName())
-                                .build()));
-
-                return RecipeIngredient.builder()
-                        .recipe(finalRecipe)
-                        .ingredient(ingredient)
-                        .amount(dto.getAmount())
-                        .unit(dto.getUnit())
-                        .build();
-            })
-            .collect(Collectors.toCollection(ArrayList::new));
-
-    recipeIngredientRepository.saveAll(recipeIngredients);
-    recipe.setRecipeIngredients(recipeIngredients);
-    return recipeRepository.save(recipe); // Save with ingredients
-}
-
-
-
-
-    public List<Recipe> findRecipesByUserId(Long userId) {
+    public List<RecipeDto> findRecipesByUserId(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException("Unknown user", HttpStatus.NOT_FOUND));
-
-        return user.getRecipes();
+        ArrayList<Recipe> recipes = user.getRecipes().isEmpty() ? new ArrayList<>() : new ArrayList<>(user.getRecipes());
+        if (recipes.isEmpty()) {
+            throw new AppException("User has no recipes", HttpStatus.NOT_FOUND);
+        }
+        return recipes.stream()
+                .map(recipeMapper::toRecipeDto)
+                .collect(Collectors.toList());
     }
+
+    public RecipeDto getRecipeByName(String name) {
+        Recipe recipe = recipeRepository.findByName(name)
+                .orElseThrow(() -> new AppException("Recipe not found", HttpStatus.NOT_FOUND));
+        return recipeMapper.toRecipeDto(recipe);
+    }
+
+    public RecipeResponseDto deleteRecipe(Long id, String login) {
+        Recipe recipe = recipeRepository.findById(id)
+                .orElseThrow(() -> new AppException("Recipe not found", HttpStatus.NOT_FOUND));
+        if(!Objects.equals(recipe.getUser().getLogin(), login)) {
+            throw new AppException("You are not the owner of this recipe", HttpStatus.FORBIDDEN);
+        }
+        recipeRepository.delete(recipe);
+        return recipeMapper.toResponseDto("Recipe deleted successfully", recipe);
+    }
+
 }
 

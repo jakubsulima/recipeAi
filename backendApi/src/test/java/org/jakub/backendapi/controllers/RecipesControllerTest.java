@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import org.jakub.backendapi.config.JwtUtils;
+import org.jakub.backendapi.config.UserAuthProvider;
 import org.jakub.backendapi.dto.RecipeDto;
 import org.jakub.backendapi.dto.RecipeIngredientDto;
 import org.jakub.backendapi.services.RecipeService;
@@ -16,13 +17,16 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -37,7 +41,12 @@ class RecipesControllerTest {
         public RecipeService recipeService() {
             return Mockito.mock(RecipeService.class);
         }
+        @Bean
+        public UserAuthProvider userAuthProvider() {
+            return Mockito.mock(UserAuthProvider.class);
+        }
     }
+
 
     @Autowired
     private MockMvc mockMvc;
@@ -45,18 +54,24 @@ class RecipesControllerTest {
     @Autowired
     private RecipeService recipeService;
 
+    @Autowired
+    private UserAuthProvider userAuthProvider;
+
+
+
     @Test
+    @WithMockUser(username = "testuser")
     void testAddRecipe() throws Exception {
         // Create test data
         RecipeDto recipeDto = RecipeDto.builder()
                 .name("Test Recipe")
-                .ingredients(List.of(
+                .ingredients(new ArrayList<>(List.of(
                         RecipeIngredientDto.builder().name("Test Ingredient").amount(100).unit("g").build()
-                ))
+                )))
                 .build();
 
         String testLogin = "testuser";
-
+        String token = userAuthProvider.createToken(testLogin);
         // Mock JWT token extraction
         try (MockedStatic<JwtUtils> jwtUtilsMock = Mockito.mockStatic(JwtUtils.class)) {
             jwtUtilsMock.when(() -> JwtUtils.getTokenFromCookies(any(HttpServletRequest.class), eq("access_token")))
@@ -64,16 +79,22 @@ class RecipesControllerTest {
             jwtUtilsMock.when(() -> JwtUtils.getLoginFromToken("test-token"))
                     .thenReturn(testLogin);
 
+
             // Perform the request using MockMvc
             mockMvc.perform(post("/addRecipe")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .cookie(new Cookie("access_token", "test-token"))
-                    .content(new ObjectMapper().writeValueAsString(recipeDto)))
+                    .cookie(new Cookie("access_token", token))
+                    .content(new ObjectMapper().writeValueAsString(recipeDto)))// Add CSRF token
                     .andExpect(status().isOk())
                     .andExpect(content().string("Added Recipe"));
 
             // Verify service was called with correct parameters
             verify(recipeService).saveRecipe(any(RecipeDto.class), eq(testLogin));
         }
+    }
+
+    @Test
+    void testGetAllRecipes() throws Exception {
+        // Add test implementation here
     }
 }
