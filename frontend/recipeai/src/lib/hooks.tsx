@@ -70,7 +70,7 @@ export const AJAX = async function (
 
     throw new Error(
       error.response
-        ? `AJAX Error: ${error.response.status} - ${error.response.statusText}`
+        ? `AJAX Error: ${error.response.status} - ${error.response.data.message}`
         : error.message
     );
   }
