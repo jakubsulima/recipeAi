@@ -1,14 +1,40 @@
 import { useState } from "react";
 import { DropDownButton } from "./DropDownButton";
 import DropDownMenu from "./DropDownMenu";
+import { useUser } from "../context/context";
+import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, setUser, loading } = useUser();
+  const navigate = useNavigate();
+
   const toggleOpen = () => {
     setIsOpen(!isOpen);
-    console.log("isOpen", isOpen);
   };
-  const navItems = ["Recipes", "Fridge", "Login"];
+
+  const handleLogout = () => {
+    localStorage.removeItem("isLoggedIn");
+    setUser(null);
+    navigate("/");
+  };
+
+  // Define navigation items based on auth state
+  const getNavItems = () => {
+    const baseItems = ["Recipes", "Fridge"];
+
+    if (loading) {
+      return [...baseItems, "Login"];
+    }
+
+    if (user) {
+      return [...baseItems, "Profile"];
+    } else {
+      return [...baseItems, "Login"];
+    }
+  };
+
+  const navItems = getNavItems();
 
   return (
     <div className="flex bg-gray-800 p-4 fixed top-0 left-0 w-full z-50">
@@ -23,6 +49,14 @@ const Navbar = () => {
                 <a href={"/" + item}>{item}</a>
               </li>
             ))}
+            {user && (
+              <li
+                className="hover:text-gray-400 cursor-pointer"
+                onClick={handleLogout}
+              >
+                Logout
+              </li>
+            )}
           </div>
           <li className="sm:hidden">
             <DropDownButton onClick={toggleOpen} isOpen={isOpen} className="" />
@@ -43,7 +77,12 @@ const Navbar = () => {
             className={`w-full transition-all duration-700 ease-in-out ${
               isOpen ? "opacity-100" : "opacity-0"
             }`}
-            dropdownItems={navItems}
+            dropdownItems={user ? [...navItems, "Logout"] : navItems}
+            onItemClick={(item) => {
+              if (item === "Logout") {
+                handleLogout();
+              }
+            }}
           />
         </div>
       </nav>

@@ -52,4 +52,16 @@ public class UserService {
 
         return userMapper.toUserDto(savedUser);
     }
+
+    public UserDto getUserById(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
+        return userMapper.toUserDto(user);
+    }
+
+    public UserDto getUserByLogin(String login) {
+        User user = userRepository.findByLogin(login)
+                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
+        return userMapper.toUserDto(user);
+    }
 }

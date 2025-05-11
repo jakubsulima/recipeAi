@@ -3,6 +3,8 @@ import { AJAX } from "../lib/hooks";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
+import { useNavigate } from "react-router-dom";
+import { useUser } from "../context/context";
 
 const schema = yup.object({
   login: yup.string().required("Login is required"),
@@ -28,6 +30,8 @@ interface RegisterProps {
 const Register = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
+  const { setUser } = useUser();
 
   const {
     register,
@@ -47,9 +51,11 @@ const Register = () => {
     setIsSubmitting(true);
     setError("");
     try {
-      await AJAX("register", true, data);
+      const userData = await AJAX("register", true, data);
+      localStorage.setItem("isLoggedIn", "true");
+      setUser(userData);
       console.log("Registration successful");
-      // Redirect to login page or show success message
+      navigate("/"); // Redirect to homepage after successful registration
     } catch (error: any) {
       setError(error.message || "Registration failed");
       console.error("Register error:", error);

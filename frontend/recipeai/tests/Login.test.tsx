@@ -4,8 +4,27 @@ import { vi, beforeEach, test, expect, describe } from "vitest";
 import React from "react";
 import * as hooks from "../src/lib/hooks";
 
+// Mock the react-router-dom hooks
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual("react-router-dom");
+  return {
+    ...actual,
+    useNavigate: () => vi.fn(),
+  };
+});
+
 vi.mock("../src/lib/hooks", () => ({
   AJAX: vi.fn(),
+}));
+
+// Mock the AuthProvider
+vi.mock("../src/context/context", () => ({
+  useUser: () => ({
+    setUser: vi.fn(),
+    user: null,
+    loading: false,
+  }),
+  AuthProvider: ({ children }) => <div>{children}</div>,
 }));
 
 describe("Login Component", () => {

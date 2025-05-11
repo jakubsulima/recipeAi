@@ -1,11 +1,14 @@
 package org.jakub.backendapi.controllers;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.jakub.backendapi.config.JwtUtils;
 import org.jakub.backendapi.config.UserAuthProvider;
 import org.jakub.backendapi.dto.CredentialsDto;
 import org.jakub.backendapi.dto.SignUpDto;
 import org.jakub.backendapi.dto.UserDto;
+import org.jakub.backendapi.entities.User;
 import org.jakub.backendapi.services.UserService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -78,6 +81,16 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletResponse response) {
         return ResponseEntity.ok().body(Map.of("message", "Logged out successfully"));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserDto> getUser(HttpServletRequest request) {
+        String token = JwtUtils.getTokenFromCookies(request, "access_token");
+        if (token == null) {
+            return ResponseEntity.badRequest().body(null);
+        }
+        String login = JwtUtils.getLoginFromToken(token);
+        return ResponseEntity.ok(userService.getUserByLogin(login));
     }
 
 }

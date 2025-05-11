@@ -12,6 +12,7 @@ import { Fridge } from "./pages/Fridge";
 import Login from "./pages/Login";
 import Recipe from "./pages/Recipe";
 import Register from "./pages/Register";
+import { AuthProvider } from "./context/context";
 
 function App() {
   const router = createBrowserRouter(
@@ -29,9 +30,9 @@ function App() {
     )
   );
   return (
-    <>
+    <AuthProvider>
       <RouterProvider router={router} />
-    </>
+    </AuthProvider>
   );
 }
 

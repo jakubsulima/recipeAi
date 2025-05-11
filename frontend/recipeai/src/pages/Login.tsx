@@ -3,6 +3,8 @@ import { AJAX } from "../lib/hooks";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
+import { useNavigate } from "react-router-dom";
+import { useUser } from "../context/context";
 
 interface LoginProps {
   login: string;
@@ -17,6 +19,7 @@ const schema = yup.object({
 const Login = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const { setUser } = useUser();
 
   const {
     register,
@@ -34,13 +37,12 @@ const Login = () => {
     setIsSubmitting(true);
     setError("");
     try {
-      await AJAX("login", true, data);
+      const userData = await AJAX("login", true, data);
+      localStorage.setItem("isLoggedIn", "true");
+      setUser(userData);
       console.log("Login successful");
     } catch (error: any) {
-      if (error.message.includes("404")) {
-        console.error("Unknown user. Please check your login credentials.");
-        setError("Invalid credentials");
-      }
+      setError(error.message || "Login failed");
       console.error("Login error:", error);
     } finally {
       setIsSubmitting(false);
