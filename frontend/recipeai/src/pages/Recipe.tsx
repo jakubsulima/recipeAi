@@ -86,6 +86,11 @@ const Recipe = () => {
     try {
       setIsLoading(true);
       console.log(recipeData);
+      const response = await AJAX("addRecipe", true, {
+        name: recipeData?.name,
+        ingredients: recipeData?.ingredients,
+        instructions: recipeData?.instructions,
+      });
     } catch (error) {
       console.error("Error saving recipe:", error);
       setError("Failed to save recipe. Please try again.");
@@ -133,7 +138,8 @@ const Recipe = () => {
           <ul className="list-disc pl-6 space-y-2">
             {recipeData.ingredients.map((ingredient, index) => (
               <li key={index} className="text-gray-700">
-                {ingredient.amount} {ingredient.unit} {ingredient.name}
+                {ingredient.amount != 0 ? ingredient.amount : ""}{" "}
+                {ingredient.unit} {ingredient.name}
               </li>
             ))}
           </ul>
