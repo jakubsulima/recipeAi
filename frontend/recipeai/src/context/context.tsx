@@ -30,8 +30,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setUser(userData);
         })
         .catch(() => {
-          localStorage.removeItem("isLoggedIn");
-          setUser(null);
+          try {
+            AJAX("refresh")
+              .then((userData) => {
+                setUser(userData);
+                return;
+              })
+              .catch(() => {
+                throw new Error("Failed to refresh user data");
+              });
+          } catch (error) {
+            localStorage.removeItem("isLoggedIn");
+            setUser(null);
+          }
         })
         .finally(() => setLoading(false));
     } else {

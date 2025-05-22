@@ -48,7 +48,7 @@ const Recipes = () => {
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-6 text-center">My Recipes</h1>
       {error && <div className="text-red-500 text-center mb-4">{error}</div>}
-      {recipes && recipes.length > 0 ? ( // Check if recipes itself is not null
+      {recipes && recipes.length > 0 ? (
         <div className="space-y-6">
           {recipes.map((recipe) => (
             <div
