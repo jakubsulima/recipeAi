@@ -7,7 +7,7 @@ import {
 import "./App.css";
 import Layout from "./pages/Layout";
 import HomePage from "./pages/HomePage";
-import Recipes from "./pages/Recipes";
+import Recipes from "./pages/UserRecipes";
 import { Fridge } from "./pages/Fridge";
 import Login from "./pages/Login";
 import Recipe from "./pages/Recipe";

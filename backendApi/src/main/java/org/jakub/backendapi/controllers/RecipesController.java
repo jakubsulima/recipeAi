@@ -24,6 +24,8 @@ public class RecipesController {
         return ResponseEntity.ok(recipeDto);
     }
 
+
+
     @GetMapping("/getAllRecipes")
     public ResponseEntity<RecipeDto[]> getAllRecipes() {
         RecipeDto[] recipes = recipeService.getAllRecipes().toArray(new RecipeDto[0]);
@@ -50,7 +52,7 @@ public class RecipesController {
         return ResponseEntity.ok(recipeResponseDto);
     }
 
-    @GetMapping("/getUserRecipes/{userId}")
+    @GetMapping("/getUserRecipes")
     public ResponseEntity<List<RecipeDto>> getUserRecipes(@PathVariable long userId, HttpServletRequest request) {
         List<RecipeDto> recipes = recipeService.findRecipesByUserId(userId);
         return ResponseEntity.ok(recipes);

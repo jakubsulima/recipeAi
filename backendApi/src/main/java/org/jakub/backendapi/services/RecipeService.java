@@ -59,7 +59,7 @@ public class RecipeService {
         }
 
         Recipe recipe = recipeMapper.toRecipeWithUser(recipeDto, user);
-        recipe = recipeRepository.save(recipe); // save to get an ID
+        recipe = recipeRepository.save(recipe);
 
            Recipe finalRecipe = recipe;
            List<RecipeIngredient> recipeIngredients = recipeDto.getIngredients().stream()
@@ -83,7 +83,7 @@ public class RecipeService {
         return recipeRepository.save(recipe); // Save with ingredients
     }
 
-    public List<RecipeDto> findRecipesByUserId(Long userId) {
+    public List<RecipeDto> findRecipesByUserId(long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException("Unknown user", HttpStatus.NOT_FOUND));
         ArrayList<Recipe> recipes = user.getRecipes().isEmpty() ? new ArrayList<>() : new ArrayList<>(user.getRecipes());

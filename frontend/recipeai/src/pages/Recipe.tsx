@@ -1,16 +1,18 @@
 import { useLocation, useParams } from "react-router";
-import { generateRecipe } from "../lib/hooks";
+import { AJAX, generateRecipe } from "../lib/hooks";
 import { useState, useEffect } from "react";
+import { r } from "react-router/dist/development/fog-of-war-BLArG-qZ";
 
-interface RecipeIngredient {
-  item: string;
-  quantity: string | number | null;
+export interface RecipeIngredient {
+  name: string;
+  amount: string | number | null;
   unit: string;
 }
 
-interface RecipeData {
-  recipe_name: string;
-  description: string;
+export interface RecipeData {
+  id?: string;
+  description?: string;
+  name: string;
   ingredients: RecipeIngredient[];
   instructions: string[];
 }
@@ -26,6 +28,16 @@ const Recipe = () => {
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
+    const fetchRecipe = async () => {
+      const response = await AJAX(`getRecipe/${recipeId}`);
+      if (response) {
+        setRecipeData(response);
+        setIsLoading(false);
+      } else {
+        setError("Recipe not found");
+        setIsLoading(false);
+      }
+    };
     if (existingRecipe) {
       setRecipeData(existingRecipe);
       setIsLoading(false);
@@ -34,7 +46,7 @@ const Recipe = () => {
 
     if (recipeId) {
       setIsLoading(false);
-      setError("Recipe ID provided, but database lookup not yet implemented");
+      fetchRecipe();
       return;
     }
 
@@ -55,7 +67,8 @@ const Recipe = () => {
         typeof response === "string"
           ? response.replace(/```json|```/g, "").trim()
           : response;
-
+      // Check if the response is a valid JSON string
+      console.log("Response:", cleanedResponse);
       const parsedData =
         typeof cleanedResponse === "string"
           ? JSON.parse(cleanedResponse)
@@ -65,6 +78,17 @@ const Recipe = () => {
     } catch (error) {
       console.error("Error generating recipe:", error);
       setError("Failed to load recipe. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  const saveRecipe = async (searchTerm: string) => {
+    try {
+      setIsLoading(true);
+      console.log(recipeData);
+    } catch (error) {
+      console.error("Error saving recipe:", error);
+      setError("Failed to save recipe. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -98,30 +122,50 @@ const Recipe = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-2">{recipeData.recipe_name}</h1>
-      <p className="text-gray-600 mb-6">{recipeData.description}</p>
+      <h1 className="text-3xl font-bold mb-2">{recipeData.name}</h1>
+      {recipeData.description && (
+        <p className="text-gray-600 mb-6">{recipeData.description}</p>
+      )}
 
       <div className="mb-8">
         <h2 className="text-2xl font-semibold mb-4">Ingredients</h2>
-        <ul className="list-disc pl-6 space-y-2">
-          {recipeData.ingredients.map((ingredient, index) => (
-            <li key={index} className="text-gray-700">
-              {ingredient.quantity} {ingredient.unit} {ingredient.item}
-            </li>
-          ))}
-        </ul>
+        {recipeData.ingredients && recipeData.ingredients.length > 0 ? (
+          <ul className="list-disc pl-6 space-y-2">
+            {recipeData.ingredients.map((ingredient, index) => (
+              <li key={index} className="text-gray-700">
+                {ingredient.amount} {ingredient.unit} {ingredient.name}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-gray-500">No ingredients listed.</p>
+        )}
       </div>
 
       <div className="mb-8">
         <h2 className="text-2xl font-semibold mb-4">Instructions</h2>
-        <ol className="list-decimal pl-6 space-y-4">
-          {recipeData.instructions.map((step, index) => (
-            <li key={index} className="text-gray-700">
-              {step}
-            </li>
-          ))}
-        </ol>
+        {recipeData.instructions && recipeData.instructions.length > 0 ? (
+          <ol className="list-decimal pl-6 space-y-4">
+            {recipeData.instructions.map((step, index) => (
+              <li key={index} className="text-gray-700">
+                {step}
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <p className="text-gray-500">No instructions provided.</p>
+        )}
       </div>
+      {search && (
+        <div className="mb-8">
+          <button
+            className="bg-blue-500 text-white px-4 py-2 rounded"
+            onClick={() => saveRecipe(search)}
+          >
+            Save Recipe
+          </button>
+        </div>
+      )}
     </div>
   );
 };
