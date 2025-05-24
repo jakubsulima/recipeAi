@@ -10,7 +10,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class RecipeIngredientDto {
-    private Long id;
     private String name;
     private double amount;
     private String unit;

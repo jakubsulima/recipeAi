@@ -36,4 +36,9 @@ public class Recipe {
     @Column(name = "instruction")
     private List<String> instructions = new ArrayList<>();
 
+    @Column()
+    private String description;
+
+    @Column()
+    private String timeToPrepare;
 }

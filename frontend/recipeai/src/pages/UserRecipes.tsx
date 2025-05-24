@@ -77,7 +77,7 @@ const Recipes = () => {
 
               <div>
                 <h3 className="text-lg font-medium mb-2">Instructions:</h3>
-                {recipe.instructions && recipe.instructions.length > 0 ? ( // Check instructions
+                {recipe.instructions && recipe.instructions.length > 0 ? (
                   <ol className="list-decimal pl-5 space-y-2">
                     {recipe.instructions.map((step, index) => (
                       <li key={index} className="text-gray-700">
