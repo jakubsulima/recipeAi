@@ -2,6 +2,7 @@ package org.jakub.backendapi.controllers;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.jakub.backendapi.config.JwtUtils;
 import org.jakub.backendapi.config.UserAuthProvider;
@@ -38,7 +39,7 @@ public class AuthController {
 
     // Register endpoint: generates an access token and refresh token
     @PostMapping("/register")
-    public ResponseEntity<UserDto> register(@RequestBody SignUpDto signUpDto, HttpServletResponse response) {
+    public ResponseEntity<UserDto> register(@Valid @RequestBody SignUpDto signUpDto, HttpServletResponse response) {
         UserDto user = userService.register(signUpDto);
         CreateToken(response, user);
 
@@ -46,8 +47,8 @@ public class AuthController {
     }
 
     private void CreateToken(HttpServletResponse response, UserDto user) {
-        String accessToken = userAuthProvider.createToken(user.getLogin());
-        String refreshToken = userAuthProvider.createRefreshToken(user.getLogin());
+        String accessToken = userAuthProvider.createToken(user.getEmail());
+        String refreshToken = userAuthProvider.createRefreshToken(user.getEmail());
 
         ArrayList<ResponseCookie> tokens = userAuthProvider.setHttpOnlyCookie(accessToken, refreshToken);
 

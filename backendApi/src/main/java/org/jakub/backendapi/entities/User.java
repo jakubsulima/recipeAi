@@ -2,6 +2,7 @@ package org.jakub.backendapi.entities;
 
 import java.util.List;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
 import lombok.*;
 
 
@@ -16,18 +17,16 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name="first_name", nullable = false)
-    private String firstName;
-
-    @Column(name="last_name", nullable = false)
-    private String lastName;
-
     @Column(nullable = false)
-    private String login;
+    @Email(message = "Email should be valid")
+    private String email;
 
     @Column(nullable = false)
     private String password;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Recipe> recipes;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<FridgeIngredient> fridgeIngredients;
 }
