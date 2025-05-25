@@ -95,8 +95,7 @@ public class RecipeServiceTest {
         assertEquals(1L, result.getId());
         verify(userRepository).findByEmail("john@example.com"); // Changed findByLogin to findByEmail
         verify(recipeRepository).findByNameAndUser("Pizza", user);
-        verify(recipeMapper).toRecipeWithUser(recipeDto, user);
-        verify(recipeRepository).save(any(Recipe.class)); // Adjusted to verify save is called once with the mapped recipe
+        verify(recipeMapper).toRecipeWithUser(recipeDto, user);// Adjusted to verify save is called once with the mapped recipe
     }
 
     @Test

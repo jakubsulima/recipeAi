@@ -18,13 +18,9 @@ public class RecipesController {
 
     @PostMapping("/addRecipe")
     public ResponseEntity<RecipeDto> addRecipe(@RequestBody RecipeDto recipeDto, HttpServletRequest request) {
-        String token = JwtUtils.getTokenFromCookies(request, "access_token");
-        String login = JwtUtils.getLoginFromToken(token);
-        recipeService.saveRecipe(recipeDto, login);
+        recipeService.saveRecipe(recipeDto, getLoginFromToken(request));
         return ResponseEntity.ok(recipeDto);
     }
-
-
 
     @GetMapping("/getAllRecipes")
     public ResponseEntity<RecipeDto[]> getAllRecipes() {
@@ -46,25 +42,19 @@ public class RecipesController {
 
     @PostMapping("/deleteRecipe/{id}")
     public ResponseEntity<RecipeResponseDto> deleteRecipe(@PathVariable Long id, HttpServletRequest request) {
-        String token = JwtUtils.getTokenFromCookies(request, "access_token");
-        String login = JwtUtils.getLoginFromToken(token);
-        RecipeResponseDto recipeResponseDto = recipeService.deleteRecipe(id, login);
+        RecipeResponseDto recipeResponseDto = recipeService.deleteRecipe(id, getLoginFromToken(request));
         return ResponseEntity.ok(recipeResponseDto);
     }
 
     @GetMapping("/getUserRecipes")
     public ResponseEntity<List<RecipeDto>> getUserRecipes(@PathVariable long userId, HttpServletRequest request) {
-        String token = JwtUtils.getTokenFromCookies(request, "access_token");
-        String login = JwtUtils.getLoginFromToken(token);
-        List<RecipeDto> recipes = recipeService.findRecipesByUserEmail(userId);
+        List<RecipeDto> recipes = recipeService.findRecipesByUserId(userId);
         return ResponseEntity.ok(recipes);
     }
 
     @PostMapping("/updateRecipe/{id}")
     public ResponseEntity<RecipeDto> updateRecipe(@PathVariable Long id, @RequestBody RecipeDto recipeDto, HttpServletRequest request) {
-        String token = JwtUtils.getTokenFromCookies(request, "access_token");
-        String login = JwtUtils.getLoginFromToken(token);
-        RecipeDto updatedRecipe = recipeService.updateRecipe(id, recipeDto, login);
+        RecipeDto updatedRecipe = recipeService.updateRecipe(id, recipeDto, getLoginFromToken(request));
         return ResponseEntity.ok(updatedRecipe);
     }
 
@@ -72,5 +62,7 @@ public class RecipesController {
         String token = JwtUtils.getTokenFromCookies(request, "access_token");
         return JwtUtils.getLoginFromToken(token);
     }
+
+
 
 }

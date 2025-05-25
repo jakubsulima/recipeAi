@@ -16,8 +16,8 @@ public interface RecipeMapper {
 
 
     default Recipe toRecipeWithUser(RecipeDto recipeDto, User user) {
-    Recipe recipe = toRecipe(recipeDto); // map the fields first
-    recipe.setUser(user);                // then add the user
-    return recipe;
-}
+        Recipe recipe = toRecipe(recipeDto); // map the fields first
+        recipe.setUser(user);                // then add the user
+        return recipe;
+    }
 }

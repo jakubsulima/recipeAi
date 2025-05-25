@@ -13,6 +13,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Builder
 public class FridgeIngredientDto {
+    private Long id;
     private String name;
     @JsonFormat(pattern = "dd-MM-yyyy")
     private LocalDate registrationDate;
@@ -22,8 +23,8 @@ public class FridgeIngredientDto {
             return null;
         }
         return FridgeIngredientDto.builder()
-                .name(entity.getName()) // Assuming FridgeIngredient has getName()
-                .registrationDate(entity.getExpirationDate()) // Changed to getExpirationDate()
+                .name(entity.getName())
+                .registrationDate(entity.getExpirationDate())
                 .build();
     }
 }

@@ -59,6 +59,7 @@ public class RecipeService {
         }
 
         Recipe recipe = recipeMapper.toRecipeWithUser(recipeDto, user);
+        recipeRepository.save(recipe); // Save recipe first to generate ID
 
            List<RecipeIngredient> recipeIngredients = recipeDto.getIngredients().stream()
                 .map(dto -> {
@@ -107,14 +108,6 @@ public class RecipeService {
         }
         recipeRepository.delete(recipe);
         return recipeMapper.toResponseDto("Recipe deleted successfully", recipe);
-    }
-
-    public List<RecipeDto> findRecipesByUserEmail(long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException("Unknown user", HttpStatus.NOT_FOUND));
-        return user.getRecipes().stream()
-                .map(recipeMapper::toRecipeDto)
-                .collect(Collectors.toList());
     }
 
     public RecipeDto updateRecipe(Long id, RecipeDto recipeDto, String login) {
