@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
+import static org.jakub.backendapi.config.JwtUtils.getLoginFromToken;
+
 
 @RestController
 @RequiredArgsConstructor
@@ -46,7 +48,7 @@ public class RecipesController {
         return ResponseEntity.ok(recipeResponseDto);
     }
 
-    @GetMapping("/getUserRecipes")
+    @GetMapping("/getUserRecipes/{userId}")
     public ResponseEntity<List<RecipeDto>> getUserRecipes(@PathVariable long userId, HttpServletRequest request) {
         List<RecipeDto> recipes = recipeService.findRecipesByUserId(userId);
         return ResponseEntity.ok(recipes);
@@ -58,10 +60,7 @@ public class RecipesController {
         return ResponseEntity.ok(updatedRecipe);
     }
 
-    private String getLoginFromToken(HttpServletRequest request) {
-        String token = JwtUtils.getTokenFromCookies(request, "access_token");
-        return JwtUtils.getLoginFromToken(token);
-    }
+
 
 
 

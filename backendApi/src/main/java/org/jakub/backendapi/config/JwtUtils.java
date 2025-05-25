@@ -28,4 +28,8 @@ public class JwtUtils {
         }
         return null;
     }
+    static public String getLoginFromToken(HttpServletRequest request) {
+        String token = JwtUtils.getTokenFromCookies(request, "access_token");
+        return JwtUtils.getLoginFromToken(token);
+    }
 }

@@ -36,8 +36,15 @@ public class FridgeService {
         return fridgeIngredientRepository.save(fridgeIngredient);
     }
 
-    public void deleteFridgeIngredient(Long id) {
+    public FridgeIngredientDto deleteFridgeIngredient(Long id, String email) {
+        UserDto userDto = userService.findByEmail(email);
+        FridgeIngredient fridgeIngredient = fridgeIngredientRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Fridge ingredient not found"));
+        if (!fridgeIngredient.getUser().getId().equals(userDto.getId())) {
+            throw new RuntimeException("You do not have permission to delete this fridge ingredient");
+        }
         fridgeIngredientRepository.deleteById(id);
+        return fridgeIngredientMapper.toFridgeIngredientDto(fridgeIngredient);
     }
 
 }
