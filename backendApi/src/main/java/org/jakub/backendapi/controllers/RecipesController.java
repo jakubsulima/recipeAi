@@ -54,8 +54,23 @@ public class RecipesController {
 
     @GetMapping("/getUserRecipes")
     public ResponseEntity<List<RecipeDto>> getUserRecipes(@PathVariable long userId, HttpServletRequest request) {
-        List<RecipeDto> recipes = recipeService.findRecipesByUserId(userId);
+        String token = JwtUtils.getTokenFromCookies(request, "access_token");
+        String login = JwtUtils.getLoginFromToken(token);
+        List<RecipeDto> recipes = recipeService.findRecipesByUserEmail(userId);
         return ResponseEntity.ok(recipes);
+    }
+
+    @PostMapping("/updateRecipe/{id}")
+    public ResponseEntity<RecipeDto> updateRecipe(@PathVariable Long id, @RequestBody RecipeDto recipeDto, HttpServletRequest request) {
+        String token = JwtUtils.getTokenFromCookies(request, "access_token");
+        String login = JwtUtils.getLoginFromToken(token);
+        RecipeDto updatedRecipe = recipeService.updateRecipe(id, recipeDto, login);
+        return ResponseEntity.ok(updatedRecipe);
+    }
+
+    private String getLoginFromToken(HttpServletRequest request) {
+        String token = JwtUtils.getTokenFromCookies(request, "access_token");
+        return JwtUtils.getLoginFromToken(token);
     }
 
 }

@@ -35,80 +35,82 @@ public class UserServiceTest {
     @InjectMocks
     private UserService userService;
 
+    private final String testEmail = "john@example.com";
+    private final String unknownEmail = "unknown@example.com";
+    private final String newEmail = "newuser@example.com";
+    private final String existingEmail = "existinguser@example.com";
+
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
     }
 
     @Test
-    void testFindByLogin_UserExists() {
+    void testFindByEmail_UserExists() {
         User user = User.builder()
-                .login("john")
-                .firstName("John")
-                .lastName("Doe")
+                .email(testEmail)
+                .password("hashedPassword")
                 .build();
 
         UserDto userDto = UserDto.builder()
-                .login("john")
-                .firstName("John")
-                .lastName("Doe")
+                .email(testEmail)
                 .build();
 
-        when(userRepository.findByLogin("john")).thenReturn(Optional.of(user));
+        when(userRepository.findByEmail(testEmail)).thenReturn(Optional.of(user));
         when(userMapper.toUserDto(user)).thenReturn(userDto);
 
-        UserDto result = userService.findByLogin("john");
+        UserDto result = userService.findByEmail(testEmail);
 
-        assertEquals("john", result.getLogin());
-        verify(userRepository).findByLogin("john");
+        assertEquals(testEmail, result.getEmail());
+        verify(userRepository).findByEmail(testEmail);
         verify(userMapper).toUserDto(user);
     }
 
     @Test
-    void testFindByLogin_UserNotFound() {
-        when(userRepository.findByLogin("unknown")).thenReturn(Optional.empty());
+    void testFindByEmail_UserNotFound() {
+        when(userRepository.findByEmail(unknownEmail)).thenReturn(Optional.empty());
 
-        AppException ex = assertThrows(AppException.class, () -> userService.findByLogin("unknown"));
+        AppException ex = assertThrows(AppException.class, () -> userService.findByEmail(unknownEmail));
         assertEquals("Error: Unknown user (HTTP 404)", ex.getMessage());
         assertEquals(HttpStatus.NOT_FOUND, ex.getCode());
     }
 
     @Test
     void testLogin_Success() {
-        CredentialsDto credentials = new CredentialsDto("john", "password");
+        CredentialsDto credentials = new CredentialsDto(testEmail, "password".toCharArray());
 
         User user = User.builder()
-                .login("john")
+                .email(testEmail)
                 .password("hashedPassword")
                 .build();
 
         UserDto userDto = UserDto.builder()
-                .login("john")
+                .email(testEmail)
                 .build();
 
-        when(userRepository.findByLogin("john")).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches(CharBuffer.wrap("password"), "hashedPassword")).thenReturn(true);
+        when(userRepository.findByEmail(testEmail)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(CharBuffer.wrap(credentials.getPassword()), "hashedPassword")).thenReturn(true); // Use getPassword()
         when(userMapper.toUserDto(user)).thenReturn(userDto);
 
         UserDto result = userService.login(credentials);
 
-        assertEquals("john", result.getLogin());
-        verify(userRepository).findByLogin("john");
-        verify(passwordEncoder).matches(any(), eq("hashedPassword"));
+        assertEquals(testEmail, result.getEmail());
+        verify(userRepository).findByEmail(testEmail);
+        verify(passwordEncoder).matches(any(CharBuffer.class), eq("hashedPassword"));
         verify(userMapper).toUserDto(user);
     }
 
     @Test
     void testLogin_InvalidPassword() {
-        CredentialsDto credentials = new CredentialsDto("john", "wrongpass");
+        CredentialsDto credentials = new CredentialsDto(testEmail, "wrongpass".toCharArray());
 
         User user = User.builder()
-                .login("john")
+                .email(testEmail)
                 .password("hashedPassword")
                 .build();
 
-        when(userRepository.findByLogin("john")).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches(CharBuffer.wrap("wrongpass"), "hashedPassword")).thenReturn(false);
+        when(userRepository.findByEmail(testEmail)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(CharBuffer.wrap(credentials.getPassword()), "hashedPassword")).thenReturn(false); // Use getPassword()
 
         AppException ex = assertThrows(AppException.class, () -> userService.login(credentials));
         assertEquals("Error: Invalid password (HTTP 400)", ex.getMessage());
@@ -117,9 +119,9 @@ public class UserServiceTest {
 
     @Test
     void testLogin_UserNotFound() {
-        CredentialsDto credentials = new CredentialsDto("nonexistent", "password");
+        CredentialsDto credentials = new CredentialsDto(unknownEmail, "password".toCharArray());
 
-        when(userRepository.findByLogin("nonexistent")).thenReturn(Optional.empty());
+        when(userRepository.findByEmail(unknownEmail)).thenReturn(Optional.empty());
 
         AppException ex = assertThrows(AppException.class, () -> userService.login(credentials));
         assertEquals("Error: Unknown user (HTTP 404)", ex.getMessage());
@@ -129,64 +131,64 @@ public class UserServiceTest {
     @Test
     void testRegister_Success() {
         SignUpDto signUpDto = SignUpDto.builder()
-                .login("newuser")
-                .firstName("Jane")
-                .lastName("Doe")
+                .email(newEmail)
                 .password("mypassword".toCharArray())
                 .build();
 
         User mappedUser = User.builder()
-                .login("newuser")
-                .firstName("Jane")
-                .lastName("Doe")
+                .email(newEmail)
                 .build();
 
         User savedUser = User.builder()
                 .id(1L)
-                .login("newuser")
-                .firstName("Jane")
-                .lastName("Doe")
+                .email(newEmail)
                 .password("encodedPassword")
                 .build();
 
         UserDto expectedDto = UserDto.builder()
                 .id(1L)
-                .login("newuser")
-                .firstName("Jane")
-                .lastName("Doe")
+                .email(newEmail)
                 .build();
 
-        when(userRepository.findByLogin("newuser")).thenReturn(Optional.empty());
+        when(userRepository.findByEmail(newEmail)).thenReturn(Optional.empty());
         when(userMapper.signUpToUser(signUpDto)).thenReturn(mappedUser);
         when(passwordEncoder.encode(CharBuffer.wrap(signUpDto.getPassword()))).thenReturn("encodedPassword");
-        when(userRepository.save(mappedUser)).thenReturn(savedUser);
+
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+            User userBeingSaved = invocation.getArgument(0);
+            return User.builder()
+                    .id(1L)
+                    .email(userBeingSaved.getEmail())
+                    .password(userBeingSaved.getPassword())
+                    .build();
+        });
+
+        when(userRepository.save(argThat(user -> newEmail.equals(user.getEmail())))).thenReturn(savedUser);
         when(userMapper.toUserDto(savedUser)).thenReturn(expectedDto);
 
         UserDto result = userService.register(signUpDto);
 
         assertNotNull(result);
-        assertEquals("newuser", result.getLogin());
-        verify(userRepository).findByLogin("newuser");
+        assertEquals(newEmail, result.getEmail());
+        verify(userRepository).findByEmail(newEmail);
         verify(userMapper).signUpToUser(signUpDto);
         verify(passwordEncoder).encode(CharBuffer.wrap(signUpDto.getPassword()));
-        verify(userRepository).save(mappedUser);
+        verify(userRepository).save(argThat(user -> newEmail.equals(user.getEmail()) && "encodedPassword".equals(user.getPassword())));
         verify(userMapper).toUserDto(savedUser);
     }
 
     @Test
     void testRegister_UserAlreadyExists() {
         SignUpDto signUpDto = SignUpDto.builder()
-                .login("existinguser")
-                .firstName("Mark")
-                .lastName("Smith")
+                .email(existingEmail)
                 .password("password123".toCharArray())
                 .build();
 
-        User existingUser = User.builder()
-                .login("existinguser")
+        User existingUserEntity = User.builder()
+                .email(existingEmail)
                 .build();
 
-        when(userRepository.findByLogin("existinguser")).thenReturn(Optional.of(existingUser));
+        when(userRepository.findByEmail(existingEmail)).thenReturn(Optional.of(existingUserEntity));
 
         AppException ex = assertThrows(AppException.class, () -> userService.register(signUpDto));
         assertEquals("Error: User already exists (HTTP 400)", ex.getMessage());

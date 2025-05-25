@@ -10,6 +10,7 @@ import org.jakub.backendapi.dto.UserDto;
 import org.jakub.backendapi.services.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
+import org.springframework.security.authentication.BadCredentialsException; // Added import
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
@@ -31,11 +32,11 @@ public class UserAuthProvider {
     }
 
     // **Create Access Token**
-    public String createToken(String login) {
+    public String createToken(String email) { // Changed parameter from login to email
         Date now = new Date();
         Date expirationDate = new Date(now.getTime() + 1_800_000); // 30 minutes
         return JWT.create()
-                .withIssuer(login)
+                .withIssuer(email) // Changed from login to email
                 .withClaim("type", "access") // Custom claim to identify access token
                 .withIssuedAt(now)
                 .withExpiresAt(expirationDate)
@@ -44,20 +45,36 @@ public class UserAuthProvider {
 
     // **Validate Access Token**
     public Authentication validateToken(String token) {
-        JWTVerifier verifier = JWT.require(Algorithm.HMAC256(secretKey)).build();
-        DecodedJWT decodedJWT = verifier.verify(token);
+        DecodedJWT decodedJWT;
+        try {
+            JWTVerifier verifier = JWT.require(Algorithm.HMAC256(secretKey)).build();
+            decodedJWT = verifier.verify(token);
+        } catch (com.auth0.jwt.exceptions.JWTVerificationException e) {
+            // Token is invalid (expired, signature mismatch, etc.)
+            throw new BadCredentialsException("Invalid token", e);
+        }
 
-        UserDto user = userService.findByLogin(decodedJWT.getIssuer());
+        String issuer = decodedJWT.getIssuer();
+        if (issuer == null) {
+            // Token is structurally valid but missing the issuer claim, which we rely on.
+            // This indicates a problem with how the token was generated.
+            // Consider logging this as a server-side error.
+            throw new BadCredentialsException("Invalid token: Issuer missing.");
+        }
+
+        UserDto user = userService.findByEmail(issuer);
+        // userService.findByEmail already throws AppException(404) if user not found.
+        // This AppException, if it propagates to JwtAuthFilter, should lead to UserAuthenticationEntryPoint (401).
 
         return new UsernamePasswordAuthenticationToken(user, null, Collections.emptyList());
     }
 
     // **Create Refresh Token**
-    public String createRefreshToken(String login) {
+    public String createRefreshToken(String email) { // Changed parameter from login to email
         Date now = new Date();
         Date expirationDate = new Date(now.getTime() + 3_600_000); // 1 hour
         return JWT.create()
-                .withIssuer(login)
+                .withIssuer(email) // Changed from login to email
                 .withClaim("type", "refresh") // Custom claim to identify refresh token
                 .withIssuedAt(now)
                 .withExpiresAt(expirationDate)

@@ -13,6 +13,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class RecipeDto {
+    private Long id; // Added id field
     private String name;
     private List<RecipeIngredientDto> ingredients = new ArrayList<>();
     private List<String> instructions = new ArrayList<>();

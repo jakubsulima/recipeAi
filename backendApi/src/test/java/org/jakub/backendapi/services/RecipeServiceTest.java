@@ -82,59 +82,63 @@ public class RecipeServiceTest {
                 RecipeIngredientDto.builder().name("Flour").amount(200).unit("g").build(),
                 RecipeIngredientDto.builder().name("Water").amount(100).unit("ml").build()
         ));
-        User user = User.builder().id(1L).login("john").build();
+        User user = User.builder().id(1L).email("john@example.com").build(); // Changed login to email
         Recipe recipe = Recipe.builder().name("Pizza").user(user).build();
         Recipe savedRecipe = Recipe.builder().id(1L).name("Pizza").user(user).build();
-        when(userRepository.findByLogin("john")).thenReturn(Optional.of(user));
+        when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.of(user)); // Changed findByLogin to findByEmail
         when(recipeRepository.findByNameAndUser("Pizza", user)).thenReturn(Optional.empty());
         when(recipeMapper.toRecipeWithUser(recipeDto, user)).thenReturn(recipe);
         when(recipeRepository.save(recipe)).thenReturn(savedRecipe);
-        when(recipeRepository.save(savedRecipe)).thenReturn(savedRecipe);
-        Recipe result = recipeService.saveRecipe(recipeDto, "john");
+        Recipe result = recipeService.saveRecipe(recipeDto, "john@example.com"); // Changed login to email
 
         assertNotNull(result);
         assertEquals(1L, result.getId());
-        verify(userRepository).findByLogin("john");
+        verify(userRepository).findByEmail("john@example.com"); // Changed findByLogin to findByEmail
         verify(recipeRepository).findByNameAndUser("Pizza", user);
         verify(recipeMapper).toRecipeWithUser(recipeDto, user);
-        verify(recipeRepository, times(2)).save(any(Recipe.class));
+        verify(recipeRepository).save(any(Recipe.class)); // Adjusted to verify save is called once with the mapped recipe
     }
 
     @Test
     void testSaveRecipe_NullIngredients() {
         RecipeDto recipeDto = RecipeDto.builder().name("Pizza").ingredients(null).build();
-        User user = User.builder().id(1L).login("john").build();
+        User user = User.builder().id(1L).email("john@example.com").build(); // Changed login to email
 
-        when(userRepository.findByLogin("john")).thenReturn(Optional.of(user));
+        when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.of(user)); // Changed findByLogin to findByEmail
 
-        AppException ex = assertThrows(AppException.class, () -> recipeService.saveRecipe(recipeDto, "john"));
+        AppException ex = assertThrows(AppException.class, () -> recipeService.saveRecipe(recipeDto, "john@example.com")); // Changed login to email
 
         assertEquals("Error: Recipe must have at least one ingredient (HTTP 400)", ex.getMessage());
         assertEquals(HttpStatus.BAD_REQUEST, ex.getCode());
-        verify(userRepository).findByLogin("john");
+        verify(userRepository).findByEmail("john@example.com"); // Changed findByLogin to findByEmail
     }
 
     @Test
     void testSaveRecipe_RecipeAlreadyExists() {
         RecipeDto recipeDto = RecipeDto.builder().name("Pizza").build();
-        User user = User.builder().id(1L).login("john").build();
+        User user = User.builder().id(1L).email("john@example.com").build(); // Changed login to email
         Recipe existingRecipe = Recipe.builder().id(1L).name("Pizza").user(user).build();
 
-        when(userRepository.findByLogin("john")).thenReturn(Optional.of(user));
+        when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.of(user)); // Changed findByLogin to findByEmail
         when(recipeRepository.findByNameAndUser("Pizza", user)).thenReturn(Optional.of(existingRecipe));
 
-        AppException ex = assertThrows(AppException.class, () -> recipeService.saveRecipe(recipeDto, "john"));
-        assertEquals("Error: Recipe already exists (HTTP 409)", ex.getMessage());
+        AppException ex = assertThrows(AppException.class, () -> recipeService.saveRecipe(recipeDto, "john@example.com")); // Changed login to email
+        assertEquals("Error: Recipe 'Pizza' already exists for user 'john@example.com' (HTTP 409)", ex.getMessage());
         assertEquals(HttpStatus.CONFLICT, ex.getCode());
+        verify(userRepository).findByEmail("john@example.com"); // Changed findByLogin to findByEmail
     }
 
     @Test
     void testFindRecipesByUserId_UserExists() {
-        User user = User.builder().id(1L).login("john").build();
+        User user = User.builder().id(1L).email("john@example.com").build();
         Recipe recipe = Recipe.builder().id(1L).name("Pasta").user(user).build();
         user.setRecipes(List.of(recipe));
 
+        RecipeDto recipeDto = RecipeDto.builder().id(1L).name("Pasta").build();
+
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        when(recipeMapper.toRecipeDto(recipe)).thenReturn(recipeDto);
 
         List<RecipeDto> result = recipeService.findRecipesByUserId(1L);
 
@@ -153,3 +157,4 @@ public class RecipeServiceTest {
         assertEquals(HttpStatus.NOT_FOUND, ex.getCode());
     }
 }
+

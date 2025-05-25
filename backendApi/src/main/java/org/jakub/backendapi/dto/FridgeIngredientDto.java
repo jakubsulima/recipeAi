@@ -16,4 +16,14 @@ public class FridgeIngredientDto {
     private String name;
     @JsonFormat(pattern = "dd-MM-yyyy")
     private LocalDate registrationDate;
+
+    public static FridgeIngredientDto fromEntity(org.jakub.backendapi.entities.FridgeIngredient entity) {
+        if (entity == null) {
+            return null;
+        }
+        return FridgeIngredientDto.builder()
+                .name(entity.getName()) // Assuming FridgeIngredient has getName()
+                .registrationDate(entity.getExpirationDate()) // Changed to getExpirationDate()
+                .build();
+    }
 }

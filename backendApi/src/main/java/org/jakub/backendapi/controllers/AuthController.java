@@ -9,9 +9,11 @@ import org.jakub.backendapi.config.UserAuthProvider;
 import org.jakub.backendapi.dto.CredentialsDto;
 import org.jakub.backendapi.dto.SignUpDto;
 import org.jakub.backendapi.dto.UserDto;
-import org.jakub.backendapi.entities.User;
+import org.jakub.backendapi.dto.ErrorDto; // Added import
+import org.jakub.backendapi.exceptions.AppException;
 import org.jakub.backendapi.services.UserService;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus; // Added import
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,10 +31,10 @@ public class AuthController {
 
     // Login endpoint: generates an access token and refresh token
     @PostMapping("/login")
-    public ResponseEntity<UserDto> login(@RequestBody CredentialsDto credentialsDto, HttpServletResponse response) {
+    public ResponseEntity<UserDto> login(@Valid @RequestBody CredentialsDto credentialsDto, HttpServletResponse response) {
         UserDto user = userService.login(credentialsDto);
 
-        CreateToken(response, user);
+        CreateToken(response, user.getEmail()); // Pass email directly
 
         return ResponseEntity.ok(user);
     }
@@ -41,14 +43,14 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<UserDto> register(@Valid @RequestBody SignUpDto signUpDto, HttpServletResponse response) {
         UserDto user = userService.register(signUpDto);
-        CreateToken(response, user);
+        CreateToken(response, user.getEmail()); // Pass email directly
 
         return ResponseEntity.created(URI.create("/users/" + user.getId())).body(user);
     }
 
-    private void CreateToken(HttpServletResponse response, UserDto user) {
-        String accessToken = userAuthProvider.createToken(user.getEmail());
-        String refreshToken = userAuthProvider.createRefreshToken(user.getEmail());
+    private void CreateToken(HttpServletResponse response, String email) {
+        String accessToken = userAuthProvider.createToken(email);
+        String refreshToken = userAuthProvider.createRefreshToken(email);
 
         ArrayList<ResponseCookie> tokens = userAuthProvider.setHttpOnlyCookie(accessToken, refreshToken);
 
@@ -85,14 +87,32 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<UserDto> getUser(HttpServletRequest request) {
+    public ResponseEntity<?> getUser(HttpServletRequest request) { // Changed return type to ResponseEntity<?>
         String token = JwtUtils.getTokenFromCookies(request, "access_token");
         if (token == null) {
-            return ResponseEntity.badRequest().body(null);
+            // It's better to return 401 if authentication is expected but no token is provided for /me
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                                 .body(new ErrorDto("Access token missing."));
         }
-        String login = JwtUtils.getLoginFromToken(token);
-        return ResponseEntity.ok(userService.getUserByLogin(login));
+
+        String emailFromToken = JwtUtils.getLoginFromToken(token); // 'getLoginFromToken' actually returns the issuer/email
+
+        if (emailFromToken == null) {
+            // This means the token's issuer was null, which is an invalid state for an access token.
+            // Log this as a server-side issue (token should always have an issuer).
+            System.err.println("Critical: Access token found with null issuer."); // Replace with proper logging
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                                 .body(new ErrorDto("Invalid token: User identifier missing."));
+        }
+
+        try {
+            UserDto userDto = userService.findByEmail(emailFromToken);
+            return ResponseEntity.ok(userDto);
+        } catch (AppException e) {
+            // Handle cases where user might not be found based on a valid-looking email from token (e.g., user deleted after token issuance)
+            return ResponseEntity.status(e.getCode() != null ? e.getCode() : HttpStatus.INTERNAL_SERVER_ERROR)
+                                 .body(new ErrorDto(e.getMessage()));
+        }
     }
 
 }
-

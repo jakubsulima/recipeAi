@@ -22,14 +22,14 @@ public class UserService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
 
-    public UserDto findByLogin(String login) {
-        User user = userRepository.findByLogin(login)
+    public UserDto findByEmail(String email) { // Renamed from findByLogin
+        User user = userRepository.findByEmail(email) // Changed from findByLogin
                 .orElseThrow(() -> new AppException("Unknown user", HttpStatus.NOT_FOUND));
         return userMapper.toUserDto(user);
     }
 
     public UserDto login(CredentialsDto credentialsDto) {
-        User user = userRepository.findByLogin(credentialsDto.getLogin())
+        User user = userRepository.findByEmail(credentialsDto.getEmail()) // Changed from findByLogin
                 .orElseThrow(() -> new AppException("Unknown user", HttpStatus.NOT_FOUND));
 
         if (passwordEncoder.matches(CharBuffer.wrap(credentialsDto.getPassword()), user.getPassword())) {
@@ -38,15 +38,15 @@ public class UserService {
         throw new AppException("Invalid password", HttpStatus.BAD_REQUEST);
     }
 
-    public UserDto register(SignUpDto userDto) {
-        Optional<User> optionalUser = userRepository.findByLogin(userDto.getLogin());
+    public UserDto register(SignUpDto signUpDto) { // Parameter name changed for clarity
+        Optional<User> optionalUser = userRepository.findByEmail(signUpDto.getEmail()); // Changed from findByLogin
         if (optionalUser.isPresent()) {
             throw new AppException("User already exists", HttpStatus.BAD_REQUEST);
         }
 
-        User user = userMapper.signUpToUser(userDto);
+        User user = userMapper.signUpToUser(signUpDto);
 
-        user.setPassword(passwordEncoder.encode(CharBuffer.wrap(userDto.getPassword())));
+        user.setPassword(passwordEncoder.encode(CharBuffer.wrap(signUpDto.getPassword())));
 
         User savedUser = userRepository.save(user);
 
@@ -59,9 +59,6 @@ public class UserService {
         return userMapper.toUserDto(user);
     }
 
-    public UserDto getUserByLogin(String login) {
-        User user = userRepository.findByLogin(login)
-                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
-        return userMapper.toUserDto(user);
-    }
+    // Removed getUserByLogin method as findByEmail serves the same purpose
+    // Removed duplicate findByEmail method
 }

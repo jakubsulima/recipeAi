@@ -13,7 +13,7 @@ import java.time.LocalDate;
 @Builder
 @Data
 @Entity
-@Table(name = "app_user")
+@Table(name = "fridge_ingredient")
 public class FridgeIngredient {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,4 +24,8 @@ public class FridgeIngredient {
 
     @Column(nullable = false)
     private LocalDate expirationDate;
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name="user_id", referencedColumnName = "id")
+    private User user;
 }

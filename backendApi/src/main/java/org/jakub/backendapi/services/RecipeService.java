@@ -46,7 +46,7 @@ public class RecipeService {
 
     @Transactional
     public Recipe saveRecipe(RecipeDto recipeDto, String login) {
-        User user = userRepository.findByLogin(login)
+        User user = userRepository.findByEmail(login)
                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
 
         recipeRepository.findByNameAndUser(recipeDto.getName(), user)
@@ -59,9 +59,7 @@ public class RecipeService {
         }
 
         Recipe recipe = recipeMapper.toRecipeWithUser(recipeDto, user);
-        recipe = recipeRepository.save(recipe);
 
-           Recipe finalRecipe = recipe;
            List<RecipeIngredient> recipeIngredients = recipeDto.getIngredients().stream()
                 .map(dto -> {
                     Ingredient ingredient = ingredientRepository.findByNameIgnoreCase(dto.getName())
@@ -70,7 +68,7 @@ public class RecipeService {
                                     .build()));
 
                     return RecipeIngredient.builder()
-                            .recipe(finalRecipe)
+                            .recipe(recipe)
                             .ingredient(ingredient)
                             .amount(dto.getAmount())
                             .unit(dto.getUnit())
@@ -104,12 +102,56 @@ public class RecipeService {
     public RecipeResponseDto deleteRecipe(Long id, String login) {
         Recipe recipe = recipeRepository.findById(id)
                 .orElseThrow(() -> new AppException("Recipe not found", HttpStatus.NOT_FOUND));
-        if(!Objects.equals(recipe.getUser().getLogin(), login)) {
+        if(!Objects.equals(recipe.getUser().getEmail(), login)) {
             throw new AppException("You are not the owner of this recipe", HttpStatus.FORBIDDEN);
         }
         recipeRepository.delete(recipe);
         return recipeMapper.toResponseDto("Recipe deleted successfully", recipe);
     }
 
+    public List<RecipeDto> findRecipesByUserEmail(long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException("Unknown user", HttpStatus.NOT_FOUND));
+        return user.getRecipes().stream()
+                .map(recipeMapper::toRecipeDto)
+                .collect(Collectors.toList());
+    }
+
+    public RecipeDto updateRecipe(Long id, RecipeDto recipeDto, String login) {
+        Recipe recipe = recipeRepository.findById(id)
+                .orElseThrow(() -> new AppException("Recipe not found", HttpStatus.NOT_FOUND));
+        if (!Objects.equals(recipe.getUser().getEmail(), login)) {
+            throw new AppException("You are not the owner of this recipe", HttpStatus.FORBIDDEN);
+        }
+
+        if (recipeDto.getIngredients() == null || recipeDto.getIngredients().isEmpty()) {
+            throw new AppException("Recipe must have at least one ingredient", HttpStatus.BAD_REQUEST);
+        }
+
+        recipe.setName(recipeDto.getName());
+        recipe.setDescription(recipeDto.getDescription());
+
+        List<RecipeIngredient> updatedIngredients = recipeDto.getIngredients().stream()
+                .map(dto -> {
+                    Ingredient ingredient = ingredientRepository.findByNameIgnoreCase(dto.getName())
+                            .orElseGet(() -> ingredientRepository.save(Ingredient.builder()
+                                    .name(dto.getName())
+                                    .build()));
+
+                    return RecipeIngredient.builder()
+                            .recipe(recipe)
+                            .ingredient(ingredient)
+                            .amount(dto.getAmount())
+                            .unit(dto.getUnit())
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        recipeIngredientRepository.deleteAll(recipe.getRecipeIngredients());
+        recipe.setRecipeIngredients(updatedIngredients);
+        recipeIngredientRepository.saveAll(updatedIngredients);
+
+        return recipeMapper.toRecipeDto(recipeRepository.save(recipe));
+    }
 }
 
