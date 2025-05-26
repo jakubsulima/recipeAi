@@ -59,6 +59,4 @@ public class UserService {
         return userMapper.toUserDto(user);
     }
 
-    // Removed getUserByLogin method as findByEmail serves the same purpose
-    // Removed duplicate findByEmail method
 }

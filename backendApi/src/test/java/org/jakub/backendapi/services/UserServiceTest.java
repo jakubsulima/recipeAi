@@ -71,7 +71,7 @@ public class UserServiceTest {
         when(userRepository.findByEmail(unknownEmail)).thenReturn(Optional.empty());
 
         AppException ex = assertThrows(AppException.class, () -> userService.findByEmail(unknownEmail));
-        assertEquals("Error: Unknown user (HTTP 404)", ex.getMessage());
+        assertEquals("Unknown user", ex.getMessage());
         assertEquals(HttpStatus.NOT_FOUND, ex.getCode());
     }
 
@@ -113,7 +113,7 @@ public class UserServiceTest {
         when(passwordEncoder.matches(CharBuffer.wrap(credentials.getPassword()), "hashedPassword")).thenReturn(false); // Use getPassword()
 
         AppException ex = assertThrows(AppException.class, () -> userService.login(credentials));
-        assertEquals("Error: Invalid password (HTTP 400)", ex.getMessage());
+        assertEquals("Invalid password", ex.getMessage());
         assertEquals(HttpStatus.BAD_REQUEST, ex.getCode());
     }
 
@@ -124,7 +124,7 @@ public class UserServiceTest {
         when(userRepository.findByEmail(unknownEmail)).thenReturn(Optional.empty());
 
         AppException ex = assertThrows(AppException.class, () -> userService.login(credentials));
-        assertEquals("Error: Unknown user (HTTP 404)", ex.getMessage());
+        assertEquals("Unknown user", ex.getMessage());
         assertEquals(HttpStatus.NOT_FOUND, ex.getCode());
     }
 
@@ -191,7 +191,7 @@ public class UserServiceTest {
         when(userRepository.findByEmail(existingEmail)).thenReturn(Optional.of(existingUserEntity));
 
         AppException ex = assertThrows(AppException.class, () -> userService.register(signUpDto));
-        assertEquals("Error: User already exists (HTTP 400)", ex.getMessage());
+        assertEquals("User already exists", ex.getMessage());
         assertEquals(HttpStatus.BAD_REQUEST, ex.getCode());
     }
 }

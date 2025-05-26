@@ -71,7 +71,7 @@ public class RecipeServiceTest {
         when(recipeRepository.findById(1L)).thenReturn(Optional.empty());
 
         AppException ex = assertThrows(AppException.class, () -> recipeService.getRecipeById(1L));
-        assertEquals("Error: Recipe not found (HTTP 404)", ex.getMessage());
+        assertEquals("Recipe not found", ex.getMessage());
         assertEquals(HttpStatus.NOT_FOUND, ex.getCode());
     }
 
@@ -107,7 +107,7 @@ public class RecipeServiceTest {
 
         AppException ex = assertThrows(AppException.class, () -> recipeService.saveRecipe(recipeDto, "john@example.com")); // Changed login to email
 
-        assertEquals("Error: Recipe must have at least one ingredient (HTTP 400)", ex.getMessage());
+        assertEquals("Recipe must have at least one ingredient", ex.getMessage());
         assertEquals(HttpStatus.BAD_REQUEST, ex.getCode());
         verify(userRepository).findByEmail("john@example.com"); // Changed findByLogin to findByEmail
     }
@@ -122,7 +122,7 @@ public class RecipeServiceTest {
         when(recipeRepository.findByNameAndUser("Pizza", user)).thenReturn(Optional.of(existingRecipe));
 
         AppException ex = assertThrows(AppException.class, () -> recipeService.saveRecipe(recipeDto, "john@example.com")); // Changed login to email
-        assertEquals("Error: Recipe 'Pizza' already exists for user 'john@example.com' (HTTP 409)", ex.getMessage());
+        assertEquals("Recipe 'Pizza' already exists for user 'john@example.com'", ex.getMessage());
         assertEquals(HttpStatus.CONFLICT, ex.getCode());
         verify(userRepository).findByEmail("john@example.com"); // Changed findByLogin to findByEmail
     }
@@ -152,7 +152,7 @@ public class RecipeServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
         AppException ex = assertThrows(AppException.class, () -> recipeService.findRecipesByUserId(1L));
-        assertEquals("Error: Unknown user (HTTP 404)", ex.getMessage());
+        assertEquals("Unknown user", ex.getMessage());
         assertEquals(HttpStatus.NOT_FOUND, ex.getCode());
     }
 }

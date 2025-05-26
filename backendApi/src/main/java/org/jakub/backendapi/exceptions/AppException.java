@@ -16,6 +16,7 @@ public class AppException extends RuntimeException {
 
     @Override
 public String getMessage() {
-    return String.format("Error: %s (HTTP %s)", super.getMessage(), code.value());
+    // Return the message as is, assuming it's already formatted
+    return super.getMessage();
 }
 }

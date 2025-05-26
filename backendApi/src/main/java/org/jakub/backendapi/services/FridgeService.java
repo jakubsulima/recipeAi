@@ -5,9 +5,11 @@ import org.jakub.backendapi.dto.FridgeIngredientDto;
 import org.jakub.backendapi.dto.UserDto;
 import org.jakub.backendapi.entities.FridgeIngredient;
 import org.jakub.backendapi.entities.User;
+import org.jakub.backendapi.exceptions.AppException;
 import org.jakub.backendapi.mappers.FridgeIngredientMapper;
 import org.jakub.backendapi.repositories.FridgeIngredientRepository;
 import org.jakub.backendapi.repositories.UserRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,7 +32,7 @@ public class FridgeService {
 
     public FridgeIngredient addFridgeIngredient(FridgeIngredientDto fridgeIngredientDto, String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new AppException("User not found",  HttpStatus.NOT_FOUND));
 
         FridgeIngredient fridgeIngredient = fridgeIngredientMapper.toFridgeIngredientWithUser(fridgeIngredientDto, user);
         return fridgeIngredientRepository.save(fridgeIngredient);
@@ -39,9 +41,9 @@ public class FridgeService {
     public FridgeIngredientDto deleteFridgeIngredient(Long id, String email) {
         UserDto userDto = userService.findByEmail(email);
         FridgeIngredient fridgeIngredient = fridgeIngredientRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Fridge ingredient not found"));
+                .orElseThrow(() -> new AppException("Fridge ingredient not found", HttpStatus.NOT_FOUND));
         if (!fridgeIngredient.getUser().getId().equals(userDto.getId())) {
-            throw new RuntimeException("You do not have permission to delete this fridge ingredient");
+            throw new AppException("You do not have permission to delete this fridge ingredient", HttpStatus.FORBIDDEN);
         }
         fridgeIngredientRepository.deleteById(id);
         return fridgeIngredientMapper.toFridgeIngredientDto(fridgeIngredient);
