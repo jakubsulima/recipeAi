@@ -17,13 +17,20 @@ vi.mock("react-router", () => ({
   useLocation: vi.fn(),
 }));
 
+// Mock the fridge context
+vi.mock("../src/context/fridgeContext", () => ({
+  useFridge: vi.fn(() => ({
+    getFridgeItemNames: vi.fn(() => ["Onion", "Tomato"]),
+  })),
+}));
+
 // Sample recipe data for tests
 const mockRecipeData = {
-  recipe_name: "Test Recipe",
+  name: "Test Recipe",
   description: "A test recipe description",
   ingredients: [
-    { item: "Ingredient 1", quantity: "1", unit: "cup" },
-    { item: "Ingredient 2", quantity: "2", unit: "tbsp" },
+    { name: "Ingredient 1", amount: "1", unit: "cup" },
+    { name: "Ingredient 2", amount: "2", unit: "tbsp" },
   ],
   instructions: ["Step 1 of the recipe", "Step 2 of the recipe"],
 };
@@ -34,7 +41,12 @@ const setupMocks = ({
   search = null,
   existingRecipe = null,
   generateRecipeResult = null,
-}) => {
+}: {
+  id?: string | null;
+  search?: string | null;
+  existingRecipe?: any;
+  generateRecipeResult?: any;
+} = {}) => {
   // Access the mocks directly instead of using spyOn
   const useParamsMock = reactRouter.useParams as vi.MockedFunction<
     typeof reactRouter.useParams

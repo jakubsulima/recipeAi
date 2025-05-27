@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
-import Recipe, { RecipeData, RecipeIngredient } from "./Recipe";
+import { RecipeData } from "./Recipe";
 import { AJAX } from "../lib/hooks";
-import { useUser } from "../context/context"; // Import useUser
-import { set } from "react-hook-form";
+import { useUser } from "../context/context";
 
 const Recipes = () => {
   const [recipes, setRecipes] = useState<RecipeData[]>([]);
@@ -13,7 +12,6 @@ const Recipes = () => {
   useEffect(() => {
     const fetchRecipes = async () => {
       if (userLoading) {
-        // Wait for user data to load
         return;
       }
 
@@ -64,11 +62,14 @@ const Recipes = () => {
                 <h3 className="text-lg font-medium mb-2">Ingredients:</h3>
                 {recipe.ingredients && recipe.ingredients.length > 0 ? ( // Check ingredients
                   <ul className="list-disc pl-5 space-y-1">
-                    {recipe.ingredients.map((ingredient, index) => (
-                      <li key={index} className="text-gray-700">
-                        {ingredient.amount} {ingredient.unit} {ingredient.name}
-                      </li>
-                    ))}
+                    {recipe.ingredients.map(
+                      (ingredient: any, index: number) => (
+                        <li key={index} className="text-gray-700">
+                          {ingredient.amount} {ingredient.unit}{" "}
+                          {ingredient.name}
+                        </li>
+                      )
+                    )}
                   </ul>
                 ) : (
                   <p className="text-gray-500">No ingredients listed.</p>
@@ -79,7 +80,7 @@ const Recipes = () => {
                 <h3 className="text-lg font-medium mb-2">Instructions:</h3>
                 {recipe.instructions && recipe.instructions.length > 0 ? (
                   <ol className="list-decimal pl-5 space-y-2">
-                    {recipe.instructions.map((step, index) => (
+                    {recipe.instructions.map((step: string, index: number) => (
                       <li key={index} className="text-gray-700">
                         {step}
                       </li>

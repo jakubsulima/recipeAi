@@ -10,9 +10,10 @@ import HomePage from "./pages/HomePage";
 import Recipes from "./pages/UserRecipes";
 import { Fridge } from "./pages/Fridge";
 import Login from "./pages/Login";
-import Recipe from "./pages/Recipe";
+import RecipePage from "./pages/RecipePage";
 import Register from "./pages/Register";
 import { AuthProvider } from "./context/context";
+import { FridgeProvider } from "./context/fridgeContext";
 
 function App() {
   const router = createBrowserRouter(
@@ -23,15 +24,17 @@ function App() {
         <Route path="/Fridge" element={<Fridge />} />
         <Route path="/Login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/Recipe" element={<Recipe />} />
-        <Route path="/Recipe/:id" element={<Recipe />} />
+        <Route path="/Recipe" element={<RecipePage />} />
+        <Route path="/Recipe/:id" element={<RecipePage />} />
         <Route path="*" element={<div>Not Found</div>} />
       </Route>
     )
   );
   return (
     <AuthProvider>
-      <RouterProvider router={router} />
+      <FridgeProvider>
+        <RouterProvider router={router} />
+      </FridgeProvider>
     </AuthProvider>
   );
 }

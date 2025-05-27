@@ -75,3 +75,9 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# TypeScript compilation artifacts (prevent JS/declaration files from source)
+src/**/*.js
+src/**/*.d.ts
+tsconfig.tsbuildinfo
+*.tsbuildinfo

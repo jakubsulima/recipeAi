@@ -25,7 +25,7 @@ public class FridgeIngredient {
     @Column(nullable = false)
     private LocalDate expirationDate;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name="user_id", referencedColumnName = "id")
     private User user;
 }

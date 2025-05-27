@@ -2,9 +2,7 @@ import { useContext, useState, createContext, useEffect } from "react";
 import { AJAX } from "../lib/hooks";
 
 interface UserProps {
-  login: string;
-  firstName: string;
-  lastName: string;
+  email: string;
   id: number;
 }
 
@@ -24,28 +22,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn");
-    if (isLoggedIn) {
+
+    // Only attempt authentication if user was previously logged in
+    if (isLoggedIn === "true") {
+      // First try to get current user data
       AJAX("me")
         .then((userData) => {
           setUser(userData);
+          setLoading(false);
         })
-        .catch(() => {
-          try {
+        .catch((error) => {
+          // If 401, try to refresh the token
+          if (error.status === 401) {
             AJAX("refresh")
               .then((userData) => {
                 setUser(userData);
-                return;
+                setLoading(false);
               })
               .catch(() => {
-                throw new Error("Failed to refresh user data");
+                // Refresh failed, clear authentication state
+                localStorage.removeItem("isLoggedIn");
+                setUser(null);
+                setLoading(false);
               });
-          } catch (error) {
+          } else {
+            // Other errors, clear authentication state
             localStorage.removeItem("isLoggedIn");
             setUser(null);
+            setLoading(false);
           }
-        })
-        .finally(() => setLoading(false));
+        });
     } else {
+      // User is not logged in, set loading to false immediately
       setLoading(false);
     }
   }, []);

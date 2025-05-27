@@ -3,16 +3,15 @@ import { AJAX } from "../lib/hooks";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { useNavigate } from "react-router-dom";
 import { useUser } from "../context/context";
 
 interface LoginProps {
-  login: string;
+  email: string;
   password: string;
 }
 
 const schema = yup.object({
-  login: yup.string().required("Login is required"),
+  email: yup.string().required("Email is required"),
   password: yup.string().required("Password is required"),
 });
 
@@ -28,7 +27,7 @@ const Login = () => {
   } = useForm<LoginProps>({
     resolver: yupResolver(schema),
     defaultValues: {
-      login: "",
+      email: "",
       password: "",
     },
   });
@@ -40,10 +39,10 @@ const Login = () => {
       const userData = await AJAX("login", true, data);
       localStorage.setItem("isLoggedIn", "true");
       setUser(userData);
-      console.log("Login successful");
+      console.log("login successful");
     } catch (error: any) {
-      setError(error.message || "Login failed");
-      console.error("Login error:", error);
+      setError(error.message || "login failed");
+      console.error("login error:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -55,15 +54,15 @@ const Login = () => {
         {error && <div className="text-red-500 mb-4">{error}</div>}
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <div>
-            <label htmlFor="login">Login:</label>
+            <label htmlFor="email">email:</label>
             <input
-              id="login"
-              {...register("login")}
+              id="email"
+              {...register("email")}
               className="border rounded p-2 w-full"
             />
-            {errors.login && (
+            {errors.email && (
               <p className="text-red-500 text-sm mt-1">
-                {errors.login.message}
+                {errors.email.message}
               </p>
             )}
           </div>
