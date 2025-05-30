@@ -1,6 +1,6 @@
 import { useLocation, useParams } from "react-router";
 import { AJAX, generateRecipe } from "../lib/hooks";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useFridge } from "../context/fridgeContext";
 
 export interface RecipeIngredient {
@@ -21,72 +21,147 @@ export interface RecipeData {
 const RecipePage = () => {
   const location = useLocation();
   const params = useParams();
-  const recipeId = params.id; // Get ID from URL if present
-  const { getFridgeItemNames } = useFridge();
+  const recipeId = params.id;
+  const { getFridgeItemNames, loading: fridgeLoading } = useFridge();
 
   const { search, existingRecipe } = location.state || {};
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [recipeData, setRecipeData] = useState<RecipeData | null>(null);
   const [error, setError] = useState<string>("");
 
-  const loadRecipe = async (searchTerm: string) => {
+  const currentRecipeIdentifierRef = useRef<string | null>(null);
+
+  const fetchRecipeCallback = useCallback(async () => {
+    if (!recipeId) return;
     try {
       setIsLoading(true);
-      const fridgeIngredients = getFridgeItemNames();
-      const response = await generateRecipe(searchTerm, fridgeIngredients);
-
-      const cleanedResponse =
-        typeof response === "string"
-          ? response.replace(/```json|```/g, "").trim()
-          : response;
-
-      console.log("Response:", cleanedResponse);
-      const parsedData =
-        typeof cleanedResponse === "string"
-          ? JSON.parse(cleanedResponse)
-          : cleanedResponse;
-
-      setRecipeData(parsedData);
-    } catch (error: any) {
-      console.error("Error generating recipe:", error);
+      setError("");
+      const response = await AJAX(`getRecipe/${recipeId}`, false);
+      setRecipeData(response);
+      currentRecipeIdentifierRef.current = recipeId;
+    } catch (err: any) {
+      console.error("Error fetching recipe:", err);
       setError("Failed to load recipe. Please try again.");
+      currentRecipeIdentifierRef.current = null;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [recipeId]);
 
-  useEffect(() => {
-    const fetchRecipe = async () => {
+  const loadNewRecipeCallback = useCallback(
+    async (currentSearchTerm: string) => {
+      if (!currentSearchTerm) return;
       try {
         setIsLoading(true);
-        const response = await AJAX(`getRecipe/${recipeId}`, false);
-        setRecipeData(response);
-      } catch (error: any) {
-        console.error("Error fetching recipe:", error);
+        setError("");
+        const fridgeIngredients = getFridgeItemNames();
+        console.log(
+          "Fridge ingredients for search:",
+          currentSearchTerm,
+          fridgeIngredients
+        );
+        const response = await generateRecipe(
+          currentSearchTerm,
+          fridgeIngredients
+        );
+
+        let jsonString =
+          typeof response === "string"
+            ? response.replace(/```json|```/g, "").trim()
+            : JSON.stringify(response); // If it's already an object, stringify for uniform processing
+
+        // Attempt to fix common JSON issues
+        // 1. Remove trailing commas in objects and arrays
+        // This regex looks for a comma followed by a closing brace or bracket,
+        // possibly with whitespace in between, and removes the comma.
+        jsonString = jsonString.replace(/,\s*([}\]])/g, "$1");
+
+        // 2. Normalize the timeToPrepare key
+        jsonString = jsonString.replace(
+          /"timeToPrepare\(string\)"/g,
+          '"timeToPrepare"'
+        );
+
+        console.log("Cleaned response before parsing:", jsonString);
+        console.log("Response for search:", currentSearchTerm, jsonString);
+        const parsedData = JSON.parse(jsonString);
+
+        setRecipeData(parsedData);
+        currentRecipeIdentifierRef.current = currentSearchTerm;
+      } catch (err: any) {
+        console.error("Error generating recipe:", err);
         setError("Failed to load recipe. Please try again.");
+        currentRecipeIdentifierRef.current = null;
       } finally {
         setIsLoading(false);
       }
-    };
+    },
+    [getFridgeItemNames]
+  );
 
+  useEffect(() => {
     if (existingRecipe) {
       setRecipeData(existingRecipe);
       setIsLoading(false);
+      setError("");
+
       return;
     }
 
     if (recipeId) {
-      fetchRecipe();
+      if (
+        currentRecipeIdentifierRef.current === recipeId &&
+        recipeData != null
+      ) {
+        setIsLoading(false);
+        setError("");
+      } else {
+        fetchRecipeCallback();
+      }
       return;
     }
 
-    if (search && !recipeId) {
-      loadRecipe(search);
-    } else if (!recipeId) {
+    if (search) {
+      if (!fridgeLoading) {
+        if (
+          currentRecipeIdentifierRef.current === search &&
+          recipeData != null
+        ) {
+          setIsLoading(false);
+          setError("");
+        } else {
+          loadNewRecipeCallback(search);
+        }
+      } else {
+        if (
+          currentRecipeIdentifierRef.current !== search ||
+          recipeData == null
+        ) {
+          setIsLoading(true);
+          setError("");
+        }
+      }
+      return;
+    }
+
+    if (!fridgeLoading) {
       setError("No search term or recipe ID provided");
       setIsLoading(false);
+      setRecipeData(null);
+      currentRecipeIdentifierRef.current = null;
+    } else {
+      setIsLoading(true);
+      setError("");
     }
-  }, [search, recipeId, existingRecipe]);
+  }, [
+    search,
+    recipeId,
+    existingRecipe,
+    fridgeLoading,
+    loadNewRecipeCallback,
+    fetchRecipeCallback,
+    recipeData,
+  ]);
 
   const saveRecipe = async () => {
     try {
@@ -116,14 +191,6 @@ const RecipePage = () => {
     );
   }
 
-  if (error) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="text-xl text-red-500">{error}</div>
-      </div>
-    );
-  }
-
   if (!recipeData) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -134,6 +201,11 @@ const RecipePage = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
+      {error && (
+        <div className="flex justify-center">
+          <div className="text-xl text-red-500">{error}</div>
+        </div>
+      )}
       <h1 className="text-3xl font-bold mb-2">{recipeData.name}</h1>
       {recipeData.timeToPrepare && (
         <h2 className="text-2xl font-bold mb-2">{recipeData.timeToPrepare}</h2>
@@ -146,7 +218,7 @@ const RecipePage = () => {
         <div>
           <h2 className="text-2xl font-semibold mb-4">Ingredients</h2>
           <ul className="space-y-2">
-            {recipeData.ingredients.map((ingredient, index) => (
+            {(recipeData.ingredients || []).map((ingredient, index) => (
               <li key={index} className="flex justify-between">
                 <span>{ingredient.name}</span>
                 <span>
@@ -160,7 +232,7 @@ const RecipePage = () => {
         <div>
           <h2 className="text-2xl font-semibold mb-4">Instructions</h2>
           <ol className="space-y-3">
-            {recipeData.instructions.map((instruction, index) => (
+            {(recipeData.instructions || []).map((instruction, index) => (
               <li key={index} className="flex">
                 <span className="text-blue-500 font-bold mr-3">
                   {index + 1}.

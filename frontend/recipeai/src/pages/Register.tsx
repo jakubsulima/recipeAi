@@ -7,7 +7,10 @@ import { useNavigate } from "react-router-dom";
 import { useUser } from "../context/context";
 
 const schema = yup.object({
-  login: yup.string().required("Login is required"),
+  email: yup
+    .string()
+    .required("Email is required")
+    .email("Invalid email format"),
   password: yup
     .string()
     .min(8, "Password must be at least 8 characters")
@@ -16,15 +19,16 @@ const schema = yup.object({
     .matches(/[A-Z]/, "Password must contain at least one uppercase letter")
     .matches(/[^\w]/, "Password must contain at least one special character")
     .required("Password is required"),
-  firstName: yup.string().required("First name is required"),
-  lastName: yup.string(),
+  confirmPassword: yup
+    .string()
+    .oneOf([yup.ref("password")], "Passwords must match")
+    .required("Confirm Password is required"),
 });
 
 interface RegisterProps {
-  login: string;
+  email: string;
   password: string;
-  firstName: string;
-  lastName: string;
+  confirmPassword: string;
 }
 
 const Register = () => {
@@ -40,10 +44,9 @@ const Register = () => {
   } = useForm<RegisterProps>({
     resolver: yupResolver(schema),
     defaultValues: {
-      login: "",
+      email: "",
       password: "",
-      firstName: "",
-      lastName: "",
+      confirmPassword: "",
     },
   });
 
@@ -70,41 +73,15 @@ const Register = () => {
         {error && <div className="text-red-500 mb-4">{error}</div>}
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <div>
-            <label htmlFor="firstName">First Name:</label>
+            <label htmlFor="email">email:</label>
             <input
-              id="firstName"
-              {...register("firstName")}
+              id="email"
+              {...register("email")}
               className="border rounded p-2 w-full"
             />
-            {errors.firstName && (
+            {errors.email && (
               <p className="text-red-500 text-sm mt-1">
-                {errors.firstName.message}
-              </p>
-            )}
-          </div>
-          <div>
-            <label htmlFor="lastName">Last Name:</label>
-            <input
-              id="lastName"
-              {...register("lastName")}
-              className="border rounded p-2 w-full"
-            />
-            {errors.lastName && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.lastName.message}
-              </p>
-            )}
-          </div>
-          <div>
-            <label htmlFor="login">Login:</label>
-            <input
-              id="login"
-              {...register("login")}
-              className="border rounded p-2 w-full"
-            />
-            {errors.login && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.login.message}
+                {errors.email.message}
               </p>
             )}
           </div>
@@ -119,6 +96,20 @@ const Register = () => {
             {errors.password && (
               <p className="text-red-500 text-sm mt-1">
                 {errors.password.message}
+              </p>
+            )}
+          </div>
+          <div>
+            <label htmlFor="confirmPassword">Confirm Password:</label>
+            <input
+              type="password"
+              id="confirmPassword"
+              {...register("confirmPassword")}
+              className="border rounded p-2 w-full"
+            />
+            {errors.confirmPassword && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.confirmPassword.message}
               </p>
             )}
           </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { RecipeData } from "./Recipe";
+import { RecipeData } from "./RecipePage";
 import { AJAX } from "../lib/hooks";
 import { useUser } from "../context/context";
 
@@ -9,8 +9,21 @@ const Recipes = () => {
   const { user, loading: userLoading } = useUser();
   const [error, setError] = useState<string>("");
 
+  const fetchAllRecipes = async () => {
+    try {
+      const response = await AJAX("getAllRecipes", false);
+      console.log("Fetched all recipes:", response);
+      setRecipes(response);
+    } catch (error) {
+      setError("Error fetching recipes");
+      console.error("Error fetching recipes:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchRecipes = async () => {
+    const fetchUserRecipes = async () => {
       if (userLoading) {
         return;
       }
@@ -27,16 +40,11 @@ const Recipes = () => {
           setIsLoading(false);
         }
       } else {
-        console.log("User not logged in or ID not available");
-        setIsLoading(false);
+        fetchAllRecipes();
       }
     };
-
-    fetchRecipes();
-  }, [user, userLoading]); // Add user and userLoading as dependencies
-  useEffect(() => {
-    console.log("Recipes state updated:", recipes);
-  }, [recipes]);
+    fetchUserRecipes();
+  }, [user, userLoading]);
 
   if (isLoading || userLoading) {
     return <div>Loading recipes...</div>;

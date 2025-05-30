@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useFridge } from "../context/fridgeContext";
+import { useUser } from "../context/context";
 
 const HomePage = () => {
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
   const { fridgeItems } = useFridge();
+  const { user, loading: userLoading } = useUser();
 
   const handleClear = () => {
     setSearch("");
@@ -29,6 +31,13 @@ const HomePage = () => {
               className="p-2 pr-10 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
+                  if (hasIngredients) {
+                    setSearch(
+                      search +
+                        " and try to use those ingredients" +
+                        fridgeItems.map((item) => item.name).join(", ")
+                    );
+                  }
                   navigate("Recipe", { state: { search } });
                 }
               }}
@@ -54,41 +63,6 @@ const HomePage = () => {
               </button>
             )}
           </div>
-
-          {hasIngredients && (
-            <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
-              <h3 className="text-lg font-semibold text-green-800 mb-2">
-                🥕 Your Fridge Items ({fridgeItems.length})
-              </h3>
-              <div className="flex flex-wrap gap-2 mb-3">
-                {fridgeItems.slice(0, 6).map((item, index) => (
-                  <span
-                    key={index}
-                    className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-sm"
-                  >
-                    {item.name}
-                  </span>
-                ))}
-                {fridgeItems.length > 6 && (
-                  <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-sm">
-                    +{fridgeItems.length - 6} more
-                  </span>
-                )}
-              </div>
-              <button
-                onClick={() =>
-                  navigate("Recipe", {
-                    state: {
-                      search: "what can I cook with my fridge ingredients",
-                    },
-                  })
-                }
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors"
-              >
-                🍳 Cook with my fridge
-              </button>
-            </div>
-          )}
         </div>
         <section
           className="flex flex-col text-center md:flex-row p-5 md:pt-10 md:pb-10 

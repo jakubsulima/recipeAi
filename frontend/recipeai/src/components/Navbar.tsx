@@ -21,14 +21,14 @@ const Navbar = () => {
 
   // Define navigation items based on auth state
   const getNavItems = () => {
-    const baseItems = ["Recipes", "Fridge"];
+    const baseItems = ["Recipes"];
 
     if (loading) {
       return [...baseItems, "Login"];
     }
 
     if (user) {
-      return [...baseItems, "Profile"];
+      return [...baseItems, "Profile", "Fridge"];
     } else {
       return [...baseItems, "Login"];
     }

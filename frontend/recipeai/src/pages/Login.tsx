@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useUser } from "../context/context";
+import { useNavigate } from "react-router";
 
 interface LoginProps {
   email: string;
@@ -19,6 +20,7 @@ const Login = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const { setUser } = useUser();
+  const navigate = useNavigate();
 
   const {
     register,
@@ -40,6 +42,7 @@ const Login = () => {
       localStorage.setItem("isLoggedIn", "true");
       setUser(userData);
       console.log("login successful");
+      navigate("/"); // Redirect to homepage after successful login
     } catch (error: any) {
       setError(error.message || "login failed");
       console.error("login error:", error);

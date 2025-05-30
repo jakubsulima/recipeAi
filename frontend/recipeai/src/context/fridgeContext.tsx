@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { AJAX } from "../lib/hooks";
+import { useUser } from "./context";
 
 export interface FridgeIngredient {
   id: number;
@@ -32,6 +33,7 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
   const [fridgeItems, setFridgeItems] = useState<FridgeIngredient[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
+  const { user, loading: userLoading } = useUser();
 
   const refreshFridgeItems = async () => {
     setLoading(true);
@@ -54,7 +56,6 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
         expirationDate: item.expirationDate,
       });
 
-      // Optimistically update the local state
       const newItem: FridgeIngredient = {
         id: response.id || Date.now(),
         name: item.name,
@@ -82,6 +83,11 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Fetch fridge items when component mounts
   useEffect(() => {
+    if (userLoading) return; // Wait for user data to load
+    if (!user || !user.id) {
+      setFridgeItems([]); // No user, clear fridge items
+      return;
+    }
     refreshFridgeItems();
   }, []);
 

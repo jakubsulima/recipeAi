@@ -30,7 +30,7 @@ public class   RecipeIngredient {
     @Column(nullable = false)
     private double amount;
 
-    @Column(nullable = false)
+    @Column()
     private String unit;
 
 
