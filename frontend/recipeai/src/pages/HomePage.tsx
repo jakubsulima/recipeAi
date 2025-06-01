@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useFridge } from "../context/fridgeContext";
-import { useUser } from "../context/context";
 
 const HomePage = () => {
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
   const { fridgeItems } = useFridge();
-  const { user, loading: userLoading } = useUser();
 
   const handleClear = () => {
     setSearch("");

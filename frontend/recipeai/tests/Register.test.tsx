@@ -37,30 +37,28 @@ describe("Register Component", () => {
   });
 
   test("renders the form fields correctly", () => {
-    expect(screen.getByLabelText(/First Name:/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Last Name:/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Login:/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Password:/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/email:/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Password:/i)).toBeInTheDocument(); // Use ^ to be more specific
+    expect(screen.getByLabelText(/Confirm Password:/i)).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /Register/i })
     ).toBeInTheDocument();
   });
 
   test("updates input values on change", () => {
-    const firstNameInput = screen.getByLabelText(/First Name:/i);
-    const lastNameInput = screen.getByLabelText(/Last Name:/i);
-    const loginInput = screen.getByLabelText(/Login:/i);
-    const passwordInput = screen.getByLabelText(/Password:/i);
+    const emailInput = screen.getByLabelText(/email:/i);
+    const passwordInput = screen.getByLabelText(/^Password:/i);
+    const confirmPasswordInput = screen.getByLabelText(/Confirm Password:/i);
 
-    fireEvent.change(firstNameInput, { target: { value: "John" } });
-    fireEvent.change(lastNameInput, { target: { value: "Doe" } });
-    fireEvent.change(loginInput, { target: { value: "johndoe" } });
-    fireEvent.change(passwordInput, { target: { value: "password" } });
+    fireEvent.change(emailInput, { target: { value: "test@example.com" } });
+    fireEvent.change(passwordInput, { target: { value: "password123" } });
+    fireEvent.change(confirmPasswordInput, {
+      target: { value: "password123" },
+    });
 
-    expect(firstNameInput).toHaveValue("John");
-    expect(lastNameInput).toHaveValue("Doe");
-    expect(loginInput).toHaveValue("johndoe");
-    expect(passwordInput).toHaveValue("password");
+    expect(emailInput).toHaveValue("test@example.com");
+    expect(passwordInput).toHaveValue("password123");
+    expect(confirmPasswordInput).toHaveValue("password123");
   });
 
   test("shows error messages for invalid inputs", async () => {
@@ -70,22 +68,50 @@ describe("Register Component", () => {
 
     // Wait for validation messages to appear
     await waitFor(() => {
-      expect(screen.getByText("First name is required")).toBeInTheDocument();
+      expect(screen.getByText("Email is required")).toBeInTheDocument();
     });
-
-    expect(screen.getByText("Login is required")).toBeInTheDocument();
 
     expect(
       screen.getByText("Password must be at least 8 characters")
     ).toBeInTheDocument();
+    expect(
+      screen.getByText("Confirm Password is required")
+    ).toBeInTheDocument();
+  });
+
+  test("shows 'Passwords must match' error if passwords do not match", async () => {
+    const emailInput = screen.getByLabelText(/email:/i);
+    const passwordInput = screen.getByLabelText(/^Password:/i);
+    const confirmPasswordInput = screen.getByLabelText(/Confirm Password:/i);
+    const submitButton = screen.getByRole("button", { name: /Register/i });
+
+    fireEvent.change(emailInput, { target: { value: "test@example.com" } });
+    fireEvent.change(passwordInput, { target: { value: "Password123!" } });
+    fireEvent.change(confirmPasswordInput, {
+      target: { value: "Password123" },
+    }); // Mismatch
+
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(screen.getByText("Passwords must match")).toBeInTheDocument();
+    });
   });
 
   test("validates password requirements", async () => {
-    const passwordInput = screen.getByLabelText(/Password:/i);
+    const emailInput = screen.getByLabelText(/email:/i);
+    const passwordInput = screen.getByLabelText(/^Password:/i);
+    const confirmPasswordInput = screen.getByLabelText(/Confirm Password:/i);
     const submitButton = screen.getByRole("button", { name: /Register/i });
+
+    // Pre-fill other required fields to isolate password validation
+    fireEvent.change(emailInput, { target: { value: "test@example.com" } });
+    fireEvent.change(confirmPasswordInput, { target: { value: "short" } });
 
     // Test for minimum length
     fireEvent.change(passwordInput, { target: { value: "short" } });
+    // Need to make confirmPassword match for this specific sub-test, or it will show "Passwords must match"
+    fireEvent.change(confirmPasswordInput, { target: { value: "short" } });
     fireEvent.click(submitButton);
     await waitFor(() => {
       expect(
@@ -95,6 +121,9 @@ describe("Register Component", () => {
 
     // Test for requiring a number
     fireEvent.change(passwordInput, { target: { value: "passwordNoNumber" } });
+    fireEvent.change(confirmPasswordInput, {
+      target: { value: "passwordNoNumber" },
+    });
     fireEvent.click(submitButton);
     await waitFor(() => {
       expect(
@@ -104,6 +133,9 @@ describe("Register Component", () => {
 
     // Test for requiring uppercase letter
     fireEvent.change(passwordInput, { target: { value: "password123!" } });
+    fireEvent.change(confirmPasswordInput, {
+      target: { value: "password123!" },
+    });
     fireEvent.click(submitButton);
     await waitFor(() => {
       expect(
@@ -113,6 +145,9 @@ describe("Register Component", () => {
 
     // Test for requiring lowercase letter
     fireEvent.change(passwordInput, { target: { value: "PASSWORD123!" } });
+    fireEvent.change(confirmPasswordInput, {
+      target: { value: "PASSWORD123!" },
+    });
     fireEvent.click(submitButton);
     await waitFor(() => {
       expect(
@@ -122,6 +157,9 @@ describe("Register Component", () => {
 
     // Test for requiring special character
     fireEvent.change(passwordInput, { target: { value: "Password123" } });
+    fireEvent.change(confirmPasswordInput, {
+      target: { value: "Password123" },
+    });
     fireEvent.click(submitButton);
     await waitFor(() => {
       expect(
@@ -131,45 +169,43 @@ describe("Register Component", () => {
       ).toBeInTheDocument();
     });
 
-    // Test valid password - should have no error message
-    const firstNameInput = screen.getByLabelText(/First Name:/i);
-    const loginInput = screen.getByLabelText(/Login:/i);
-    fireEvent.change(firstNameInput, { target: { value: "John" } });
-    fireEvent.change(loginInput, { target: { value: "johndoe" } });
+    // Test valid password - should have no error message for password
+    // emailInput is already filled
     fireEvent.change(passwordInput, { target: { value: "Password123!" } });
+    fireEvent.change(confirmPasswordInput, {
+      target: { value: "Password123!" },
+    });
     fireEvent.click(submitButton);
     await waitFor(() => {
+      // Check that AJAX was called, implying other validations passed
+      expect(hooks.AJAX).toHaveBeenCalled();
+      // And that password specific errors are not present
       expect(screen.queryByText(/Password must/i)).not.toBeInTheDocument();
     });
   });
 
-  test("submits form with valid password", async () => {
-    // Mock the AJAX function to resolve
+  test("submits form with valid data", async () => {
     const mockAJAX = vi.fn().mockResolvedValue({ success: true });
-    (hooks.AJAX as unknown as typeof mockAJAX) = mockAJAX;
+    (hooks.AJAX as unknown as ReturnType<typeof vi.fn>) = mockAJAX;
 
-    const firstNameInput = screen.getByLabelText(/First Name:/i);
-    const lastNameInput = screen.getByLabelText(/Last Name:/i);
-    const loginInput = screen.getByLabelText(/Login:/i);
-    const passwordInput = screen.getByLabelText(/Password:/i);
+    const emailInput = screen.getByLabelText(/email:/i);
+    const passwordInput = screen.getByLabelText(/^Password:/i);
+    const confirmPasswordInput = screen.getByLabelText(/Confirm Password:/i);
     const submitButton = screen.getByRole("button", { name: /Register/i });
 
-    // Fill in the form
-    fireEvent.change(firstNameInput, { target: { value: "John" } });
-    fireEvent.change(lastNameInput, { target: { value: "Doe" } });
-    fireEvent.change(loginInput, { target: { value: "johndoe" } });
+    fireEvent.change(emailInput, { target: { value: "test@example.com" } });
     fireEvent.change(passwordInput, { target: { value: "Password123!" } });
+    fireEvent.change(confirmPasswordInput, {
+      target: { value: "Password123!" },
+    });
 
-    // Submit the form
     fireEvent.click(submitButton);
 
-    // Wait for the async submission to complete
     await waitFor(() => {
       expect(mockAJAX).toHaveBeenCalledWith("register", true, {
-        firstName: "John",
-        lastName: "Doe",
-        login: "johndoe",
+        email: "test@example.com",
         password: "Password123!",
+        confirmPassword: "Password123!",
       });
     });
   });

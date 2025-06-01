@@ -14,6 +14,7 @@ import RecipePage from "./pages/RecipePage";
 import Register from "./pages/Register";
 import { AuthProvider } from "./context/context";
 import { FridgeProvider } from "./context/fridgeContext";
+import MePage from "./pages/MePage";
 
 function App() {
   const router = createBrowserRouter(
@@ -24,6 +25,7 @@ function App() {
         <Route path="/Fridge" element={<Fridge />} />
         <Route path="/Login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/Me" element={<MePage />} />
         <Route path="/Recipe" element={<RecipePage />} />
         <Route path="/Recipe/:id" element={<RecipePage />} />
         <Route path="*" element={<div>Not Found</div>} />

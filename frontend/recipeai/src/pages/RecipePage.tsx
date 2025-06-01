@@ -10,12 +10,13 @@ export interface RecipeIngredient {
 }
 
 export interface RecipeData {
+  title: string;
   id?: string;
   description?: string;
   name: string;
   ingredients: RecipeIngredient[];
   instructions: string[];
-  timeToPrepare?: string;
+  timeToPrepare: string;
 }
 
 const RecipePage = () => {

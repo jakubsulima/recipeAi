@@ -57,8 +57,7 @@ const Register = () => {
       const userData = await AJAX("register", true, data);
       localStorage.setItem("isLoggedIn", "true");
       setUser(userData);
-      console.log("Registration successful");
-      navigate("/"); // Redirect to homepage after successful registration
+      navigate("/");
     } catch (error: any) {
       setError(error.message || "Registration failed");
       console.error("Register error:", error);

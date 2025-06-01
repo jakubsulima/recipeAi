@@ -42,7 +42,7 @@ const Login = () => {
       localStorage.setItem("isLoggedIn", "true");
       setUser(userData);
       console.log("login successful");
-      navigate("/"); // Redirect to homepage after successful login
+      navigate("/");
     } catch (error: any) {
       setError(error.message || "login failed");
       console.error("login error:", error);

@@ -32,7 +32,7 @@ public class SecurityConfig {
             // Configure request authorization
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.POST, "/login", "/register", "/refresh", "/addRecipe").permitAll()
-                .requestMatchers(HttpMethod.GET, "/getAllRecipes").permitAll() // Allow GET requests to /getAllRecipes for everyone
+                .requestMatchers(HttpMethod.GET, "/getAllRecipes", "/getRecipe/").permitAll() // Allow GET requests to /getAllRecipes for everyone
                 .anyRequest().authenticated()
             )
 

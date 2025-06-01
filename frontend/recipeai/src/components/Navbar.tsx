@@ -28,7 +28,7 @@ const Navbar = () => {
     }
 
     if (user) {
-      return [...baseItems, "Profile", "Fridge"];
+      return [...baseItems, "Fridge", "Me"];
     } else {
       return [...baseItems, "Login"];
     }

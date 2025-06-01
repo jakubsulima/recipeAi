@@ -1,193 +1,361 @@
 import React from "react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
-import Recipe from "../src/pages/Recipe";
-import * as hooks from "../src/lib/hooks";
-import * as reactRouter from "react-router";
+import { describe, test, expect, vi, beforeEach } from "vitest"; // Correctly import test
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { MemoryRouter, useLocation, useParams } from "react-router-dom"; // Import from react-router-dom
 
-// Mock the generateRecipe function
+import { AJAX, generateRecipe } from "../src/lib/hooks";
+import { useFridge } from "../src/context/fridgeContext";
+import RecipePage from "../src/pages/RecipePage";
+import { AuthProvider } from "../src/context/context"; // Corrected import to AuthProvider
+
+// Mock the hooks
 vi.mock("../src/lib/hooks", () => ({
+  AJAX: vi.fn(),
   generateRecipe: vi.fn(),
 }));
 
-// Mock the react-router hooks
-vi.mock("react-router", () => ({
-  ...vi.importActual("react-router"),
-  useParams: vi.fn(),
-  useLocation: vi.fn(),
-}));
+// Mock react-router-dom hooks
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual("react-router-dom");
+  return {
+    ...actual,
+    useParams: vi.fn(),
+    useLocation: vi.fn(),
+  };
+});
 
 // Mock the fridge context
 vi.mock("../src/context/fridgeContext", () => ({
-  useFridge: vi.fn(() => ({
-    getFridgeItemNames: vi.fn(() => ["Onion", "Tomato"]),
-  })),
+  useFridge: vi.fn(),
 }));
 
-// Sample recipe data for tests
-const mockRecipeData = {
-  name: "Test Recipe",
-  description: "A test recipe description",
-  ingredients: [
-    { name: "Ingredient 1", amount: "1", unit: "cup" },
-    { name: "Ingredient 2", amount: "2", unit: "tbsp" },
-  ],
-  instructions: ["Step 1 of the recipe", "Step 2 of the recipe"],
-};
+// Define mocks using vi.mocked for better type safety
+const mockUseLocation = vi.mocked(useLocation);
+const mockUseParams = vi.mocked(useParams);
+const mockUseFridge = vi.mocked(useFridge);
+const mockAJAX = vi.mocked(AJAX);
+const mockGenerateRecipe = vi.mocked(generateRecipe);
 
-// Setup function to configure mocks
-const setupMocks = ({
-  id = null,
-  search = null,
-  existingRecipe = null,
-  generateRecipeResult = null,
-}: {
-  id?: string | null;
-  search?: string | null;
-  existingRecipe?: any;
-  generateRecipeResult?: any;
-} = {}) => {
-  // Access the mocks directly instead of using spyOn
-  const useParamsMock = reactRouter.useParams as vi.MockedFunction<
-    typeof reactRouter.useParams
-  >;
-  useParamsMock.mockReturnValue(id ? { id } : {});
+interface SetupMocksArgs {
+  fridgeItems?: any[]; // Adjust type as per FridgeIngredient[] if available
+  loadingFridge?: boolean;
+  fridgeError?: string;
+  getFridgeItemNames?: () => string[];
+  params?: { recipeName?: string };
+  locationState?: { recipe?: any } | null; // Allow null
+  ajaxResponse?: any;
+  generateRecipeResponse?: any;
+}
 
-  const useLocationMock = reactRouter.useLocation as vi.MockedFunction<
-    typeof reactRouter.useLocation
-  >;
-  useLocationMock.mockReturnValue({
-    pathname: "/Recipe",
+function setupMocks({
+  fridgeItems = [],
+  loadingFridge = false,
+  fridgeError = "",
+  getFridgeItemNames = () => [],
+  params = { recipeName: "Test Recipe" },
+  locationState = null,
+  ajaxResponse = {},
+  generateRecipeResponse = {
+    recipeName: "Test Recipe",
+    ingredients: [{ name: "Ingredient 1", quantity: "1 cup" }],
+    instructions: ["Step 1"],
+    timeToPrepare: "30 minutes",
+  },
+}: SetupMocksArgs = {}) {
+  // Added type for the destructured argument
+  mockUseParams.mockReturnValue(params as any); // Cast to any if type is complex
+  mockUseLocation.mockReturnValue({
+    state: locationState,
+    pathname: `/recipe/${params.recipeName || "default"}`,
     search: "",
-    state: { search, existingRecipe },
     hash: "",
-  });
+    key: "test-key",
+  } as any); // Cast to any for simplicity or define a proper Location type
 
-  // Configure generateRecipe mock
-  if (generateRecipeResult) {
-    vi.mocked(hooks.generateRecipe).mockResolvedValue(
-      JSON.stringify(generateRecipeResult)
-    );
+  mockUseFridge.mockReturnValue({
+    fridgeItems,
+    setFridgeItems: vi.fn(),
+    loading: loadingFridge,
+    error: fridgeError,
+    addFridgeItem: vi.fn().mockResolvedValue(undefined),
+    removeFridgeItem: vi.fn().mockResolvedValue(undefined),
+    refreshFridgeItems: vi.fn().mockResolvedValue(undefined),
+    getFridgeItemNames: vi.fn().mockImplementation(getFridgeItemNames),
+  });
+  mockAJAX.mockReset(); // Reset before setting new behavior
+  mockGenerateRecipe.mockReset();
+
+  if (typeof ajaxResponse === "function") {
+    mockAJAX.mockImplementation(ajaxResponse);
+  } else {
+    mockAJAX.mockResolvedValue(ajaxResponse);
   }
-};
 
-describe("Recipe Component", () => {
+  if (typeof generateRecipeResponse === "function") {
+    mockGenerateRecipe.mockImplementation(generateRecipeResponse);
+  } else {
+    mockGenerateRecipe.mockResolvedValue(generateRecipeResponse);
+  }
+}
+
+describe("RecipePage", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.clearAllMocks(); // Clear mocks before each test
+    // Setup default mocks for each test, can be overridden
+    setupMocks();
   });
 
-  it("displays loading state initially", () => {
-    setupMocks({ search: "pasta" });
-
-    render(<Recipe />);
-
-    expect(screen.getByText("Loading recipe...")).toBeInTheDocument();
+  test("renders loading state initially when fridge is loading", () => {
+    setupMocks({ loadingFridge: true });
+    render(
+      <MemoryRouter>
+        <AuthProvider>
+          <RecipePage />
+        </AuthProvider>
+      </MemoryRouter>
+    );
+    expect(screen.getByText("Loading...")).toBeInTheDocument();
   });
 
-  it("displays recipe from existing recipe data", async () => {
-    setupMocks({ existingRecipe: mockRecipeData });
+  test("renders error state if fridge has error", () => {
+    setupMocks({ fridgeError: "Failed to load fridge" });
+    render(
+      <MemoryRouter>
+        <AuthProvider>
+          <RecipePage />
+        </AuthProvider>
+      </MemoryRouter>
+    );
+    expect(
+      screen.getByText("Error: Failed to load fridge")
+    ).toBeInTheDocument();
+  });
 
-    render(<Recipe />);
+  test("renders recipe details from location state", async () => {
+    const recipeFromState = {
+      recipeName: "State Recipe",
+      ingredients: [{ name: "State Ingredient", quantity: "2 cups" }],
+      instructions: ["State Step 1"],
+      timeToPrepare: "45 minutes",
+    };
+    setupMocks({ locationState: { recipe: recipeFromState } });
+
+    render(
+      <MemoryRouter>
+        <AuthProvider>
+          <RecipePage />
+        </AuthProvider>
+      </MemoryRouter>
+    );
 
     await waitFor(() => {
-      expect(screen.getByText("Test Recipe")).toBeInTheDocument();
-      expect(screen.getByText("A test recipe description")).toBeInTheDocument();
-
-      // Use regex for partial matches of ingredients
-      expect(screen.getByText(/Ingredient 1/)).toBeInTheDocument();
-      expect(screen.getByText(/Ingredient 2/)).toBeInTheDocument();
-
-      // For instructions, the exact match should work
-      expect(screen.getByText("Step 1 of the recipe")).toBeInTheDocument();
+      expect(screen.getByText("State Recipe")).toBeInTheDocument();
     });
+    expect(screen.getByText("State Ingredient - 2 cups")).toBeInTheDocument();
+    expect(screen.getByText("State Step 1")).toBeInTheDocument();
+    expect(screen.getByText("Time to prepare: 45 minutes")).toBeInTheDocument();
   });
 
-  it("fetches and displays recipe based on search term", async () => {
+  test("generates a new recipe if no location state and fridge items are available", async () => {
+    const generatedRecipe = {
+      recipeName: "Generated Recipe",
+      ingredients: [{ name: "Generated Ingredient", quantity: "3 units" }],
+      instructions: ["Generated Step 1"],
+      timeToPrepare: "1 hour",
+    };
     setupMocks({
-      search: "pasta",
-      generateRecipeResult: mockRecipeData,
+      getFridgeItemNames: () => ["Apple", "Banana"],
+      generateRecipeResponse: generatedRecipe,
+      locationState: null, // Ensure no recipe in location state
     });
 
-    render(<Recipe />);
-
-    expect(hooks.generateRecipe).toHaveBeenCalledWith("pasta", [
-      "Onion",
-      "Tomato",
-    ]);
+    render(
+      <MemoryRouter>
+        <AuthProvider>
+          <RecipePage />
+        </AuthProvider>
+      </MemoryRouter>
+    );
 
     await waitFor(() => {
-      expect(screen.getByText("Test Recipe")).toBeInTheDocument();
-      expect(screen.getByText("A test recipe description")).toBeInTheDocument();
+      expect(mockGenerateRecipe).toHaveBeenCalledWith(["Apple", "Banana"]);
     });
+    await waitFor(() => {
+      expect(screen.getByText("Generated Recipe")).toBeInTheDocument();
+    });
+    expect(
+      screen.getByText("Generated Ingredient - 3 units")
+    ).toBeInTheDocument();
+    expect(screen.getByText("Generated Step 1")).toBeInTheDocument();
+    expect(screen.getByText("Time to prepare: 1 hour")).toBeInTheDocument();
   });
 
-  it("displays error message when recipe ID is provided", async () => {
-    setupMocks({ id: "123" });
+  test("displays message if no fridge items and no recipe in state or URL", async () => {
+    setupMocks({
+      getFridgeItemNames: () => [],
+      locationState: null,
+      params: { recipeName: undefined }, // No recipe name in URL
+      // Mock AJAX for getRecipeByName to return nothing or an error
+      ajaxResponse: async (url: string) => {
+        if (url.startsWith("getRecipeByName/")) {
+          return Promise.resolve(null); // Or reject to simulate not found
+        }
+        return Promise.resolve({});
+      },
+    });
 
-    render(<Recipe />);
+    render(
+      <MemoryRouter initialEntries={["/recipe/"]}>
+        <AuthProvider>
+          <RecipePage />
+        </AuthProvider>
+      </MemoryRouter>
+    );
 
     await waitFor(() => {
       expect(
         screen.getByText(
-          /Recipe ID provided, but database lookup not yet implemented/
+          "No recipe data found. Add items to your fridge to generate one or check out your saved recipes."
         )
       ).toBeInTheDocument();
     });
   });
 
-  it("displays error when no search or ID is provided", async () => {
-    setupMocks({});
+  test("handles error during recipe generation", async () => {
+    setupMocks({
+      getFridgeItemNames: () => ["Tomato"],
+      generateRecipeResponse: () => Promise.reject(new Error("AI failed")),
+      locationState: null,
+    });
 
-    render(<Recipe />);
+    render(
+      <MemoryRouter>
+        <AuthProvider>
+          <RecipePage />
+        </AuthProvider>
+      </MemoryRouter>
+    );
 
     await waitFor(() => {
       expect(
-        screen.getByText(/No search term or recipe ID provided/)
+        screen.getByText("Error generating recipe: AI failed")
       ).toBeInTheDocument();
     });
   });
 
-  it("handles API errors properly", async () => {
-    setupMocks({ search: "pasta" });
+  test("saves recipe to database", async () => {
+    const recipeToSave = {
+      recipeName: "Save Me Recipe",
+      ingredients: [{ name: "Save Ingredient", quantity: "1" }],
+      instructions: ["Save Step"],
+      timeToPrepare: "10 mins",
+    };
+    setupMocks({
+      locationState: { recipe: recipeToSave },
+      ajaxResponse: { message: "Recipe saved" }, // Mock for saveRecipe
+    });
 
-    const generateRecipe = vi.mocked(hooks.generateRecipe);
-    generateRecipe.mockRejectedValue(new Error("API error"));
-
-    render(<Recipe />);
+    render(
+      <MemoryRouter>
+        <AuthProvider>
+          <RecipePage />
+        </AuthProvider>
+      </MemoryRouter>
+    );
 
     await waitFor(() => {
-      expect(screen.getByText(/Failed to load recipe/)).toBeInTheDocument();
+      expect(screen.getByText("Save Me Recipe")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /save recipe/i }));
+
+    await waitFor(() => {
+      expect(mockAJAX).toHaveBeenCalledWith("saveRecipe", true, recipeToSave);
+    });
+    // await waitFor(() => expect(screen.getByText("Recipe saved successfully!")).toBeInTheDocument());
+  });
+
+  test("handles error when saving recipe", async () => {
+    const recipeToSave = {
+      recipeName: "Fail Save Recipe",
+      ingredients: [{ name: "Fail Ingredient", quantity: "1" }],
+      instructions: ["Fail Step"],
+      timeToPrepare: "5 mins",
+    };
+    setupMocks({
+      locationState: { recipe: recipeToSave },
+      ajaxResponse: () => Promise.reject(new Error("DB error")), // Mock for saveRecipe
+    });
+
+    render(
+      <MemoryRouter>
+        <AuthProvider>
+          <RecipePage />
+        </AuthProvider>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Fail Save Recipe")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /save recipe/i }));
+
+    await waitFor(() => {
+      expect(mockAJAX).toHaveBeenCalledWith("saveRecipe", true, recipeToSave);
+    });
+    await waitFor(() => {
+      expect(
+        screen.getByText("Error saving recipe: DB error")
+      ).toBeInTheDocument();
     });
   });
 
-  it("renders ingredients list correctly", async () => {
-    setupMocks({ existingRecipe: mockRecipeData });
+  test("displays recipe from URL parameter if no location state", async () => {
+    const recipeNameFromUrl = "RecipeFromURL";
+    const recipeFromDB = {
+      recipeName: "DB Recipe",
+      ingredients: [{ name: "DB Ingredient", quantity: "1 kg" }],
+      instructions: ["DB Step 1"],
+      timeToPrepare: "20 minutes",
+    };
 
-    render(<Recipe />);
+    setupMocks({
+      params: { recipeName: recipeNameFromUrl },
+      locationState: null,
+      getFridgeItemNames: () => [],
+      ajaxResponse: async (
+        url: string,
+        _isProtected?: boolean,
+        _body?: any
+      ) => {
+        if (url === `getRecipeByName/${recipeNameFromUrl}`) {
+          return Promise.resolve(recipeFromDB);
+        }
+        return Promise.resolve({});
+      },
+    });
+
+    render(
+      <MemoryRouter initialEntries={[`/recipe/${recipeNameFromUrl}`]}>
+        <AuthProvider>
+          <RecipePage />
+        </AuthProvider>
+      </MemoryRouter>
+    );
 
     await waitFor(() => {
-      const ingredients = screen.getAllByRole("listitem");
-      expect(ingredients.length).toBe(4); // 2 ingredients + 2 instructions
+      expect(mockAJAX).toHaveBeenCalledWith(
+        `getRecipeByName/${recipeNameFromUrl}`,
+        false
+      );
     });
-  });
-
-  it("renders instructions list correctly", async () => {
-    setupMocks({ existingRecipe: mockRecipeData });
-
-    const { container } = render(<Recipe />);
 
     await waitFor(() => {
-      // First find the heading
-      const instructionsHeading = screen.getByText("Instructions");
-      // Then find the parent div
-      const instructionsSection = instructionsHeading.closest("div");
-      // Then find the list within that section
-      const instructionsList = instructionsSection?.querySelector("ol");
-      expect(instructionsList).toBeInTheDocument();
-
-      // Check list items
-      const listItems = instructionsList?.querySelectorAll("li");
-      expect(listItems?.length).toBe(2);
+      expect(screen.getByText("DB Recipe")).toBeInTheDocument();
     });
+    expect(screen.getByText("DB Ingredient - 1 kg")).toBeInTheDocument();
+    expect(screen.getByText("DB Step 1")).toBeInTheDocument();
+    expect(screen.getByText("Time to prepare: 20 minutes")).toBeInTheDocument();
   });
 });
