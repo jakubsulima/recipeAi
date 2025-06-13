@@ -2,6 +2,7 @@ import { useLocation, useParams } from "react-router";
 import { AJAX, generateRecipe } from "../lib/hooks";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useFridge } from "../context/fridgeContext";
+import { useUser } from "../context/context";
 
 export interface RecipeIngredient {
   name: string;
@@ -24,6 +25,7 @@ const RecipePage = () => {
   const params = useParams();
   const recipeId = params.id;
   const { getFridgeItemNames, loading: fridgeLoading } = useFridge();
+  const { user } = useUser();
 
   const { search, existingRecipe } = location.state || {};
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -170,6 +172,8 @@ const RecipePage = () => {
       console.log(recipeData);
       await AJAX("addRecipe", true, {
         name: recipeData?.name,
+        description: recipeData?.description,
+        timeToPrepare: recipeData?.timeToPrepare,
         ingredients: recipeData?.ingredients,
         instructions: recipeData?.instructions,
       });
@@ -245,7 +249,7 @@ const RecipePage = () => {
         </div>
       </div>
 
-      {!recipeId && (
+      {!recipeId && user && (
         <div className="mb-8">
           <button
             className="bg-blue-500 text-white px-4 py-2 rounded"

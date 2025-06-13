@@ -40,6 +40,7 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
     setError("");
     try {
       const response = await AJAX("getFridgeIngredients", false);
+      console.log("Fetched fridge items:", response);
       setFridgeItems(response);
     } catch (err: any) {
       setError("Failed to fetch fridge items");
@@ -81,15 +82,14 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
     return fridgeItems.map((item) => item.name);
   };
 
-  // Fetch fridge items when component mounts
   useEffect(() => {
-    if (userLoading) return; // Wait for user data to load
+    if (userLoading) return;
     if (!user || !user.id) {
-      setFridgeItems([]); // No user, clear fridge items
+      setFridgeItems([]);
       return;
     }
     refreshFridgeItems();
-  }, []);
+  }, [user, userLoading]);
 
   const value: FridgeContextType = {
     fridgeItems,

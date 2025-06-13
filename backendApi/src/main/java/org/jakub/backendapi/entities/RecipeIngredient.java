@@ -33,6 +33,4 @@ public class   RecipeIngredient {
     @Column()
     private String unit;
 
-
-
 }

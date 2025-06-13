@@ -3,9 +3,9 @@ import { API_URL, TIMEOUT } from "./const";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(`${import.meta.env.VITE_AI_API_KEY}`);
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
+const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 const formOfPrompt =
-  " Answer in the following json format: name: The name of the recipe. description: A brief description of the recipe. timeToPrepare(string): just time to prepare. ingredients: An array of ingredient objects, where each object contains: name: The name of the ingredient. amount(string): The amount needed. unit(not null): The measurement unit (if applicable) only european units like litres. instructions: An array of step-by-step cooking instructions in complete sentences and withouut any special characters. ";
+  " Answer in the following json format: name: The name of the recipe. description: A brief description of the recipe. timeToPrepare(string): just time to prepare. ingredients: An array of ingredient objects, where each object contains: name: The name of the ingredient. amount(double): The amount needed. unit(not null): The measurement unit (if applicable) only european units like litres. instructions: An array of step-by-step cooking instructions in complete sentences and withouut any special characters. ";
 export const generateRecipe = async function (
   prompt: string,
   productsFridge: string[]
