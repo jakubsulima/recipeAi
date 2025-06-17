@@ -63,7 +63,7 @@ const HomePage = () => {
           </div>
         </div>
         <section
-          className="flex flex-col text-center md:flex-row p-5 md:pt-10 md:pb-10 
+          className="flex bg-[#FFF9C4] flex-col text-center md:flex-row p-5 md:pt-10 md:pb-10 
         "
         >
           <p className="pt-2 md:pt-0">

@@ -239,9 +239,7 @@ const RecipePage = () => {
           <ol className="space-y-3">
             {(recipeData.instructions || []).map((instruction, index) => (
               <li key={index} className="flex">
-                <span className="text-blue-500 font-bold mr-3">
-                  {index + 1}.
-                </span>
+                <span className="text-main font-bold mr-3">{index + 1}.</span>
                 <span>{instruction}</span>
               </li>
             ))}
@@ -252,7 +250,7 @@ const RecipePage = () => {
       {!recipeId && user && (
         <div className="mb-8">
           <button
-            className="bg-blue-500 text-white px-4 py-2 rounded"
+            className="bg-main text-black px-4 py-2 rounded"
             onClick={() => saveRecipe()}
           >
             Save Recipe

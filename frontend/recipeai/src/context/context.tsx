@@ -4,21 +4,25 @@ import { AJAX } from "../lib/hooks";
 interface UserProps {
   email: string;
   id: number;
+  role: string; // Changed from isAdmin to role
 }
 
 interface AuthContextType {
   user: UserProps | null;
   setUser: React.Dispatch<React.SetStateAction<UserProps | null>>;
   loading: boolean;
+  isAdmin: boolean;
 }
 
-const AuthContext = createContext<AuthContextType>(null!);
+export const AuthContext = createContext<AuthContextType>(null!);
 
 export const useUser = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<UserProps | null>(null);
   const [loading, setLoading] = useState(true);
+  // Derive isAdmin by checking if the user's role is 'admin'
+  const isAdmin = user?.role === "admin" || false;
 
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn");
@@ -59,7 +63,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, setUser, loading }}>
+    <AuthContext.Provider value={{ user, setUser, loading, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );

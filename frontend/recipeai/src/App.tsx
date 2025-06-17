@@ -12,9 +12,11 @@ import { Fridge } from "./pages/Fridge";
 import Login from "./pages/Login";
 import RecipePage from "./pages/RecipePage";
 import Register from "./pages/Register";
-import { AuthProvider } from "./context/context";
-import { FridgeProvider } from "./context/fridgeContext";
 import MePage from "./pages/MePage";
+import AdminPage from "./pages/AdminPage"; // Import the AdminPage component
+import UserRecipes from "./pages/UserRecipes";
+import { AuthProvider } from "./context/context"; // Add import for AuthProvider
+import { FridgeProvider } from "./context/fridgeContext"; // Add import for FridgeProvider
 
 function App() {
   const router = createBrowserRouter(
@@ -28,6 +30,8 @@ function App() {
         <Route path="/Me" element={<MePage />} />
         <Route path="/Recipe" element={<RecipePage />} />
         <Route path="/Recipe/:id" element={<RecipePage />} />
+        <Route path="/myRecipes" element={<UserRecipes />} />
+        <Route path="/admin" element={<AdminPage />} />
         <Route path="*" element={<div>Not Found</div>} />
       </Route>
     )
