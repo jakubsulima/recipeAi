@@ -14,7 +14,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.nio.CharBuffer;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -61,4 +63,24 @@ public class UserService {
         return userMapper.toUserDto(user);
     }
 
+    // Admin methods
+    public List<UserDto> getAllUsers() {
+        return userRepository.findAll().stream()
+                .map(userMapper::toUserDto)
+                .collect(Collectors.toList());
+    }
+
+    public UserDto updateUserRole(Long id, Role role) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
+        user.setRole(role);
+        User updatedUser = userRepository.save(user);
+        return userMapper.toUserDto(updatedUser);
+    }
+
+    public void deleteUser(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
+        userRepository.delete(user);
+    }
 }

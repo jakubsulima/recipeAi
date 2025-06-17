@@ -33,7 +33,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.POST, "/login", "/register", "/refresh").permitAll()
                 .requestMatchers(HttpMethod.GET, "/getAllRecipes", "/getRecipe/**").permitAll() // Allow GET requests to /getAllRecipes for everyone
-                .requestMatchers(HttpMethod.POST, "/addRecipe").hasRole("USER") // Example: USER can add recipe
+                .requestMatchers(HttpMethod.POST, "/addRecipe").hasAnyRole("USER", "ADMIN") // Allow USER and ADMIN to add recipe
+                .requestMatchers("/admin/**").hasRole("ADMIN") // Secure all /admin/** endpoints
                 .anyRequest().authenticated()
             )
 

@@ -60,8 +60,16 @@ public class RecipesController {
         return ResponseEntity.ok(updatedRecipe);
     }
 
+    // Admin Recipe Endpoints
+    @PutMapping("/admin/recipes/{id}")
+    public ResponseEntity<RecipeDto> adminUpdateRecipe(@PathVariable Long id, @RequestBody RecipeDto recipeDto) {
+        RecipeDto updatedRecipe = recipeService.adminUpdateRecipe(id, recipeDto);
+        return ResponseEntity.ok(updatedRecipe);
+    }
 
-
-
-
+    @PostMapping("/admin/deleteRecipe/{id}")
+    public ResponseEntity<RecipeResponseDto> adminDeleteRecipe(@PathVariable Long id) {
+        RecipeResponseDto recipeResponseDto = recipeService.adminDeleteRecipe(id);
+        return ResponseEntity.ok(recipeResponseDto);
+    }
 }

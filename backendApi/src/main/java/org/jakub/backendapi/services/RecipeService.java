@@ -16,6 +16,7 @@ import org.jakub.backendapi.repositories.RecipeRepository;
 import org.jakub.backendapi.repositories.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.jakub.backendapi.entities.Role;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -114,7 +115,12 @@ public class RecipeService {
         Recipe recipe = recipeRepository.findById(id)
                 .orElseThrow(() -> new AppException("Recipe not found", HttpStatus.NOT_FOUND));
         if (!Objects.equals(recipe.getUser().getEmail(), login)) {
-            throw new AppException("You are not the owner of this recipe", HttpStatus.FORBIDDEN);
+            // Allow admin to update any recipe
+            User user = userRepository.findByEmail(login)
+                    .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
+            if (user.getRole() != Role.ADMIN) {
+                throw new AppException("You are not the owner of this recipe or an admin", HttpStatus.FORBIDDEN);
+            }
         }
 
         if (recipeDto.getIngredients() == null || recipeDto.getIngredients().isEmpty()) {
@@ -146,5 +152,47 @@ public class RecipeService {
 
         return recipeMapper.toRecipeDto(recipeRepository.save(recipe));
     }
-}
 
+    // Admin methods
+    public RecipeDto adminUpdateRecipe(Long id, RecipeDto recipeDto) {
+        Recipe recipe = recipeRepository.findById(id)
+                .orElseThrow(() -> new AppException("Recipe not found", HttpStatus.NOT_FOUND));
+
+        if (recipeDto.getIngredients() == null || recipeDto.getIngredients().isEmpty()) {
+            throw new AppException("Recipe must have at least one ingredient", HttpStatus.BAD_REQUEST);
+        }
+
+        recipe.setName(recipeDto.getName());
+        recipe.setDescription(recipeDto.getDescription());
+        // Note: This doesn't change the recipe's original user
+
+        List<RecipeIngredient> updatedIngredients = recipeDto.getIngredients().stream()
+            .map(dto -> {
+                Ingredient ingredient = ingredientRepository.findByNameIgnoreCase(dto.getName())
+                        .orElseGet(() -> ingredientRepository.save(Ingredient.builder()
+                                .name(dto.getName())
+                                .build()));
+
+                return RecipeIngredient.builder()
+                        .recipe(recipe)
+                        .ingredient(ingredient)
+                        .amount(dto.getAmount())
+                        .unit(dto.getUnit())
+                        .build();
+            })
+            .collect(Collectors.toList());
+
+        recipeIngredientRepository.deleteAll(recipe.getRecipeIngredients());
+        recipe.setRecipeIngredients(updatedIngredients);
+        recipeIngredientRepository.saveAll(updatedIngredients);
+
+        return recipeMapper.toRecipeDto(recipeRepository.save(recipe));
+    }
+
+    public RecipeResponseDto adminDeleteRecipe(Long id) {
+        Recipe recipe = recipeRepository.findById(id)
+                .orElseThrow(() -> new AppException("Recipe not found", HttpStatus.NOT_FOUND));
+        recipeRepository.delete(recipe);
+        return recipeMapper.toResponseDto("Recipe deleted successfully by admin", recipe);
+    }
+}
