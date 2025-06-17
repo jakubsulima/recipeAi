@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.jakub.backendapi.dto.CredentialsDto;
 import org.jakub.backendapi.dto.SignUpDto;
 import org.jakub.backendapi.dto.UserDto;
+import org.jakub.backendapi.entities.Role; // Import Role
 import org.jakub.backendapi.entities.User;
 import org.jakub.backendapi.exceptions.AppException;
 import org.jakub.backendapi.mappers.UserMapper;
@@ -47,6 +48,7 @@ public class UserService {
         User user = userMapper.signUpToUser(signUpDto);
 
         user.setPassword(passwordEncoder.encode(CharBuffer.wrap(signUpDto.getPassword())));
+        user.setRole(Role.USER); // Set default role to USER
 
         User savedUser = userRepository.save(user);
 

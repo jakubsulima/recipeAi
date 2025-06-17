@@ -13,6 +13,8 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.BadCredentialsException; // Added import
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -33,11 +35,13 @@ public class UserAuthProvider {
 
     // **Create Access Token**
     public String createToken(String email) { // Changed parameter from login to email
+        UserDto userDto = userService.findByEmail(email);
         Date now = new Date();
         Date expirationDate = new Date(now.getTime() + 1_800_000); // 30 minutes
         return JWT.create()
                 .withIssuer(email) // Changed from login to email
                 .withClaim("type", "access") // Custom claim to identify access token
+                .withClaim("role", userDto.getRole().name()) // Add role to token
                 .withIssuedAt(now)
                 .withExpiresAt(expirationDate)
                 .sign(Algorithm.HMAC256(secretKey));
@@ -66,7 +70,8 @@ public class UserAuthProvider {
         // userService.findByEmail already throws AppException(404) if user not found.
         // This AppException, if it propagates to JwtAuthFilter, should lead to UserAuthenticationEntryPoint (401).
 
-        return new UsernamePasswordAuthenticationToken(user, null, Collections.emptyList());
+        List<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
+        return new UsernamePasswordAuthenticationToken(user, null, authorities);
     }
 
     // **Create Refresh Token**
@@ -81,22 +86,23 @@ public class UserAuthProvider {
                 .sign(Algorithm.HMAC256(secretKey));
     }
 
-    // **Validate Refresh Token**
-    public boolean validateRefreshToken(String token) {
+    // **Validate Refresh Token** -> Renamed to isRefreshTokenInvalid
+    public boolean isRefreshTokenInvalid(String token) {
         try {
             JWTVerifier verifier = JWT.require(Algorithm.HMAC256(secretKey)).build();
             DecodedJWT decodedJWT = verifier.verify(token);
 
-            // Ensure the token is not expired
-            return !decodedJWT.getExpiresAt().before(new Date()) && "refresh".equals(decodedJWT.getClaim("type").asString());
+            // Token is invalid if expired OR if it's not a refresh token type
+            return decodedJWT.getExpiresAt().before(new Date()) || !"refresh".equals(decodedJWT.getClaim("type").asString());
         } catch (Exception e) {
-            return false;
+            // Any exception during verification means it's invalid
+            return true;
         }
     }
 
     // **Refresh Access Token using Refresh Token**
     public String refreshAccessToken(String refreshToken) {
-        if (!validateRefreshToken(refreshToken)) {
+        if (isRefreshTokenInvalid(refreshToken)) { // Updated call
             throw new RuntimeException("Invalid or expired refresh token");
         }
 
@@ -106,7 +112,7 @@ public class UserAuthProvider {
 
     // **Refresh Refresh Token (Optional, if you want to issue a new refresh token)**
     public String refreshRefreshToken(String refreshToken) {
-        if (!validateRefreshToken(refreshToken)) {
+        if (isRefreshTokenInvalid(refreshToken)) { // Updated call
             throw new RuntimeException("Invalid or expired refresh token");
         }
 

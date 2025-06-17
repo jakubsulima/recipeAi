@@ -31,8 +31,9 @@ public class SecurityConfig {
 
             // Configure request authorization
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.POST, "/login", "/register", "/refresh", "/addRecipe").permitAll()
-                .requestMatchers(HttpMethod.GET, "/getAllRecipes", "/getRecipe/").permitAll() // Allow GET requests to /getAllRecipes for everyone
+                .requestMatchers(HttpMethod.POST, "/login", "/register", "/refresh").permitAll()
+                .requestMatchers(HttpMethod.GET, "/getAllRecipes", "/getRecipe/**").permitAll() // Allow GET requests to /getAllRecipes for everyone
+                .requestMatchers(HttpMethod.POST, "/addRecipe").hasRole("USER") // Example: USER can add recipe
                 .anyRequest().authenticated()
             )
 
