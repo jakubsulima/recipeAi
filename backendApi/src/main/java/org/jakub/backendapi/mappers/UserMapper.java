@@ -11,6 +11,7 @@ public interface UserMapper {
     UserDto toUserDto(User user);
 
     @Mapping(target = "password", ignore = true)
+    @Mapping(target = "role", ignore = true) // Add this line to ignore role during signUpToUser mapping
     User signUpToUser(SignUpDto userDto);
 
 }

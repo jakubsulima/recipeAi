@@ -4,8 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.List;
+import org.jakub.backendapi.entities.Role;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -15,4 +14,5 @@ public class UserDto {
 
     private String email;
     private Long id;
+    private Role role;
 }
