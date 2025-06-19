@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { user, setUser, loading } = useUser();
+  const { user, setUser, loading, isAdmin } = useUser();
   const navigate = useNavigate();
 
   const toggleOpen = () => {
@@ -28,7 +28,7 @@ const Navbar = () => {
     }
 
     if (user) {
-      return [...baseItems, "Fridge", "Me"];
+      return [...baseItems, "Fridge", "Me", isAdmin ? "Admin" : "Login"];
     } else {
       return [...baseItems, "Login"];
     }

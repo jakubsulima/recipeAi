@@ -52,7 +52,7 @@ const Recipes = () => {
   }
 
   return (
-    <div className="p-4">
+    <div className="p-4 w-full max-w-3xl mx-auto">
       <h1 className="text-2xl font-bold mb-6 text-center">My Recipes</h1>
       {error && <div className="text-red-500 text-center mb-4">{error}</div>}
       {recipes && recipes.length > 0 ? (

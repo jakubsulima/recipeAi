@@ -246,17 +246,29 @@ const RecipePage = () => {
           </ol>
         </div>
       </div>
+      <div className="display flex justify-between flex-row items-center mt-8">
+        {!recipeId && user && (
+          <div className="mb-8">
+            <button
+              className="bg-[#FEE715] text-black px-4 py-2 rounded"
+              onClick={() => saveRecipe()}
+            >
+              Save Recipe
+            </button>
+          </div>
+        )}
 
-      {!recipeId && user && (
-        <div className="mb-8">
-          <button
-            className="bg-main text-black px-4 py-2 rounded"
-            onClick={() => saveRecipe()}
-          >
-            Save Recipe
-          </button>
-        </div>
-      )}
+        {!recipeId && (
+          <div className="mb-8">
+            <button
+              className="bg-[#FEE715] text-black px-4 py-2 rounded"
+              onClick={() => loadNewRecipeCallback(recipeData.name)}
+            >
+              I want new recipe
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

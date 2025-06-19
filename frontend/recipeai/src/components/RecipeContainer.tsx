@@ -21,7 +21,6 @@ const RecipeContainer = ({
         }}
       >
         <h1 className="text-2xl font-bold">{title}</h1>
-        <p className="text-gray-500">ID: {id}</p>
         <p className="text-gray-500">Time to Prepare: {timeToPrepare}</p>
       </div>
     </>

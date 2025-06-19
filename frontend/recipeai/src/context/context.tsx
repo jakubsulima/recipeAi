@@ -21,8 +21,9 @@ export const useUser = () => useContext(AuthContext);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<UserProps | null>(null);
   const [loading, setLoading] = useState(true);
-  // Derive isAdmin by checking if the user's role is 'admin'
-  const isAdmin = user?.role === "admin" || false;
+
+  const isAdmin = user?.role === "ADMIN" || false;
+  console.log("isAdmin:", isAdmin);
 
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn");

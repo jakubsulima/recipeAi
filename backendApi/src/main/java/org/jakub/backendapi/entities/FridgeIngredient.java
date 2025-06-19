@@ -22,7 +22,7 @@ public class FridgeIngredient {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false)
+    @Column()
     private LocalDate expirationDate;
 
     @ManyToOne(cascade = CascadeType.PERSIST)

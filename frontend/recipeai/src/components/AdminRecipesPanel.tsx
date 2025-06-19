@@ -4,7 +4,7 @@ import { AJAX } from "../lib/hooks"; // Assuming AJAX handles API calls
 
 interface Recipe {
   id: number;
-  title: string;
+  name: string;
   timeToPrepare: string;
   // Add other relevant recipe fields if needed, e.g., author
   // For now, aligning with RecipeContainerProps
@@ -107,7 +107,7 @@ const AdminRecipesPanel: React.FC = () => {
                   className="border-b border-gray-200 hover:bg-gray-100"
                 >
                   <td className="py-3 px-4">{recipe.id}</td>
-                  <td className="py-3 px-4">{recipe.title}</td>
+                  <td className="py-3 px-4">{recipe.name}</td>
                   <td className="py-3 px-4">{recipe.timeToPrepare}</td>
                   <td className="py-3 px-4">
                     <button

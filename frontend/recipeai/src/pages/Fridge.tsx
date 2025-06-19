@@ -35,11 +35,6 @@ export const Fridge = () => {
       return;
     }
 
-    if (!newItemDate) {
-      setError("Expiration date is required");
-      return;
-    }
-
     // Check if date is in the past
     const selectedDate = new Date(newItemDate);
     const today = new Date();
@@ -86,12 +81,10 @@ export const Fridge = () => {
   const displayLoading = isLoading || contextLoading;
   return (
     <>
-      <div className="flex justify-center">
-        <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-md">
-          <h1 className="text-2xl font-bold mb-4">My Fridge</h1>
-          {displayError && (
-            <div className="text-red-500 mb-4">{displayError}</div>
-          )}
+      <div className="container mx-auto p-6 grid md:grid-cols-2 gap-8">
+        {/* Left Column: Add Item Form */}
+        <div className="w-full p-6 bg-white rounded-lg shadow-md h-fit">
+          <h1 className="text-2xl font-bold mb-4">Add to Fridge</h1>
           <div className="mb-4">
             <input
               type="text"
@@ -104,6 +97,9 @@ export const Fridge = () => {
               disabled={displayLoading}
               required
             />
+            <label className="block mb-1 text-sm text-gray-600">
+              Expiration date <span className="text-gray-400">(optional)</span>
+            </label>
             <input
               type="date"
               value={newItemDate}
@@ -112,19 +108,26 @@ export const Fridge = () => {
                 error && !newItemDate ? "border-red-500" : "border-gray-300"
               }`}
               disabled={displayLoading}
-              required
             />
             <button
               onClick={() => addItem()}
               disabled={displayLoading}
-              className="mt-2 bg-blue-500 text-white px-4 py-2 rounded w-full hover:bg-blue-600 disabled:opacity-50"
+              className="mt-2 bg-main text-black px-4 py-2 rounded w-full hover:bg-yellow-400 disabled:opacity-50"
             >
               {displayLoading ? "Adding..." : "Add Item"}
             </button>
           </div>
-          <ul className="space-y-2">
+        </div>
+
+        {/* Right Column: Fridge Items Grid */}
+        <div className="w-full p-6 bg-white rounded-lg shadow-md">
+          <h1 className="text-2xl font-bold mb-4">My Fridge</h1>
+          {displayError && (
+            <div className="text-red-500 mb-4">{displayError}</div>
+          )}
+          <ul className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {fridgeItems.map((item) => (
-              <li key={item.id} className="flex justify-between items-center">
+              <li key={item.id}>
                 <FridgeIngredientContainer
                   name={item.name}
                   expirationDate={item.expirationDate}

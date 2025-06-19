@@ -14,11 +14,10 @@ const MePage = () => {
   }
   if (user && !userLoading) {
     return (
-      <div>
+      <div className="p-4 w-full max-w-3xl mx-auto">
         <h1 className="text-2xl font-bold mb-6 text-center">My Profile</h1>
-        <div className="text-center">
+        <div className="text-center mx-auto max-w-md p-4 border rounded-lg shadow-lg">
           <p className="text-lg">Email: {user.email}</p>
-          <p className="text-lg">User ID: {user.id}</p>
         </div>
       </div>
     );
