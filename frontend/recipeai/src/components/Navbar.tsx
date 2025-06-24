@@ -28,7 +28,7 @@ const Navbar = () => {
     }
 
     if (user) {
-      return [...baseItems, "Fridge", "Me", isAdmin ? "Admin" : "Login"];
+      return [...baseItems, "Fridge", "Me", isAdmin ? "Admin" : ""];
     } else {
       return [...baseItems, "Login"];
     }

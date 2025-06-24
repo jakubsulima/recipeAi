@@ -47,13 +47,6 @@ const AdminRecipesPanel: React.FC = () => {
       try {
         const response = await AJAX(`admin/deleteRecipe/${recipeId}`, true);
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({
-            message: `Failed to delete recipe: ${response.statusText}`,
-          }));
-          throw new Error(
-            errorData.message ||
-              `Failed to delete recipe: ${response.statusText}`
-          );
         }
         fetchRecipes();
       } catch (err) {

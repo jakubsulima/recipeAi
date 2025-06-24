@@ -1,4 +1,4 @@
-import { useLocation, useParams } from "react-router";
+import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { AJAX, generateRecipe } from "../lib/hooks";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useFridge } from "../context/fridgeContext";
@@ -21,6 +21,7 @@ export interface RecipeData {
 }
 
 const RecipePage = () => {
+  const navigate = useNavigate();
   const location = useLocation();
   const params = useParams();
   const recipeId = params.id;
@@ -188,6 +189,23 @@ const RecipePage = () => {
     }
   };
 
+  const handleDelete = async () => {
+    if (!recipeId) return;
+
+    if (window.confirm("Are you sure you want to delete this recipe?")) {
+      try {
+        setIsLoading(true);
+        await AJAX(`deleteRecipe/${recipeId}`, true, { method: "DELETE" });
+        navigate("/Me"); // Navigate to user's page after deletion
+      } catch (err: any) {
+        console.error("Error deleting recipe:", err);
+        setError(err.message || "Failed to delete recipe.");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -250,7 +268,7 @@ const RecipePage = () => {
         {!recipeId && user && (
           <div className="mb-8">
             <button
-              className="bg-[#FEE715] text-black px-4 py-2 rounded"
+              className="bg-main text-black px-4 py-2 rounded"
               onClick={() => saveRecipe()}
             >
               Save Recipe
@@ -258,10 +276,21 @@ const RecipePage = () => {
           </div>
         )}
 
+        {recipeId && user && (
+          <div className="mb-8">
+            <button
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+              onClick={handleDelete}
+            >
+              Delete Recipe
+            </button>
+          </div>
+        )}
+
         {!recipeId && (
           <div className="mb-8">
             <button
-              className="bg-[#FEE715] text-black px-4 py-2 rounded"
+              className="bg-main text-black px-4 py-2 rounded"
               onClick={() => loadNewRecipeCallback(recipeData.name)}
             >
               I want new recipe
