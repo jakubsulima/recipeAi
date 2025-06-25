@@ -5,7 +5,7 @@ import { useUser } from "./context";
 export interface FridgeIngredient {
   id: number;
   name: string;
-  expirationDate: string | null; // ISO date string or null if no expiration date
+  expirationDate: string | null;
 }
 
 interface FridgeContextType {
@@ -33,17 +33,42 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
   const [fridgeItems, setFridgeItems] = useState<FridgeIngredient[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
+  const [expiredAlertShown, setExpiredAlertShown] = useState(false);
   const { user, loading: userLoading } = useUser();
+  const [expirationNotificationShown, setExpirationNotificationShown] =
+    useState(
+      () => localStorage.getItem("expirationNotificationShown") === "true"
+    );
 
   const refreshFridgeItems = async () => {
     setLoading(true);
     setError("");
     try {
       const response = await apiClient("getFridgeIngredients", false);
-      console.log("Fetched fridge items:", response);
       setFridgeItems(response);
+      console.log(expirationNotificationShown);
+      if (expirationNotificationShown === false) {
+        const today = new Date();
+        const expiredItems = response.filter((item: FridgeIngredient) => {
+          if (item.expirationDate) {
+            const [day, month, year] = item.expirationDate.split("-");
+            const expDate = new Date(`${year}-${month}-${day}`);
+            expDate.setHours(0, 0, 0, 0);
+            return expDate < today;
+          }
+          return false;
+        });
+        if (expiredItems.length > 0 && !expiredAlertShown) {
+          alert(
+            `Warning: You have expired products: ${expiredItems
+              .map((item: FridgeIngredient) => item.name)
+              .join(", ")}`
+          );
+          handleSetExpirationNotificationShown(true);
+        }
+      }
     } catch (err: any) {
-      setError("Failed to fetch fridge items");
+      setError(err.message || "Failed to fetch fridge items");
       console.error("Failed to fetch fridge items:", err);
     } finally {
       setLoading(false);
@@ -52,17 +77,11 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
 
   const addFridgeItem = async (item: Omit<FridgeIngredient, "id">) => {
     try {
-      const response = await apiClient("addFridgeIngredient", true, {
+      await apiClient("addFridgeIngredient", true, {
         name: item.name,
         expirationDate: item.expirationDate,
       });
 
-      const newItem: FridgeIngredient = {
-        id: response.id || Date.now(),
-        name: item.name,
-        expirationDate: item.expirationDate,
-      };
-      setFridgeItems((prev) => [...prev, newItem]);
       refreshFridgeItems();
     } catch (err: any) {
       throw new Error("Failed to add fridge item");
@@ -72,7 +91,6 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
   const removeFridgeItem = async (id: number) => {
     try {
       await apiClient(`deleteFridgeIngredient/${id}`, true, {});
-
       setFridgeItems((prev) => prev.filter((item) => item.id !== id));
     } catch (err: any) {
       throw new Error("Failed to remove fridge item");
@@ -83,13 +101,23 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
     return fridgeItems.map((item) => item.name);
   };
 
+  const handleSetExpirationNotificationShown = (value: boolean) => {
+    setExpirationNotificationShown(value);
+    localStorage.setItem(
+      "expirationNotificationShown",
+      value ? "true" : "false"
+    );
+  };
+
   useEffect(() => {
     if (userLoading) return;
     if (!user || !user.id) {
       setFridgeItems([]);
+      setExpiredAlertShown(false);
+      localStorage.removeItem("expirationNotificationShown");
       return;
     }
-    refreshFridgeItems();
+    refreshFridgeItems(); // Show alert after login
   }, [user, userLoading]);
 
   const value: FridgeContextType = {

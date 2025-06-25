@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import FridgeIngredientContainer from "../components/FridgeIngredientContainer";
 import { useFridge } from "../context/fridgeContext";
 
@@ -140,7 +140,7 @@ export const Fridge = () => {
               <li key={item.id}>
                 <FridgeIngredientContainer
                   name={item.name}
-                  expirationDate={item.expirationDate}
+                  expirationDate={item.expirationDate || ""}
                   remove={() => removeItem(item.id)}
                 />
               </li>

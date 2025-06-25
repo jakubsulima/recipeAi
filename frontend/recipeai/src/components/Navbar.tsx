@@ -19,7 +19,6 @@ const Navbar = () => {
     navigate("/");
   };
 
-  // Define navigation items based on auth state
   const getNavItems = () => {
     const baseItems = ["Recipes"];
 
@@ -78,11 +77,8 @@ const Navbar = () => {
               isOpen ? "opacity-100" : "opacity-0"
             }`}
             dropdownItems={user ? [...navItems, "Logout"] : navItems}
-            onItemClick={(item) => {
-              if (item === "Logout") {
-                handleLogout();
-              }
-            }}
+            handleLogout={handleLogout}
+            onItemClick={() => setIsOpen(false)}
           />
         </div>
       </nav>

@@ -1,18 +1,26 @@
+import { useNavigate } from "react-router";
 import DropDownItem from "./DropDownItem";
 interface Props {
   dropdownItems: string[];
   className: string;
-  onItemClick?: (item: string) => void;
+  handleLogout: () => void;
+  onItemClick?: () => void;
 }
 
-const DropDownMenu = ({ dropdownItems, className, onItemClick }: Props) => {
+const DropDownMenu = ({
+  dropdownItems,
+  className,
+  handleLogout,
+  onItemClick,
+}: Props) => {
+  const navigate = useNavigate();
   const handleClick = (item: string) => {
-    if (onItemClick) {
-      onItemClick(item);
+    if (item === "Logout") {
+      handleLogout();
     } else {
-      // Default behavior - navigate to the page
-      window.location.href = `/${item}`;
+      navigate("/" + item);
     }
+    if (onItemClick) onItemClick();
   };
 
   return (
@@ -20,10 +28,10 @@ const DropDownMenu = ({ dropdownItems, className, onItemClick }: Props) => {
       {dropdownItems.map((item, index) => (
         <DropDownItem
           key={index}
-          className="pt-1 cursor-pointer"
+          className="pt-2 cursor-pointer bg-[#FEE715] border-none hover:bg-gray-200"
           onClick={() => handleClick(item)}
         >
-          <p>{item}</p>
+          <p className="text-center">{item}</p>
         </DropDownItem>
       ))}
     </div>
