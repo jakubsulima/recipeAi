@@ -19,3 +19,4 @@ public class FridgeIngredientDto {
     private LocalDate expirationDate;
 
 }
+

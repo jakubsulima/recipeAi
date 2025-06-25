@@ -2,9 +2,13 @@ import { useState } from "react";
 import FridgeIngredientContainer from "../components/FridgeIngredientContainer";
 import { useFridge } from "../context/fridgeContext";
 
-// Date formatting utility functions
 const formatDateForBackend = (dateString: string): string => {
   const date = new Date(dateString);
+
+  if (isNaN(date.getTime())) {
+    // Invalid date string
+    return "";
+  }
 
   const day = date.getDate().toString().padStart(2, "0");
   const month = (date.getMonth() + 1).toString().padStart(2, "0");
@@ -26,29 +30,30 @@ export const Fridge = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const addItem = async () => {
-    // Clear previous errors
     setError("");
 
-    // Validate required fields
     if (!newItem.trim()) {
       setError("Item name is required");
       return;
     }
 
-    // Check if date is in the past
-    const selectedDate = new Date(newItemDate);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Reset time to start of day for fair comparison
+    if (newItemDate) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const selectedDate = new Date(newItemDate);
+      selectedDate.setHours(0, 0, 0, 0);
 
-    if (selectedDate < today) {
-      setError("Expiration date cannot be in the past");
-      return;
+      if (selectedDate < today) {
+        setError("Expiration date cannot be in the past");
+        return;
+      }
     }
 
     setIsLoading(true);
     try {
-      // Format the date before sending to backend
-      const formattedDate = formatDateForBackend(newItemDate);
+      const formattedDate = newItemDate
+        ? formatDateForBackend(newItemDate)
+        : null;
 
       await addFridgeItem({
         name: newItem.trim(),
@@ -58,13 +63,22 @@ export const Fridge = () => {
       setNewItem("");
       setNewItemDate("");
     } catch (err: any) {
-      setError(err.message || "Failed to add item");
+      const errorMsg =
+        typeof err === "object" && err !== null && "message" in err
+          ? (err as any).message
+          : String(err) || "Failed to add item";
+      setError(errorMsg);
     } finally {
       setIsLoading(false);
     }
   };
 
   const removeItem = async (id: number) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to remove this item?"
+    );
+    if (!confirmed) return;
+
     setIsLoading(true);
     setError("");
     try {
@@ -82,7 +96,6 @@ export const Fridge = () => {
   return (
     <>
       <div className="container mx-auto p-6 grid md:grid-cols-2 gap-8">
-        {/* Left Column: Add Item Form */}
         <div className="w-full p-6 bg-white rounded-lg shadow-md h-fit">
           <h1 className="text-2xl font-bold mb-4">Add to Fridge</h1>
           <div className="mb-4">
@@ -104,9 +117,7 @@ export const Fridge = () => {
               type="date"
               value={newItemDate}
               onChange={(e) => setNewItemDate(e.target.value)}
-              className={`border rounded p-2 w-full mb-2 ${
-                error && !newItemDate ? "border-red-500" : "border-gray-300"
-              }`}
+              className={`border rounded p-2 w-full mb-2 `}
               disabled={displayLoading}
             />
             <button
@@ -119,7 +130,6 @@ export const Fridge = () => {
           </div>
         </div>
 
-        {/* Right Column: Fridge Items Grid */}
         <div className="w-full p-6 bg-white rounded-lg shadow-md">
           <h1 className="text-2xl font-bold mb-4">My Fridge</h1>
           {displayError && (

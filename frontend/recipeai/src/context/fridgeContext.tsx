@@ -1,11 +1,11 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import { AJAX } from "../lib/hooks";
+import { apiClient } from "../lib/hooks";
 import { useUser } from "./context";
 
 export interface FridgeIngredient {
   id: number;
   name: string;
-  expirationDate: string;
+  expirationDate: string | null; // ISO date string or null if no expiration date
 }
 
 interface FridgeContextType {
@@ -39,7 +39,7 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
     setLoading(true);
     setError("");
     try {
-      const response = await AJAX("getFridgeIngredients", false);
+      const response = await apiClient("getFridgeIngredients", false);
       console.log("Fetched fridge items:", response);
       setFridgeItems(response);
     } catch (err: any) {
@@ -52,7 +52,7 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
 
   const addFridgeItem = async (item: Omit<FridgeIngredient, "id">) => {
     try {
-      const response = await AJAX("addFridgeIngredient", true, {
+      const response = await apiClient("addFridgeIngredient", true, {
         name: item.name,
         expirationDate: item.expirationDate,
       });
@@ -63,6 +63,7 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
         expirationDate: item.expirationDate,
       };
       setFridgeItems((prev) => [...prev, newItem]);
+      refreshFridgeItems();
     } catch (err: any) {
       throw new Error("Failed to add fridge item");
     }
@@ -70,8 +71,8 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
 
   const removeFridgeItem = async (id: number) => {
     try {
-      await AJAX(`deleteFridgeIngredient/${id}`, true, {});
-      // Optimistically update the local state
+      await apiClient(`deleteFridgeIngredient/${id}`, true, {});
+
       setFridgeItems((prev) => prev.filter((item) => item.id !== id));
     } catch (err: any) {
       throw new Error("Failed to remove fridge item");

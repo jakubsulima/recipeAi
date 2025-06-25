@@ -1,5 +1,5 @@
 import { useLocation, useParams, useNavigate } from "react-router-dom";
-import { AJAX, generateRecipe } from "../lib/hooks";
+import { apiClient, generateRecipe } from "../lib/hooks";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useFridge } from "../context/fridgeContext";
 import { useUser } from "../context/context";
@@ -40,7 +40,7 @@ const RecipePage = () => {
     try {
       setIsLoading(true);
       setError("");
-      const response = await AJAX(`getRecipe/${recipeId}`, false);
+      const response = await apiClient(`getRecipe/${recipeId}`, false);
       setRecipeData(response);
       currentRecipeIdentifierRef.current = recipeId;
     } catch (err: any) {
@@ -171,7 +171,7 @@ const RecipePage = () => {
     try {
       setIsLoading(true);
       console.log(recipeData);
-      await AJAX("addRecipe", true, {
+      await apiClient("addRecipe", true, {
         name: recipeData?.name,
         description: recipeData?.description,
         timeToPrepare: recipeData?.timeToPrepare,
@@ -195,7 +195,7 @@ const RecipePage = () => {
     if (window.confirm("Are you sure you want to delete this recipe?")) {
       try {
         setIsLoading(true);
-        await AJAX(`deleteRecipe/${recipeId}`, true, { method: "DELETE" });
+        await apiClient(`deleteRecipe/${recipeId}`, true, { method: "DELETE" });
         navigate("/Me"); // Navigate to user's page after deletion
       } catch (err: any) {
         console.error("Error deleting recipe:", err);

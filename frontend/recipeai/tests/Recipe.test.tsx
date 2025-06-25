@@ -3,14 +3,14 @@ import { describe, test, expect, vi, beforeEach } from "vitest"; // Correctly im
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { MemoryRouter, useLocation, useParams } from "react-router-dom"; // Import from react-router-dom
 
-import { AJAX, generateRecipe } from "../src/lib/hooks";
+import { apiClient, generateRecipe } from "../src/lib/hooks";
 import { useFridge } from "../src/context/fridgeContext";
 import RecipePage from "../src/pages/RecipePage";
 import { AuthProvider } from "../src/context/context"; // Corrected import to AuthProvider
 
 // Mock the hooks
 vi.mock("../src/lib/hooks", () => ({
-  AJAX: vi.fn(),
+  apiClient: vi.fn(),
   generateRecipe: vi.fn(),
 }));
 
@@ -33,7 +33,7 @@ vi.mock("../src/context/fridgeContext", () => ({
 const mockUseLocation = vi.mocked(useLocation);
 const mockUseParams = vi.mocked(useParams);
 const mockUseFridge = vi.mocked(useFridge);
-const mockAJAX = vi.mocked(AJAX);
+const mockAPIClient = vi.mocked(apiClient);
 const mockGenerateRecipe = vi.mocked(generateRecipe);
 
 interface SetupMocksArgs {
@@ -82,13 +82,13 @@ function setupMocks({
     refreshFridgeItems: vi.fn().mockResolvedValue(undefined),
     getFridgeItemNames: vi.fn().mockImplementation(getFridgeItemNames),
   });
-  mockAJAX.mockReset(); // Reset before setting new behavior
+  mockAPIClient.mockReset(); // Reset before setting new behavior
   mockGenerateRecipe.mockReset();
 
   if (typeof ajaxResponse === "function") {
-    mockAJAX.mockImplementation(ajaxResponse);
+    mockAPIClient.mockImplementation(ajaxResponse);
   } else {
-    mockAJAX.mockResolvedValue(ajaxResponse);
+    mockAPIClient.mockResolvedValue(ajaxResponse);
   }
 
   if (typeof generateRecipeResponse === "function") {
@@ -270,7 +270,11 @@ describe("RecipePage", () => {
     fireEvent.click(screen.getByRole("button", { name: /save recipe/i }));
 
     await waitFor(() => {
-      expect(mockAJAX).toHaveBeenCalledWith("saveRecipe", true, recipeToSave);
+      expect(mockAPIClient).toHaveBeenCalledWith(
+        "saveRecipe",
+        true,
+        recipeToSave
+      );
     });
     // await waitFor(() => expect(screen.getByText("Recipe saved successfully!")).toBeInTheDocument());
   });
@@ -302,7 +306,11 @@ describe("RecipePage", () => {
     fireEvent.click(screen.getByRole("button", { name: /save recipe/i }));
 
     await waitFor(() => {
-      expect(mockAJAX).toHaveBeenCalledWith("saveRecipe", true, recipeToSave);
+      expect(mockAPIClient).toHaveBeenCalledWith(
+        "saveRecipe",
+        true,
+        recipeToSave
+      );
     });
     await waitFor(() => {
       expect(
@@ -345,7 +353,7 @@ describe("RecipePage", () => {
     );
 
     await waitFor(() => {
-      expect(mockAJAX).toHaveBeenCalledWith(
+      expect(mockAPIClient).toHaveBeenCalledWith(
         `getRecipeByName/${recipeNameFromUrl}`,
         false
       );

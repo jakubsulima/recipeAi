@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useContext } from "react";
 import { AuthContext } from "../context/context";
-import { AJAX } from "../lib/hooks";
-import AdminRecipesPanel from "../components/AdminRecipesPanel"; // Import the new component
+import { apiClient } from "../lib/hooks";
+import AdminRecipesPanel from "../components/AdminRecipesPanel";
 
 interface User {
   id: number;
@@ -16,10 +16,9 @@ const AdminPage: React.FC = () => {
   const authContext = useContext(AuthContext);
 
   const fetchUsers = async () => {
-    // Removed direct token check as it's HttpOnly
     setLoading(true);
     try {
-      const data = await AJAX("admin/users");
+      const data = await apiClient("admin/users");
       setUsers(data);
       setError(null);
     } catch (err) {
@@ -37,10 +36,9 @@ const AdminPage: React.FC = () => {
   }, [authContext]);
 
   const handleDeleteUser = async (userId: number) => {
-    // Removed direct token check as it's HttpOnly
     if (window.confirm("Are you sure you want to delete this user?")) {
       try {
-        const response = await AJAX(`admin/users/delete/${userId}`, true);
+        const response = await apiClient(`admin/users/delete/${userId}`, true);
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({
             message: `Failed to delete user: ${response.statusText}`,
@@ -49,7 +47,6 @@ const AdminPage: React.FC = () => {
             errorData.message || `Failed to delete user: ${response.statusText}`
           );
         }
-        // Refresh users list
         fetchUsers();
       } catch (err) {
         setError(
@@ -80,7 +77,6 @@ const AdminPage: React.FC = () => {
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
 
-      {/* User Management Panel */}
       <div className="mb-12">
         <h2 className="text-2xl font-semibold mb-4">User Management</h2>
         {users.length === 0 && !loading && !error ? (

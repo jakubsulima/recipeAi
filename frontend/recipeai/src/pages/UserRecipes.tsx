@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { RecipeData } from "./RecipePage";
-import { AJAX } from "../lib/hooks";
+import { apiClient } from "../lib/hooks";
 import { useUser } from "../context/context";
 import RecipeContainer from "../components/RecipeContainer";
 
@@ -12,7 +12,7 @@ const Recipes = () => {
 
   const fetchAllRecipes = async () => {
     try {
-      const response = await AJAX("getAllRecipes", false);
+      const response = await apiClient("getAllRecipes", false);
       console.log("Fetched all recipes:", response);
       setRecipes(response);
     } catch (error) {
@@ -31,7 +31,7 @@ const Recipes = () => {
 
       if (user && user.id) {
         try {
-          const response = await AJAX(`getUserRecipes/${user.id}`);
+          const response = await apiClient(`getUserRecipes/${user.id}`);
           console.log("Fetched recipes:", response);
           setRecipes(response);
         } catch (error) {

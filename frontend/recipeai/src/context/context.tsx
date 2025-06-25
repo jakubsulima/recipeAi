@@ -1,5 +1,5 @@
 import { useContext, useState, createContext, useEffect } from "react";
-import { AJAX } from "../lib/hooks";
+import { apiClient } from "../lib/hooks";
 
 interface UserProps {
   email: string;
@@ -31,7 +31,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Only attempt authentication if user was previously logged in
     if (isLoggedIn === "true") {
       // First try to get current user data
-      AJAX("me")
+      apiClient("me")
         .then((userData) => {
           setUser(userData);
           setLoading(false);
@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .catch((error) => {
           // If 401, try to refresh the token
           if (error.status === 401) {
-            AJAX("refresh")
+            apiClient("refresh")
               .then((userData) => {
                 setUser(userData);
                 setLoading(false);

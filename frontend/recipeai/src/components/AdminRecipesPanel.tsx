@@ -1,13 +1,11 @@
 import React, { useEffect, useState, useContext } from "react";
 import { AuthContext } from "../context/context";
-import { AJAX } from "../lib/hooks"; // Assuming AJAX handles API calls
+import { apiClient } from "../lib/hooks";
 
 interface Recipe {
   id: number;
   name: string;
   timeToPrepare: string;
-  // Add other relevant recipe fields if needed, e.g., author
-  // For now, aligning with RecipeContainerProps
 }
 
 const AdminRecipesPanel: React.FC = () => {
@@ -19,9 +17,8 @@ const AdminRecipesPanel: React.FC = () => {
   const fetchRecipes = async () => {
     setLoading(true);
     try {
-      // Assuming 'getAllRecipes' is the correct public or admin endpoint to fetch all recipes
-      const data = await AJAX("getAllRecipes");
-      setRecipes(data || []); // Ensure data is an array
+      const data = await apiClient("getAllRecipes");
+      setRecipes(data || []);
       setError(null);
     } catch (err) {
       setError(
@@ -30,7 +27,7 @@ const AdminRecipesPanel: React.FC = () => {
           : "An unknown error occurred while fetching recipes"
       );
       console.error(err);
-      setRecipes([]); // Clear recipes on error
+      setRecipes([]);
     } finally {
       setLoading(false);
     }
@@ -45,7 +42,10 @@ const AdminRecipesPanel: React.FC = () => {
   const handleDeleteRecipe = async (recipeId: number) => {
     if (window.confirm("Are you sure you want to delete this recipe?")) {
       try {
-        const response = await AJAX(`admin/deleteRecipe/${recipeId}`, true);
+        const response = await apiClient(
+          `admin/deleteRecipe/${recipeId}`,
+          true
+        );
         if (!response.ok) {
         }
         fetchRecipes();
@@ -61,8 +61,6 @@ const AdminRecipesPanel: React.FC = () => {
   };
 
   if (!authContext || authContext.user?.role !== "ADMIN") {
-    // This panel should only be rendered if the user is an admin,
-    // but this check is for safety if it's somehow rendered otherwise.
     return null;
   }
 
@@ -109,7 +107,6 @@ const AdminRecipesPanel: React.FC = () => {
                     >
                       Delete
                     </button>
-                    {/* Add Edit button/functionality here later if needed */}
                   </td>
                 </tr>
               ))}

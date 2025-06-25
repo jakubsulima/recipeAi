@@ -28,13 +28,12 @@ export const generateRecipe = async function (
     console.error("AI Error:", error);
     const message = error.message || "Unknown AI error";
     const aiError = new Error(`AI Generation Error: ${message}`);
-    // You could attach original error details if needed:
-    // (aiError as any).originalError = error;
+
     throw aiError;
   }
 };
 
-export const AJAX = async function (
+export const apiClient = async function (
   url: string,
   uploadData: boolean = false,
   body: any = null
@@ -86,7 +85,6 @@ export const AJAX = async function (
 
     if (axios.isAxiosError(error)) {
       if (error.response) {
-        // Server responded with an error status
         const status = error.response.status;
         let message = `Server error with status ${status}`;
         if (
@@ -102,24 +100,20 @@ export const AJAX = async function (
           message = error.response.data;
         }
         finalError = new Error(`AJAX Error (${status}): ${message}`);
-        (finalError as any).status = status; // Attach status code
+        (finalError as any).status = status;
       } else if (error.request) {
-        // Request was made but no response received
         finalError = new Error(
           "AJAX Error: No response from server. Check network or server availability."
         );
         (finalError as any).isNetworkError = true;
       } else {
-        // Error setting up the request
         finalError = new Error(
           `AJAX Error: Request setup failed - ${error.message}`
         );
       }
     } else if (error instanceof Error) {
-      // For other errors (e.g., timeout, custom HTML error from try block)
-      finalError = error; // Preserve original error type and properties if it's already an Error instance
+      finalError = error;
     } else {
-      // Fallback for non-Error types thrown
       finalError = new Error(
         "An unknown AJAX error occurred: " + String(error)
       );

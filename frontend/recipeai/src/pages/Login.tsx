@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AJAX } from "../lib/hooks";
+import { apiClient } from "../lib/hooks";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -38,7 +38,7 @@ const Login = () => {
     setIsSubmitting(true);
     setError("");
     try {
-      const userData = await AJAX("login", true, data);
+      const userData = await apiClient("login", true, data);
       localStorage.setItem("isLoggedIn", "true");
       setUser(userData);
       console.log("login successful");
