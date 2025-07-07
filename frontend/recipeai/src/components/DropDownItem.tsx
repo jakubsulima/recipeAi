@@ -1,14 +1,20 @@
+import { Link } from "react-router-dom";
+
 interface Props {
-  className: string;
+  to: string;
   children: React.ReactNode;
   onClick?: () => void;
 }
 
-const DropDownItem = ({ className, children, onClick }: Props) => {
+const DropDownItem = ({ to, children, onClick }: Props) => {
   return (
-    <div className={className} onClick={onClick}>
+    <Link
+      to={to}
+      onClick={onClick}
+      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+    >
       {children}
-    </div>
+    </Link>
   );
 };
 

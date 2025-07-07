@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useFridge } from "../context/fridgeContext";
+import PromptForm from "../components/PromptForm";
 
 const HomePage = () => {
   const [search, setSearch] = useState("");
@@ -62,6 +63,7 @@ const HomePage = () => {
             )}
           </div>
         </div>
+        <PromptForm></PromptForm>
         <section
           className="flex bg-[#FFF9C4] flex-col text-center md:flex-row p-5 md:pt-10 md:pb-10 
         "

@@ -3,6 +3,7 @@ import { DropDownButton } from "./DropDownButton";
 import DropDownMenu from "./DropDownMenu";
 import { useUser } from "../context/context";
 import { useNavigate } from "react-router-dom";
+import DropDownItem from "./DropDownItem";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -80,6 +81,22 @@ const Navbar = () => {
             handleLogout={handleLogout}
             onItemClick={() => setIsOpen(false)}
           />
+          {isOpen && (
+            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20">
+              <DropDownItem to="/user-recipes" onClick={() => setIsOpen(false)}>
+                My recipes
+              </DropDownItem>
+              <DropDownItem to="/fridge" onClick={() => setIsOpen(false)}>
+                Fridge
+              </DropDownItem>
+              <DropDownItem to="/me" onClick={() => setIsOpen(false)}>
+                My profile
+              </DropDownItem>
+              <DropDownItem to="/" onClick={handleLogout}>
+                Logout
+              </DropDownItem>
+            </div>
+          )}
         </div>
       </nav>
     </div>
