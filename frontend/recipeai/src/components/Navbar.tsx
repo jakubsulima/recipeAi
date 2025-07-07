@@ -4,6 +4,7 @@ import DropDownMenu from "./DropDownMenu";
 import { useUser } from "../context/context";
 import { useNavigate } from "react-router-dom";
 import DropDownItem from "./DropDownItem";
+import { colors } from "../lib/const";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -37,7 +38,9 @@ const Navbar = () => {
   const navItems = getNavItems();
 
   return (
-    <div className="flex bg-[#FEE715] p-4 fixed top-0 left-0 w-full z-50">
+    <div
+      className={`flex bg-${colors.primary} p-4 fixed top-0 left-0 w-full z-50`}
+    >
       <nav className="container mx-auto">
         <ul className="flex space-x-4 text-black justify-between">
           <li className="hover:text-gray-400">
@@ -64,7 +67,7 @@ const Navbar = () => {
         </ul>
         <div
           className={`
-            w-full bg-gray-800 shadow-lg rounded-md
+            w-full bg-gray-800 shadow-lg rounded-md flex flex-col
             transition-all duration-700 ease-in-out
             ${
               isOpen
@@ -74,29 +77,13 @@ const Navbar = () => {
           `}
         >
           <DropDownMenu
-            className={`w-full transition-all duration-700 ease-in-out ${
+            className={`w-full transition-all duration-700  ease-in-out flex flex-col ${
               isOpen ? "opacity-100" : "opacity-0"
-            }`}
+            } `}
             dropdownItems={user ? [...navItems, "Logout"] : navItems}
             handleLogout={handleLogout}
             onItemClick={() => setIsOpen(false)}
           />
-          {isOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20">
-              <DropDownItem to="/user-recipes" onClick={() => setIsOpen(false)}>
-                My recipes
-              </DropDownItem>
-              <DropDownItem to="/fridge" onClick={() => setIsOpen(false)}>
-                Fridge
-              </DropDownItem>
-              <DropDownItem to="/me" onClick={() => setIsOpen(false)}>
-                My profile
-              </DropDownItem>
-              <DropDownItem to="/" onClick={handleLogout}>
-                Logout
-              </DropDownItem>
-            </div>
-          )}
         </div>
       </nav>
     </div>

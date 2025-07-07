@@ -30,14 +30,19 @@ const HomePage = () => {
               className="p-2 pr-10 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                  if (hasIngredients) {
-                    setSearch(
-                      search +
-                        " and try to use those ingredients" +
-                        fridgeItems.map((item) => item.name).join(", ")
-                    );
+                  // First, construct the final search prompt
+                  let finalSearch = search;
+                  if (!search.trim()) {
+                    finalSearch = "random recipe";
+                  } else if (hasIngredients && search.trim()) {
+                    const ingredientsText = fridgeItems
+                      .map((item) => item.name)
+                      .join(", ");
+                    finalSearch +=
+                      " and try to use those ingredients: " + ingredientsText;
                   }
-                  navigate("Recipe", { state: { search } });
+                  // Then, navigate with the final, correct value
+                  navigate("Recipe", { state: { search: finalSearch } });
                 }
               }}
             />

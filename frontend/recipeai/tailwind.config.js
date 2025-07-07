@@ -3,9 +3,9 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        "main": "#FEE715", // Main color
-        "highlight": "#FFF9C4", // Marked elements
-        "background": "#FFFFFF", // Background
+        main: "#FEE715", // Main color
+        highlight: "#FFF9C4", // Marked elements
+        background: "#FFFFFF", // Background
       },
     },
   },

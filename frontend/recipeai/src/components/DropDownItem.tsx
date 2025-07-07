@@ -4,15 +4,12 @@ interface Props {
   to: string;
   children: React.ReactNode;
   onClick?: () => void;
+  className: string;
 }
 
-const DropDownItem = ({ to, children, onClick }: Props) => {
+const DropDownItem = ({ to, children, onClick, className }: Props) => {
   return (
-    <Link
-      to={to}
-      onClick={onClick}
-      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-    >
+    <Link to={to} onClick={onClick} className={className}>
       {children}
     </Link>
   );

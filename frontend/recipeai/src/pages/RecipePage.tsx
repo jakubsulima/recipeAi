@@ -35,29 +35,13 @@ const RecipePage = () => {
 
   const currentRecipeIdentifierRef = useRef<string | null>(null);
 
-  const fetchRecipeCallback = useCallback(async () => {
-    if (!recipeId) return;
-    try {
-      setIsLoading(true);
-      setError("");
-      const response = await apiClient(`getRecipe/${recipeId}`, false);
-      setRecipeData(response);
-      currentRecipeIdentifierRef.current = recipeId;
-    } catch (err: any) {
-      console.error("Error fetching recipe:", err);
-      setError("Failed to load recipe. Please try again.");
-      currentRecipeIdentifierRef.current = null;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [recipeId]);
-
   const loadNewRecipeCallback = useCallback(
     async (currentSearchTerm: string) => {
       if (!currentSearchTerm) return;
       try {
         setIsLoading(true);
         setError("");
+        console.log("Loading new recipe for search term:", currentSearchTerm);
         const fridgeIngredients = getFridgeItemNames();
         console.log(
           "Fridge ingredients for search:",
@@ -72,15 +56,9 @@ const RecipePage = () => {
         let jsonString =
           typeof response === "string"
             ? response.replace(/```json|```/g, "").trim()
-            : JSON.stringify(response); // If it's already an object, stringify for uniform processing
-
-        // Attempt to fix common JSON issues
-        // 1. Remove trailing commas in objects and arrays
-        // This regex looks for a comma followed by a closing brace or bracket,
-        // possibly with whitespace in between, and removes the comma.
+            : JSON.stringify(response);
         jsonString = jsonString.replace(/,\s*([}\]])/g, "$1");
 
-        // 2. Normalize the timeToPrepare key
         jsonString = jsonString.replace(
           /"timeToPrepare\(string\)"/g,
           '"timeToPrepare"'
@@ -100,72 +78,85 @@ const RecipePage = () => {
         setIsLoading(false);
       }
     },
-    [getFridgeItemNames]
+    []
   );
 
   useEffect(() => {
-    if (existingRecipe) {
-      setRecipeData(existingRecipe);
-      setIsLoading(false);
-      setError("");
-
-      return;
-    }
-
-    if (recipeId) {
-      if (
-        currentRecipeIdentifierRef.current === recipeId &&
-        recipeData != null
-      ) {
+    const loadRecipe = async () => {
+      if (existingRecipe) {
+        setRecipeData(existingRecipe);
         setIsLoading(false);
         setError("");
-      } else {
-        fetchRecipeCallback();
+        return;
       }
-      return;
-    }
 
-    if (search) {
-      if (!fridgeLoading) {
-        if (
-          currentRecipeIdentifierRef.current === search &&
-          recipeData != null
-        ) {
-          setIsLoading(false);
-          setError("");
+      if (recipeId) {
+        if (currentRecipeIdentifierRef.current !== recipeId) {
+          try {
+            setIsLoading(true);
+            setError("");
+            const response = await apiClient(`getRecipe/${recipeId}`, false);
+            setRecipeData(response);
+            currentRecipeIdentifierRef.current = recipeId;
+          } catch (err: any) {
+            console.error("Error fetching recipe:", err);
+            setError("Failed to load recipe. Please try again.");
+            currentRecipeIdentifierRef.current = null;
+          } finally {
+            setIsLoading(false);
+          }
         } else {
-          loadNewRecipeCallback(search);
+          setIsLoading(false);
         }
-      } else {
-        if (
-          currentRecipeIdentifierRef.current !== search ||
-          recipeData == null
-        ) {
-          setIsLoading(true);
-          setError("");
-        }
+        return;
       }
-      return;
-    }
 
-    if (!fridgeLoading) {
-      setError("No search term or recipe ID provided");
-      setIsLoading(false);
-      setRecipeData(null);
-      currentRecipeIdentifierRef.current = null;
-    } else {
-      setIsLoading(true);
-      setError("");
-    }
-  }, [
-    search,
-    recipeId,
-    existingRecipe,
-    fridgeLoading,
-    loadNewRecipeCallback,
-    fetchRecipeCallback,
-    recipeData,
-  ]);
+      if (search) {
+        if (!fridgeLoading) {
+          if (currentRecipeIdentifierRef.current !== search) {
+            try {
+              setIsLoading(true);
+              setError("");
+              const fridgeIngredients = getFridgeItemNames();
+              const response = await generateRecipe(search, fridgeIngredients);
+
+              let jsonString =
+                typeof response === "string"
+                  ? response.replace(/```json|```/g, "").trim()
+                  : JSON.stringify(response);
+              jsonString = jsonString.replace(/,\s*([}\]])/g, "$1");
+              jsonString = jsonString.replace(
+                /"timeToPrepare\(string\)"/g,
+                '"timeToPrepare"'
+              );
+
+              const parsedData = JSON.parse(jsonString);
+              setRecipeData(parsedData);
+              currentRecipeIdentifierRef.current = search;
+            } catch (err: any) {
+              console.error("Error generating recipe:", err);
+              setError("Failed to load recipe. Please try again.");
+              currentRecipeIdentifierRef.current = null;
+            } finally {
+              setIsLoading(false);
+            }
+          } else {
+            setIsLoading(false);
+          }
+        }
+        return;
+      }
+
+      if (!fridgeLoading) {
+        setError("No search term or recipe ID provided");
+        setIsLoading(false);
+        setRecipeData(null);
+        currentRecipeIdentifierRef.current = null;
+      }
+    };
+
+    loadRecipe();
+  }, [search, recipeId, existingRecipe]);
 
   const saveRecipe = async () => {
     try {
@@ -196,7 +187,7 @@ const RecipePage = () => {
       try {
         setIsLoading(true);
         await apiClient(`deleteRecipe/${recipeId}`, true, { method: "DELETE" });
-        navigate("/Me"); // Navigate to user's page after deletion
+        navigate("/Me");
       } catch (err: any) {
         console.error("Error deleting recipe:", err);
         setError(err.message || "Failed to delete recipe.");
