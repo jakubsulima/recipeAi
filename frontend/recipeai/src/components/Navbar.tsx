@@ -3,8 +3,6 @@ import { DropDownButton } from "./DropDownButton";
 import DropDownMenu from "./DropDownMenu";
 import { useUser } from "../context/context";
 import { useNavigate } from "react-router-dom";
-import DropDownItem from "./DropDownItem";
-import { colors } from "../lib/const";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -38,9 +36,7 @@ const Navbar = () => {
   const navItems = getNavItems();
 
   return (
-    <div
-      className={`flex bg-${colors.primary} p-4 fixed top-0 left-0 w-full z-50`}
-    >
+    <div className={`flex bg-primary p-4 fixed top-0 left-0 w-full z-50`}>
       <nav className="container mx-auto">
         <ul className="flex space-x-4 text-black justify-between">
           <li className="hover:text-gray-400">

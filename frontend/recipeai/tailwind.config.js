@@ -1,5 +1,12 @@
 module.exports = {
   content: ["./src/**/*.{js,jsx,ts,tsx}"],
+  safelist: [
+    "bg-main",
+    "bg-highlight",
+    "bg-background",
+    "text-main",
+    "text-highlight",
+  ],
   theme: {
     extend: {
       colors: {

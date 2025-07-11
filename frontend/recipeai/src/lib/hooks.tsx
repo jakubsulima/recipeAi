@@ -1,5 +1,5 @@
 import axios from "axios";
-import { API_URL, TIMEOUT } from "./const";
+import { API_URL, TIMEOUT } from "./constants";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(`${import.meta.env.VITE_AI_API_KEY}`);

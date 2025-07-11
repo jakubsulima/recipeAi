@@ -41,13 +41,7 @@ const RecipePage = () => {
       try {
         setIsLoading(true);
         setError("");
-        console.log("Loading new recipe for search term:", currentSearchTerm);
         const fridgeIngredients = getFridgeItemNames();
-        console.log(
-          "Fridge ingredients for search:",
-          currentSearchTerm,
-          fridgeIngredients
-        );
         const response = await generateRecipe(
           currentSearchTerm,
           fridgeIngredients
@@ -63,9 +57,6 @@ const RecipePage = () => {
           /"timeToPrepare\(string\)"/g,
           '"timeToPrepare"'
         );
-
-        console.log("Cleaned response before parsing:", jsonString);
-        console.log("Response for search:", currentSearchTerm, jsonString);
         const parsedData = JSON.parse(jsonString);
 
         setRecipeData(parsedData);
@@ -161,7 +152,6 @@ const RecipePage = () => {
   const saveRecipe = async () => {
     try {
       setIsLoading(true);
-      console.log(recipeData);
       await apiClient("addRecipe", true, {
         name: recipeData?.name,
         description: recipeData?.description,
@@ -187,7 +177,7 @@ const RecipePage = () => {
       try {
         setIsLoading(true);
         await apiClient(`deleteRecipe/${recipeId}`, true, { method: "DELETE" });
-        navigate("/Me");
+        navigate("/myRecipes");
       } catch (err: any) {
         console.error("Error deleting recipe:", err);
         setError(err.message || "Failed to delete recipe.");

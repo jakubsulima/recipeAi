@@ -2,11 +2,16 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useFridge } from "../context/fridgeContext";
 import PromptForm from "../components/PromptForm";
+import ButtonsForm from "../components/ButtonsForm";
 
 const HomePage = () => {
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
   const { fridgeItems } = useFridge();
+  const controlsCuisine = ["Italian", "Mexican", "Indian", "Chinese"];
+  const controlsMeal = ["Dinner", "Lunch", "Breakfast", "Snack"];
+  const [selectedMeal, setSelectedMeal] = useState<string | null>(null);
+  const [selectedCuisine, setSelectedCuisine] = useState<string | null>(null);
 
   const handleClear = () => {
     setSearch("");
@@ -30,7 +35,6 @@ const HomePage = () => {
               className="p-2 pr-10 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                  // First, construct the final search prompt
                   let finalSearch = search;
                   if (!search.trim()) {
                     finalSearch = "random recipe";
@@ -41,7 +45,6 @@ const HomePage = () => {
                     finalSearch +=
                       " and try to use those ingredients: " + ingredientsText;
                   }
-                  // Then, navigate with the final, correct value
                   navigate("Recipe", { state: { search: finalSearch } });
                 }
               }}
@@ -68,7 +71,18 @@ const HomePage = () => {
             )}
           </div>
         </div>
-        <PromptForm></PromptForm>
+        <ButtonsForm
+          options={controlsMeal}
+          onButtonClick={setSelectedMeal}
+          selectedButton={selectedMeal}
+          title="Select Meal Type"
+        ></ButtonsForm>
+        <ButtonsForm
+          options={controlsCuisine}
+          onButtonClick={setSelectedCuisine}
+          selectedButton={selectedCuisine}
+          title="Select Cuisine"
+        ></ButtonsForm>
         <section
           className="flex bg-[#FFF9C4] flex-col text-center md:flex-row p-5 md:pt-10 md:pb-10 
         "

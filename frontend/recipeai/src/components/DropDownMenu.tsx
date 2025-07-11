@@ -1,5 +1,4 @@
 import { useNavigate } from "react-router";
-import { colors } from "../lib/const";
 import DropDownItem from "./DropDownItem";
 interface Props {
   dropdownItems: string[];
@@ -30,7 +29,7 @@ const DropDownMenu = ({
         <DropDownItem
           to={item === "Logout" ? "#" : "/" + item}
           key={index}
-          className={`pt-2 cursor-pointer bg-${colors.primary} border-none hover:bg-gray-200 text-center`}
+          className={`pt-2 cursor-pointer bg-primary border-none hover:bg-gray-200 text-center`}
           onClick={() => handleClick(item)}
         >
           {item}
