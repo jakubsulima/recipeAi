@@ -10,27 +10,52 @@ export const generateRecipe = async function (
   prompt: string,
   productsFridge: string[]
 ) {
-  try {
-    let result: any;
-    if (productsFridge.length === 0) {
-      result = await model.generateContent(prompt + formOfPrompt);
-    } else {
-      result = await model.generateContent(
+  const maxRetries = 3;
+  let lastError: any = null;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      let result: any;
+      const fullPrompt =
         prompt +
-          formOfPrompt +
-          "It would be nice if you use some of this products for this recipe" +
-          productsFridge.join(", ")
-      );
+        formOfPrompt +
+        (productsFridge.length > 0
+          ? "It would be nice if you use some of this products for this recipe" +
+            productsFridge.join(", ")
+          : "");
+
+      result = await model.generateContent(fullPrompt);
+      return result.response.text();
+    } catch (error: any) {
+      lastError = error;
+      console.error(`AI Error (Attempt ${attempt}/${maxRetries}):`, error);
+
+      // Check if it's a 503 error and we have retries left
+      if (
+        error.message &&
+        error.message.includes("503") &&
+        attempt < maxRetries
+      ) {
+        const delay = Math.pow(2, attempt - 1) * 1000; // 1s, 2s, 4s
+        console.log(
+          `Model is overloaded. Retrying in ${delay / 1000} second(s)...`
+        );
+        await new Promise((res) => setTimeout(res, delay));
+        continue; // Go to the next iteration to retry
+      }
+
+      // For non-503 errors or if max retries are reached, throw a structured error
+      const message = error.message || "Unknown AI error";
+      const aiError = new Error(`AI Generation Error: ${message}`);
+      throw aiError;
     }
-
-    return result.response.text();
-  } catch (error: any) {
-    console.error("AI Error:", error);
-    const message = error.message || "Unknown AI error";
-    const aiError = new Error(`AI Generation Error: ${message}`);
-
-    throw aiError;
   }
+
+  // This part is reached only if all retries fail.
+  const message =
+    lastError.message || "Unknown AI error after multiple retries";
+  const aiError = new Error(`AI Generation Error: ${message}`);
+  throw aiError;
 };
 
 export const apiClient = async function (

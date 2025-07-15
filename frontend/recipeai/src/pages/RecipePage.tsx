@@ -69,7 +69,7 @@ const RecipePage = () => {
         setIsLoading(false);
       }
     },
-    []
+    [getFridgeItemNames]
   );
 
   useEffect(() => {
@@ -106,6 +106,7 @@ const RecipePage = () => {
         if (!fridgeLoading) {
           if (currentRecipeIdentifierRef.current !== search) {
             try {
+              console.log("Generating new recipe for search:", search);
               setIsLoading(true);
               setError("");
               const fridgeIngredients = getFridgeItemNames();
@@ -147,7 +148,9 @@ const RecipePage = () => {
     };
 
     loadRecipe();
-  }, [search, recipeId, existingRecipe]);
+    // REMOVED `recipeData` from dependencies to prevent re-running on state update.
+    // ADDED `getFridgeItemNames` for correctness.
+  }, [search, fridgeLoading, existingRecipe, recipeId, getFridgeItemNames]);
 
   const saveRecipe = async () => {
     try {
@@ -272,7 +275,7 @@ const RecipePage = () => {
           <div className="mb-8">
             <button
               className="bg-main text-black px-4 py-2 rounded"
-              onClick={() => loadNewRecipeCallback(recipeData.name)}
+              onClick={() => loadNewRecipeCallback(search)}
             >
               I want new recipe
             </button>
