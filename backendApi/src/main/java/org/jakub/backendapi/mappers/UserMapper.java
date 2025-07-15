@@ -6,7 +6,7 @@ import org.jakub.backendapi.entities.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = UserPreferencesMapper.class)
 public interface UserMapper {
     UserDto toUserDto(User user);
 

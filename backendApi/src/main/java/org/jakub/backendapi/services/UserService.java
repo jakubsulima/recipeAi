@@ -4,8 +4,11 @@ import lombok.RequiredArgsConstructor;
 import org.jakub.backendapi.dto.CredentialsDto;
 import org.jakub.backendapi.dto.SignUpDto;
 import org.jakub.backendapi.dto.UserDto;
+import org.jakub.backendapi.dto.UserPreferencesDto;
+import org.jakub.backendapi.entities.Diet;
 import org.jakub.backendapi.entities.Role; // Import Role
 import org.jakub.backendapi.entities.User;
+import org.jakub.backendapi.entities.UserPreferences;
 import org.jakub.backendapi.exceptions.AppException;
 import org.jakub.backendapi.mappers.UserMapper;
 import org.jakub.backendapi.repositories.UserRepository;
@@ -46,12 +49,17 @@ public class UserService {
         if (optionalUser.isPresent()) {
             throw new AppException("User already exists", HttpStatus.BAD_REQUEST);
         }
-
         User user = userMapper.signUpToUser(signUpDto);
-
         user.setPassword(passwordEncoder.encode(CharBuffer.wrap(signUpDto.getPassword())));
-        user.setRole(Role.USER); // Set default role to USER
+        user.setRole(Role.USER);
 
+        UserPreferences userPreferences = UserPreferences.builder()
+            .diet(Diet.NONE)
+            .dislikedIngredients(List.of())
+            .user(user)
+            .build();
+
+        user.setUserPreferences(userPreferences);
         User savedUser = userRepository.save(user);
 
         return userMapper.toUserDto(savedUser);
@@ -83,4 +91,6 @@ public class UserService {
                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
         userRepository.delete(user);
     }
+
+
 }

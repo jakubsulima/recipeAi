@@ -2,7 +2,6 @@ package org.jakub.backendapi.controllers;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.jakub.backendapi.config.JwtUtils;
 import org.jakub.backendapi.dto.RecipeDto;
 import org.jakub.backendapi.dto.RecipeResponseDto;
 import org.jakub.backendapi.services.RecipeService;
@@ -31,7 +30,7 @@ public class RecipesController {
     }
 
     @GetMapping("/getRecipe/{id}")
-    public ResponseEntity<RecipeDto> getRecipe(@PathVariable Long id, HttpServletRequest request) {
+    public ResponseEntity<RecipeDto> getRecipe(@PathVariable Long id) {
         RecipeDto recipe = recipeService.getRecipeById(id);
         return ResponseEntity.ok(recipe);
     }

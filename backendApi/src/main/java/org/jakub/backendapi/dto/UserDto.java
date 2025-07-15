@@ -16,3 +16,4 @@ public class UserDto {
     private Long id;
     private Role role;
 }
+
