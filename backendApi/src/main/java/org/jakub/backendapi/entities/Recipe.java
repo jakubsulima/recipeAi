@@ -15,7 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @Table(name = "recipe")
-public class Recipe {
+public class  Recipe {
 
     @Id
     @GeneratedValue

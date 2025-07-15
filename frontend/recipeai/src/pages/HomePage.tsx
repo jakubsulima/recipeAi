@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useFridge } from "../context/fridgeContext";
-import PromptForm from "../components/PromptForm";
 import ButtonsForm from "../components/ButtonsForm";
 
 const HomePage = () => {
@@ -10,6 +9,8 @@ const HomePage = () => {
   const { fridgeItems } = useFridge();
   const controlsCuisine = ["Italian", "Mexican", "Indian", "Chinese"];
   const controlsMeal = ["Dinner", "Lunch", "Breakfast", "Snack"];
+  const controlsTime = ["Quick", "Moderate", "Slow"];
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [selectedMeal, setSelectedMeal] = useState<string | null>(null);
   const [selectedCuisine, setSelectedCuisine] = useState<string | null>(null);
 
@@ -44,6 +45,15 @@ const HomePage = () => {
                       .join(", ");
                     finalSearch +=
                       " and try to use those ingredients: " + ingredientsText;
+                  }
+                  if (selectedMeal) {
+                    finalSearch += ` for ${selectedMeal}`;
+                  }
+                  if (selectedCuisine) {
+                    finalSearch += ` in ${selectedCuisine} cuisine`;
+                  }
+                  if (selectedTime) {
+                    finalSearch += ` in ${selectedTime} time`;
                   }
                   navigate("Recipe", { state: { search: finalSearch } });
                 }
@@ -82,6 +92,12 @@ const HomePage = () => {
           onButtonClick={setSelectedCuisine}
           selectedButton={selectedCuisine}
           title="Select Cuisine"
+        ></ButtonsForm>
+        <ButtonsForm
+          options={controlsTime}
+          onButtonClick={setSelectedTime}
+          selectedButton={selectedTime}
+          title="Select Time to Prepare"
         ></ButtonsForm>
         <section
           className="flex bg-[#FFF9C4] flex-col text-center md:flex-row p-5 md:pt-10 md:pb-10 
