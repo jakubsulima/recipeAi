@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.jakub.backendapi.entities.Enums.Diet;
 
 import java.util.List;
 
@@ -13,7 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name= "user_preferences")
+@Table(name = "user_preferences")
 public class UserPreferences {
 
     @Id
@@ -23,7 +24,7 @@ public class UserPreferences {
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId
     @JoinColumn(name = "user_id")
-private User user;
+    private User user;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "diet")

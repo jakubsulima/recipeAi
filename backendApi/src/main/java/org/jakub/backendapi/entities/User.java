@@ -4,6 +4,7 @@ import java.util.List;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import lombok.*;
+import org.jakub.backendapi.entities.Enums.Role;
 
 
 @AllArgsConstructor

@@ -16,7 +16,7 @@ import org.jakub.backendapi.repositories.RecipeRepository;
 import org.jakub.backendapi.repositories.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.jakub.backendapi.entities.Role;
+import org.jakub.backendapi.entities.Enums.Role;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,8 +34,8 @@ public class RecipeService {
 
     public RecipeDto getRecipeById(Long id) {
         return recipeMapper.toRecipeDto(
-            recipeRepository.findById(id)
-                .orElseThrow(() -> new AppException("Recipe not found", HttpStatus.NOT_FOUND))
+                recipeRepository.findById(id)
+                        .orElseThrow(() -> new AppException("Recipe not found", HttpStatus.NOT_FOUND))
         );
     }
 
@@ -62,7 +62,7 @@ public class RecipeService {
         Recipe recipe = recipeMapper.toRecipeWithUser(recipeDto, user);
         recipeRepository.save(recipe); // Save recipe first to generate ID
 
-           List<RecipeIngredient> recipeIngredients = recipeDto.getIngredients().stream()
+        List<RecipeIngredient> recipeIngredients = recipeDto.getIngredients().stream()
                 .map(dto -> {
                     Ingredient ingredient = ingredientRepository.findByNameIgnoreCase(dto.getName())
                             .orElseGet(() -> ingredientRepository.save(Ingredient.builder()
@@ -104,7 +104,7 @@ public class RecipeService {
     public RecipeResponseDto deleteRecipe(Long id, String login) {
         Recipe recipe = recipeRepository.findById(id)
                 .orElseThrow(() -> new AppException("Recipe not found", HttpStatus.NOT_FOUND));
-        if(!Objects.equals(recipe.getUser().getEmail(), login)) {
+        if (!Objects.equals(recipe.getUser().getEmail(), login)) {
             throw new AppException("You are not the owner of this recipe", HttpStatus.FORBIDDEN);
         }
         recipeRepository.delete(recipe);
@@ -115,7 +115,6 @@ public class RecipeService {
         Recipe recipe = recipeRepository.findById(id)
                 .orElseThrow(() -> new AppException("Recipe not found", HttpStatus.NOT_FOUND));
         if (!Objects.equals(recipe.getUser().getEmail(), login)) {
-            // Allow admin to update any recipe
             User user = userRepository.findByEmail(login)
                     .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
             if (user.getRole() != Role.ADMIN) {
@@ -164,23 +163,22 @@ public class RecipeService {
 
         recipe.setName(recipeDto.getName());
         recipe.setDescription(recipeDto.getDescription());
-        // Note: This doesn't change the recipe's original user
 
         List<RecipeIngredient> updatedIngredients = recipeDto.getIngredients().stream()
-            .map(dto -> {
-                Ingredient ingredient = ingredientRepository.findByNameIgnoreCase(dto.getName())
-                        .orElseGet(() -> ingredientRepository.save(Ingredient.builder()
-                                .name(dto.getName())
-                                .build()));
+                .map(dto -> {
+                    Ingredient ingredient = ingredientRepository.findByNameIgnoreCase(dto.getName())
+                            .orElseGet(() -> ingredientRepository.save(Ingredient.builder()
+                                    .name(dto.getName())
+                                    .build()));
 
-                return RecipeIngredient.builder()
-                        .recipe(recipe)
-                        .ingredient(ingredient)
-                        .amount(dto.getAmount())
-                        .unit(dto.getUnit())
-                        .build();
-            })
-            .collect(Collectors.toList());
+                    return RecipeIngredient.builder()
+                            .recipe(recipe)
+                            .ingredient(ingredient)
+                            .amount(dto.getAmount())
+                            .unit(dto.getUnit())
+                            .build();
+                })
+                .collect(Collectors.toList());
 
         recipeIngredientRepository.deleteAll(recipe.getRecipeIngredients());
         recipe.setRecipeIngredients(updatedIngredients);

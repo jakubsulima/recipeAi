@@ -3,11 +3,11 @@ package org.jakub.backendapi.services;
 import org.jakub.backendapi.dto.FridgeIngredientDto;
 import org.jakub.backendapi.dto.UserDto;
 import org.jakub.backendapi.entities.FridgeIngredient;
-import org.jakub.backendapi.entities.User; // Added import
+import org.jakub.backendapi.entities.User;
 import org.jakub.backendapi.exceptions.AppException;
 import org.jakub.backendapi.mappers.FridgeIngredientMapper;
 import org.jakub.backendapi.repositories.FridgeIngredientRepository;
-import org.jakub.backendapi.repositories.UserRepository; // Added import
+import org.jakub.backendapi.repositories.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -15,17 +15,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional; // Added import
-import java.time.LocalDate; // Added import
+import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull; // Added import
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.verify; // Added import
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.ArgumentMatchers.any; // Added import for ArgumentMatchers
 
 @ExtendWith(MockitoExtension.class)
 class FridgeServiceTest {
@@ -106,6 +104,8 @@ class FridgeServiceTest {
         LocalDate expirationDate = LocalDate.of(2028, 12, 20);
         FridgeIngredientDto fridgeIngredientDto = FridgeIngredientDto.builder()
                 .name("Tomato")
+                .unit(null)
+                .amount(1.0)
                 .expirationDate(expirationDate)
                 .build();
         User user = User.builder().id(1L).email(email).build();
@@ -119,6 +119,8 @@ class FridgeServiceTest {
         FridgeIngredient savedFridgeIngredient = FridgeIngredient.builder()
                 .id(1L) // ID assigned after save
                 .name("Tomato")
+                .unit(null)
+                .amount(1.0) // Default amount for testing
                 .expirationDate(expirationDate)
                 .user(user)
                 .build();
@@ -146,7 +148,7 @@ class FridgeServiceTest {
     void addFridgeIngredient_shouldThrowAppException_whenUserNotFound() {
         // Given
         String email = "nonexistent@example.com";
-        FridgeIngredientDto fridgeIngredientDto = FridgeIngredientDto.builder().name("Milk").build();
+        FridgeIngredientDto fridgeIngredientDto = FridgeIngredientDto.builder().name("Milk").amount(1.0).build();
         String expectedErrorMessage = "User not found";
 
         when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
@@ -174,5 +176,69 @@ class FridgeServiceTest {
         AppException exception = assertThrows(AppException.class, () -> fridgeService.deleteFridgeIngredient(fridgeIngredientId, email));
         assertEquals("Fridge ingredient not found", exception.getMessage());
         assertEquals(HttpStatus.NOT_FOUND, exception.getCode());
+    }
+
+    @Test
+    void addFridgeIngredient_shouldThrowAppException_whenInvalidUnitProvided() {
+        // Given
+        String email = "test@example.com";
+        FridgeIngredientDto fridgeIngredientDto = FridgeIngredientDto.builder()
+                .name("Milk")
+                .unit("INVALID_UNIT")
+                .amount(1.0)
+                .build();
+
+        // When & Then
+        AppException exception = assertThrows(AppException.class, () -> fridgeService.addFridgeIngredient(fridgeIngredientDto, email));
+
+        assertEquals("Invalid unit value provided: INVALID_UNIT", exception.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getCode());
+    }
+
+    @Test
+    void addFridgeIngredient_shouldThrowAppException_whenAmountIsZeroOrNegative() {
+        // Given
+        String email = "test@example.com";
+        FridgeIngredientDto fridgeIngredientDto = FridgeIngredientDto.builder()
+                .name("Milk")
+                .unit("LITERS")
+                .amount(0)
+                .build();
+
+        // When & Then
+        AppException exception = assertThrows(AppException.class, () -> fridgeService.addFridgeIngredient(fridgeIngredientDto, email));
+
+        assertEquals("Amount must be positive", exception.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getCode());
+    }
+
+    @Test
+    void addFridgeIngredient_shouldAddIngredient_whenValidDataProvided() {
+        // Given
+        String email = "test@example.com";
+        User user = new User();
+        user.setEmail(email);
+
+        FridgeIngredientDto fridgeIngredientDto = FridgeIngredientDto.builder()
+                .name("Milk")
+                .unit("LITERS")
+                .amount(1.0)
+                .expirationDate(LocalDate.now().plusDays(7))
+                .build();
+
+        FridgeIngredient fridgeIngredient = new FridgeIngredient();
+        fridgeIngredient.setName(fridgeIngredientDto.getName());
+
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+        when(fridgeIngredientMapper.toFridgeIngredientWithUser(any(FridgeIngredientDto.class), any(User.class))).thenReturn(fridgeIngredient);
+        when(fridgeIngredientRepository.save(any(FridgeIngredient.class))).thenReturn(fridgeIngredient);
+
+        // When
+        FridgeIngredient result = fridgeService.addFridgeIngredient(fridgeIngredientDto, email);
+
+        // Then
+        assertNotNull(result);
+        assertEquals("Milk", result.getName());
+        verify(fridgeIngredientRepository).save(fridgeIngredient);
     }
 }

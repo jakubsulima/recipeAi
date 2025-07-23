@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.jakub.backendapi.entities.Enums.Unit;
 
 import java.time.LocalDate;
 
@@ -25,7 +26,14 @@ public class FridgeIngredient {
     @Column()
     private LocalDate expirationDate;
 
+    @Column()
+    @Enumerated(EnumType.STRING)
+    private Unit unit;
+
+    @Column(nullable = false)
+    private double amount;
+
     @ManyToOne(cascade = CascadeType.PERSIST)
-    @JoinColumn(name="user_id", referencedColumnName = "id")
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
 }

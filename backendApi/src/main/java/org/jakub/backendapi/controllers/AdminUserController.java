@@ -2,7 +2,7 @@ package org.jakub.backendapi.controllers;
 
 import lombok.RequiredArgsConstructor;
 import org.jakub.backendapi.dto.UserDto;
-import org.jakub.backendapi.entities.Role;
+import org.jakub.backendapi.entities.Enums.Role;
 import org.jakub.backendapi.services.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

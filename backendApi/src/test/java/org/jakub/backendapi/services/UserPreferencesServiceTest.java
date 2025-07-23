@@ -1,7 +1,7 @@
 package org.jakub.backendapi.services;
 
 import org.jakub.backendapi.dto.UserPreferencesDto;
-import org.jakub.backendapi.entities.Diet;
+import org.jakub.backendapi.entities.Enums.Diet;
 import org.jakub.backendapi.entities.User;
 import org.jakub.backendapi.entities.UserPreferences;
 import org.jakub.backendapi.exceptions.AppException;

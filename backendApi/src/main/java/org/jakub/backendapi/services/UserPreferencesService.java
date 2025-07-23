@@ -2,7 +2,6 @@ package org.jakub.backendapi.services;
 
 import lombok.RequiredArgsConstructor;
 import org.jakub.backendapi.dto.UserPreferencesDto;
-import org.jakub.backendapi.entities.Diet;
 import org.jakub.backendapi.entities.User;
 import org.jakub.backendapi.entities.UserPreferences;
 import org.jakub.backendapi.exceptions.AppException;
@@ -12,8 +11,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.prefs.Preferences;
-
 @Service
 @RequiredArgsConstructor
 public class UserPreferencesService {
@@ -22,8 +19,7 @@ public class UserPreferencesService {
     private final UserPreferencesMapper preferencesMapper;
 
     public UserPreferencesDto getPreferences(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
         return preferencesMapper.toUserPreferencesDto(user.getUserPreferences());
     }
 

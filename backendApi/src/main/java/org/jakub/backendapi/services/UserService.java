@@ -4,9 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.jakub.backendapi.dto.CredentialsDto;
 import org.jakub.backendapi.dto.SignUpDto;
 import org.jakub.backendapi.dto.UserDto;
-import org.jakub.backendapi.dto.UserPreferencesDto;
-import org.jakub.backendapi.entities.Diet;
-import org.jakub.backendapi.entities.Role; // Import Role
+import org.jakub.backendapi.entities.Enums.Diet;
+import org.jakub.backendapi.entities.Enums.Role; // Import Role
 import org.jakub.backendapi.entities.User;
 import org.jakub.backendapi.entities.UserPreferences;
 import org.jakub.backendapi.exceptions.AppException;
@@ -53,11 +52,7 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(CharBuffer.wrap(signUpDto.getPassword())));
         user.setRole(Role.USER);
 
-        UserPreferences userPreferences = UserPreferences.builder()
-            .diet(Diet.NONE)
-            .dislikedIngredients(List.of())
-            .user(user)
-            .build();
+        UserPreferences userPreferences = UserPreferences.builder().diet(Diet.NONE).dislikedIngredients(List.of()).user(user).build();
 
         user.setUserPreferences(userPreferences);
         User savedUser = userRepository.save(user);
@@ -66,29 +61,24 @@ public class UserService {
     }
 
     public UserDto getUserById(Long id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
+        User user = userRepository.findById(id).orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
         return userMapper.toUserDto(user);
     }
 
     // Admin methods
     public List<UserDto> getAllUsers() {
-        return userRepository.findAll().stream()
-                .map(userMapper::toUserDto)
-                .collect(Collectors.toList());
+        return userRepository.findAll().stream().map(userMapper::toUserDto).collect(Collectors.toList());
     }
 
     public UserDto updateUserRole(Long id, Role role) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
+        User user = userRepository.findById(id).orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
         user.setRole(role);
         User updatedUser = userRepository.save(user);
         return userMapper.toUserDto(updatedUser);
     }
 
     public void deleteUser(Long id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
+        User user = userRepository.findById(id).orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
         userRepository.delete(user);
     }
 

@@ -17,6 +17,7 @@ public class FridgeIngredientDto {
     private String name;
     @JsonFormat(pattern = "dd-MM-yyyy")
     private LocalDate expirationDate;
-
+    private String unit;
+    private double amount;
 }
 

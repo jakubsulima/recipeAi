@@ -2,7 +2,7 @@ package org.jakub.backendapi.mappers;
 
 import org.jakub.backendapi.dto.UserPreferencesDto;
 import org.jakub.backendapi.entities.UserPreferences;
-import org.jakub.backendapi.entities.Diet;
+import org.jakub.backendapi.entities.Enums.Diet;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;

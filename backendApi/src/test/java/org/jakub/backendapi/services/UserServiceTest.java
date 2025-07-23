@@ -2,8 +2,8 @@ package org.jakub.backendapi.services;
 
 import org.jakub.backendapi.dto.SignUpDto;
 import org.jakub.backendapi.dto.UserDto;
-import org.jakub.backendapi.entities.Diet;
-import org.jakub.backendapi.entities.Role;
+import org.jakub.backendapi.entities.Enums.Diet;
+import org.jakub.backendapi.entities.Enums.Role;
 import org.jakub.backendapi.entities.User;
 import org.jakub.backendapi.mappers.UserMapper;
 import org.jakub.backendapi.repositories.UserRepository;

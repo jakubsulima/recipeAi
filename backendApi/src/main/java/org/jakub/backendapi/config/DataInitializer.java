@@ -1,7 +1,7 @@
 package org.jakub.backendapi.config;
 
 import lombok.RequiredArgsConstructor;
-import org.jakub.backendapi.entities.Role;
+import org.jakub.backendapi.entities.Enums.Role;
 import org.jakub.backendapi.entities.User;
 import org.jakub.backendapi.repositories.UserRepository;
 import org.springframework.boot.CommandLineRunner;

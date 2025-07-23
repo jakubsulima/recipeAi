@@ -1,4 +1,4 @@
-package org.jakub.backendapi.entities;
+package org.jakub.backendapi.entities.Enums;
 
 public enum Diet {
     NONE,
