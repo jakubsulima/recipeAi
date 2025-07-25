@@ -3,7 +3,7 @@ import { API_URL, TIMEOUT } from "./constants";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(`${import.meta.env.VITE_AI_API_KEY}`);
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 const formOfPrompt =
   " Answer in the following json format: name: The name of the recipe. description: A brief description of the recipe. timeToPrepare(string): just time to prepare. ingredients: An array of ingredient objects, where each object contains: name: The name of the ingredient. amount(double): The amount needed. unit(not null): The measurement unit (if applicable) only european units like litres. instructions: An array of step-by-step cooking instructions in complete sentences and withouut any special characters. ";
 export const generateRecipe = async function (
@@ -30,7 +30,6 @@ export const generateRecipe = async function (
       lastError = error;
       console.error(`AI Error (Attempt ${attempt}/${maxRetries}):`, error);
 
-      // Check if it's a 503 error and we have retries left
       if (
         error.message &&
         error.message.includes("503") &&
@@ -41,22 +40,23 @@ export const generateRecipe = async function (
           `Model is overloaded. Retrying in ${delay / 1000} second(s)...`
         );
         await new Promise((res) => setTimeout(res, delay));
-        continue; // Go to the next iteration to retry
+        continue;
       }
 
-      // For non-503 errors or if max retries are reached, throw a structured error
       const message = error.message || "Unknown AI error";
       const aiError = new Error(`AI Generation Error: ${message}`);
       throw aiError;
     }
   }
 
-  // This part is reached only if all retries fail.
   const message =
     lastError.message || "Unknown AI error after multiple retries";
   const aiError = new Error(`AI Generation Error: ${message}`);
   throw aiError;
 };
+
+axios.defaults.headers.common["Content-Type"] = "application/json";
+axios.defaults.withCredentials = true;
 
 export const apiClient = async function (
   url: string,
@@ -65,16 +65,9 @@ export const apiClient = async function (
 ) {
   try {
     const fetchOperation = uploadData
-      ? axios.post(API_URL + url, body, {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          withCredentials: true,
-        })
+      ? axios.post(API_URL + url, body)
       : axios.get(API_URL + url, {
           timeout: TIMEOUT * 1000,
-          withCredentials: true,
-          headers: { "Content-Type": "application/json" },
         });
 
     const res: any = await Promise.race([
@@ -96,11 +89,10 @@ export const apiClient = async function (
     }
 
     const data = await res.data;
-    console.log(data);
     return data;
   } catch (error: any) {
     console.error(
-      "AJAX Error Details:", // More specific console log
+      "AJAX Error Details:",
       error.response
         ? { status: error.response.status, data: error.response.data }
         : error.message

@@ -1,10 +1,16 @@
 import { useContext, useState, createContext, useEffect } from "react";
 import { apiClient } from "../lib/hooks";
 
+interface UserPreferences {
+  diet: string;
+  dislikedIngredients: string[];
+}
+
 interface UserProps {
   email: string;
   id: number;
-  role: string; // Changed from isAdmin to role
+  role: string;
+  preferences: UserPreferences;
 }
 
 interface AuthContextType {
@@ -12,6 +18,10 @@ interface AuthContextType {
   setUser: React.Dispatch<React.SetStateAction<UserProps | null>>;
   loading: boolean;
   isAdmin: boolean;
+  updateUserPreferences: (
+    newPreferences: Partial<UserPreferences>
+  ) => Promise<void>;
+  getUserPreferences: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType>(null!);
@@ -25,19 +35,58 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const isAdmin = user?.role === "ADMIN" || false;
   console.log("isAdmin:", isAdmin);
 
+  const updateUserPreferences = async (
+    newPreferences: Partial<UserPreferences>
+  ) => {
+    if (!user) return;
+
+    try {
+      const updatedUser = {
+        ...user,
+        preferences: {
+          ...user.preferences,
+          ...newPreferences,
+        },
+      };
+      setUser(updatedUser);
+      await apiClient("user/updatePreferences", false, updatedUser);
+    } catch (error) {
+      console.error("Failed to update user preferences:", error);
+    }
+  };
+
+  const getUserPreferences = async () => {
+    if (!user) return;
+    try {
+      const response: UserPreferences = await apiClient(
+        "user/getPreferences",
+        false
+      );
+      if (response) {
+        setUser((prevUser) =>
+          prevUser
+            ? {
+                ...prevUser,
+                preferences: response,
+              }
+            : null
+        );
+      }
+    } catch (error) {
+      console.error("Failed to fetch user preferences:", error);
+    }
+  };
+
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn");
 
-    // Only attempt authentication if user was previously logged in
     if (isLoggedIn === "true") {
-      // First try to get current user data
       apiClient("me")
         .then((userData) => {
           setUser(userData);
           setLoading(false);
         })
         .catch((error) => {
-          // If 401, try to refresh the token
           if (error.status === 401) {
             apiClient("refresh")
               .then((userData) => {
@@ -45,26 +94,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 setLoading(false);
               })
               .catch(() => {
-                // Refresh failed, clear authentication state
                 localStorage.removeItem("isLoggedIn");
                 setUser(null);
                 setLoading(false);
               });
           } else {
-            // Other errors, clear authentication state
             localStorage.removeItem("isLoggedIn");
             setUser(null);
             setLoading(false);
           }
         });
     } else {
-      // User is not logged in, set loading to false immediately
       setLoading(false);
     }
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, isAdmin }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        setUser,
+        loading,
+        isAdmin,
+        updateUserPreferences,
+        getUserPreferences,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

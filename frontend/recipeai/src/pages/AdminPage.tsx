@@ -40,7 +40,7 @@ const AdminPage: React.FC = () => {
       try {
         const response = await apiClient(`admin/users/delete/${userId}`, true);
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({
+          const errorData = await response.json.catch(() => ({
             message: `Failed to delete user: ${response.statusText}`,
           }));
           throw new Error(

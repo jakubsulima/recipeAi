@@ -90,7 +90,6 @@ export const Fridge = () => {
     }
   };
 
-  // Use context error if no local error
   const displayError = error || contextError;
   const displayLoading = isLoading || contextLoading;
   return (
