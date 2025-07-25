@@ -1,10 +1,14 @@
 package org.jakub.backendapi.entities;
 
-import java.util.List;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.jakub.backendapi.entities.Enums.Role;
+
+import java.util.List;
 
 
 @AllArgsConstructor
@@ -35,8 +39,7 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<FridgeIngredient> fridgeIngredients;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = false)
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER, optional = false, orphanRemoval = true)
     private UserPreferences userPreferences;
 
 }
-

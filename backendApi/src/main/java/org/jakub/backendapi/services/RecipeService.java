@@ -4,6 +4,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.jakub.backendapi.dto.RecipeDto;
 import org.jakub.backendapi.dto.RecipeResponseDto;
+import org.jakub.backendapi.entities.Enums.Role;
 import org.jakub.backendapi.entities.Ingredient;
 import org.jakub.backendapi.entities.Recipe;
 import org.jakub.backendapi.entities.RecipeIngredient;
@@ -16,7 +17,6 @@ import org.jakub.backendapi.repositories.RecipeRepository;
 import org.jakub.backendapi.repositories.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.jakub.backendapi.entities.Enums.Role;
 
 import java.util.ArrayList;
 import java.util.List;

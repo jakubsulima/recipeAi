@@ -5,7 +5,7 @@ import org.jakub.backendapi.dto.CredentialsDto;
 import org.jakub.backendapi.dto.SignUpDto;
 import org.jakub.backendapi.dto.UserDto;
 import org.jakub.backendapi.entities.Enums.Diet;
-import org.jakub.backendapi.entities.Enums.Role; // Import Role
+import org.jakub.backendapi.entities.Enums.Role;
 import org.jakub.backendapi.entities.User;
 import org.jakub.backendapi.entities.UserPreferences;
 import org.jakub.backendapi.exceptions.AppException;
@@ -27,14 +27,14 @@ public class UserService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
 
-    public UserDto findByEmail(String email) { // Renamed from findByLogin
-        User user = userRepository.findByEmail(email) // Changed from findByLogin
+    public UserDto findByEmail(String email) {
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException("Unknown user", HttpStatus.NOT_FOUND));
         return userMapper.toUserDto(user);
     }
 
     public UserDto login(CredentialsDto credentialsDto) {
-        User user = userRepository.findByEmail(credentialsDto.getEmail()) // Changed from findByLogin
+        User user = userRepository.findByEmail(credentialsDto.getEmail())
                 .orElseThrow(() -> new AppException("Unknown user", HttpStatus.NOT_FOUND));
 
         if (passwordEncoder.matches(CharBuffer.wrap(credentialsDto.getPassword()), user.getPassword())) {
@@ -43,14 +43,15 @@ public class UserService {
         throw new AppException("Invalid password", HttpStatus.BAD_REQUEST);
     }
 
-    public UserDto register(SignUpDto signUpDto) { // Parameter name changed for clarity
-        Optional<User> optionalUser = userRepository.findByEmail(signUpDto.getEmail()); // Changed from findByLogin
+    public UserDto register(SignUpDto signUpDto) {
+        Optional<User> optionalUser = userRepository.findByEmail(signUpDto.getEmail());
         if (optionalUser.isPresent()) {
             throw new AppException("User already exists", HttpStatus.BAD_REQUEST);
         }
         User user = userMapper.signUpToUser(signUpDto);
         user.setPassword(passwordEncoder.encode(CharBuffer.wrap(signUpDto.getPassword())));
         user.setRole(Role.USER);
+        user.setUserPreferences(new UserPreferences());
 
         UserPreferences userPreferences = UserPreferences.builder().diet(Diet.NONE).dislikedIngredients(List.of()).user(user).build();
 
@@ -65,7 +66,6 @@ public class UserService {
         return userMapper.toUserDto(user);
     }
 
-    // Admin methods
     public List<UserDto> getAllUsers() {
         return userRepository.findAll().stream().map(userMapper::toUserDto).collect(Collectors.toList());
     }
@@ -84,3 +84,4 @@ public class UserService {
 
 
 }
+
