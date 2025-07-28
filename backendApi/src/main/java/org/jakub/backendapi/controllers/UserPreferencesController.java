@@ -3,6 +3,7 @@ package org.jakub.backendapi.controllers;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.jakub.backendapi.dto.UserPreferencesDto;
+import org.jakub.backendapi.entities.Enums.Diet;
 import org.jakub.backendapi.services.UserPreferencesService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,6 +27,11 @@ public class UserPreferencesController {
     @PostMapping("/user/updatePreferences")
     public ResponseEntity<UserPreferencesDto> patchPreferences(HttpServletRequest request, @RequestBody UserPreferencesDto preferencesDto) {
         return ResponseEntity.ok(userPreferencesService.patchPreferences(getLoginFromToken(request), preferencesDto));
+    }
+
+    @GetMapping("/user/getDiets")
+    public ResponseEntity<Diet[]> getDiets() {
+        return ResponseEntity.ok(userPreferencesService.getDiets());
     }
 }
 

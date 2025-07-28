@@ -148,8 +148,6 @@ const RecipePage = () => {
     };
 
     loadRecipe();
-    // REMOVED `recipeData` from dependencies to prevent re-running on state update.
-    // ADDED `getFridgeItemNames` for correctness.
   }, [search, fridgeLoading, existingRecipe, recipeId, getFridgeItemNames]);
 
   const saveRecipe = async () => {

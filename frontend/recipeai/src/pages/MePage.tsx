@@ -1,6 +1,8 @@
 import { use, useEffect, useState } from "react";
 import { useUser } from "../context/context";
 import { useNavigate } from "react-router";
+import DietForm from "../components/DietForm";
+import { apiClient } from "../lib/hooks";
 
 const MePage = () => {
   const navigate = useNavigate();
@@ -11,8 +13,28 @@ const MePage = () => {
     updateUserPreferences,
   } = useUser();
   const [error, setError] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(true);
+  const [dietOptions, setDietOptions] = useState<string[]>([]);
 
   useEffect(() => {
+    const fetchDietOptions = async () => {
+      try {
+        const response = await apiClient("user/getDiets");
+        console.log("Diet options fetched:", response);
+        setDietOptions(response);
+      } catch (error) {
+        console.error("Failed to fetch diet options:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDietOptions();
+  }, []);
+
+  useEffect(() => {
+    if (!user || userLoading) return;
+
     const fetchUserPreferences = async () => {
       try {
         await getUserPreferences();
@@ -23,7 +45,7 @@ const MePage = () => {
     };
 
     fetchUserPreferences();
-  }, []);
+  }, [userLoading]);
 
   if (!userLoading && !user) {
     navigate("/login");
@@ -44,9 +66,16 @@ const MePage = () => {
           <p className="text-lg">
             Diet: {user.preferences?.diet || "Not specified"}
           </p>
+          <DietForm
+            dietOptions={dietOptions}
+            currentDiet={user.preferences?.diet || ""}
+            onSaveDiet={async (diet) => {
+              await updateUserPreferences({ diet });
+            }}
+          />
           <p className="text-lg">
             Disliked Ingredients:{" "}
-            {user.preferences?.dislikedIngredients.length > 0
+            {user.preferences?.dislikedIngredients?.length > 0
               ? user.preferences.dislikedIngredients.join(", ")
               : "None"}
           </p>

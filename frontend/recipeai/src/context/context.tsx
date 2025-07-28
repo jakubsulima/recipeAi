@@ -39,17 +39,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     newPreferences: Partial<UserPreferences>
   ) => {
     if (!user) return;
-
     try {
-      const updatedUser = {
-        ...user,
-        preferences: {
-          ...user.preferences,
-          ...newPreferences,
-        },
-      };
-      setUser(updatedUser);
-      await apiClient("user/updatePreferences", false, updatedUser);
+      if (!newPreferences.dislikedIngredients) {
+        newPreferences.dislikedIngredients = [];
+      }
+      console.log("Updating user preferences:", newPreferences);
+      await apiClient("user/updatePreferences", true, {
+        diet: newPreferences.diet,
+        dislikedIngredients: newPreferences.dislikedIngredients.join(","),
+      });
+      setUser((prevUser) =>
+        prevUser
+          ? {
+              ...prevUser,
+              preferences: {
+                ...prevUser.preferences,
+                ...newPreferences,
+              },
+            }
+          : null
+      );
     } catch (error) {
       console.error("Failed to update user preferences:", error);
     }
@@ -62,6 +71,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         "user/getPreferences",
         false
       );
+      console.log("Fetched user preferences:", response);
       if (response) {
         setUser((prevUser) =>
           prevUser
