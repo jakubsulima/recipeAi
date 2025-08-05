@@ -148,7 +148,7 @@ const RecipePage = () => {
     };
 
     loadRecipe();
-  }, [search, fridgeLoading, existingRecipe, recipeId, getFridgeItemNames]);
+  }, [search, fridgeLoading, existingRecipe, recipeId]);
 
   const saveRecipe = async () => {
     try {

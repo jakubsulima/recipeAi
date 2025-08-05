@@ -33,9 +33,17 @@ public class UserPreferencesService {
                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
 
         UserPreferences preferences = user.getUserPreferences();
-        preferences.setDiet(Diet.valueOf(preferencesDto.getDiet().toUpperCase()));
-        preferences.setDislikedIngredients(Stream.concat(Arrays.stream(preferencesDto.getDislikedIngredients()).toList().stream(),
-                preferences.getDislikedIngredients().stream()).toList());
+        try {
+            if (preferencesDto.getDiet() != null) {
+                preferences.setDiet(Diet.valueOf(preferencesDto.getDiet().toUpperCase()));
+            }
+        } catch (IllegalArgumentException e) {
+            throw new AppException("Invalid diet value", HttpStatus.BAD_REQUEST);
+        }
+        if (preferencesDto.getDislikedIngredients() != null) {
+            preferences.setDislikedIngredients(Stream.concat(Arrays.stream(preferencesDto.getDislikedIngredients()).toList().stream(),
+                    preferences.getDislikedIngredients().stream()).toList());
+        }
 
         return preferencesMapper.toUserPreferencesDto(preferences);
     }

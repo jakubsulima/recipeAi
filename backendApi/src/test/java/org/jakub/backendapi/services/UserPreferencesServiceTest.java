@@ -92,7 +92,6 @@ public class UserPreferencesServiceTest {
         updatedUserPreferences.setDislikedIngredients(Collections.singletonList("Garlic"));
 
         when(userRepository.findByEmail(userEmail)).thenReturn(Optional.of(user));
-        when(preferencesMapper.toUserPreferences(newPreferencesDto)).thenReturn(updatedUserPreferences);
         when(preferencesMapper.toUserPreferencesDto(user.getUserPreferences())).thenReturn(newPreferencesDto);
 
         UserPreferencesDto result = userPreferencesService.patchPreferences(userEmail, newPreferencesDto);
@@ -100,7 +99,7 @@ public class UserPreferencesServiceTest {
         assertNotNull(result);
         assertEquals(newPreferencesDto, result);
         assertEquals(Diet.VEGETARIAN, user.getUserPreferences().getDiet());
-        assertEquals(Collections.singletonList("Garlic"), user.getUserPreferences().getDislikedIngredients());
+        assertEquals(java.util.List.of("Garlic", "Onion"), user.getUserPreferences().getDislikedIngredients());
         verify(userRepository, times(1)).findByEmail(userEmail);
     }
 
@@ -139,7 +138,6 @@ public class UserPreferencesServiceTest {
         newPreferencesDto.setDiet("VEGETARIAN");
 
         when(userRepository.findByEmail(userEmail)).thenReturn(Optional.of(user));
-        when(preferencesMapper.toUserPreferences(newPreferencesDto)).thenReturn(new UserPreferences());
         when(preferencesMapper.toUserPreferencesDto(user.getUserPreferences())).thenReturn(newPreferencesDto);
 
         UserPreferencesDto result = userPreferencesService.patchPreferences(userEmail, newPreferencesDto);
@@ -158,13 +156,12 @@ public class UserPreferencesServiceTest {
         updatedUserPreferences.setDislikedIngredients(Collections.singletonList("Tomato"));
 
         when(userRepository.findByEmail(userEmail)).thenReturn(Optional.of(user));
-        when(preferencesMapper.toUserPreferences(newPreferencesDto)).thenReturn(updatedUserPreferences);
         when(preferencesMapper.toUserPreferencesDto(user.getUserPreferences())).thenReturn(newPreferencesDto);
 
         UserPreferencesDto result = userPreferencesService.patchPreferences(userEmail, newPreferencesDto);
 
         assertNotNull(result);
         assertEquals(Diet.VEGETARIAN, user.getUserPreferences().getDiet());
-        assertEquals(Collections.singletonList("Tomato"), user.getUserPreferences().getDislikedIngredients());
+        assertEquals(java.util.List.of("Tomato", "Onion"), user.getUserPreferences().getDislikedIngredients());
     }
 }

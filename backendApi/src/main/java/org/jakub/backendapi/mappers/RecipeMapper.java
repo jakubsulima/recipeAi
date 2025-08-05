@@ -11,9 +11,11 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface RecipeMapper {
-    @Mapping(target="ingredients", source = "recipeIngredients") // Ignore ingredients for now
+    @Mapping(target = "ingredients", source = "recipeIngredients")
     RecipeDto toRecipeDto(Recipe recipe);
+
     RecipeResponseDto toResponseDto(String message, Recipe recipe);
+
     Recipe toRecipe(RecipeDto recipeDto);
 
     @Mapping(source = "ingredient.name", target = "name")
@@ -22,8 +24,8 @@ public interface RecipeMapper {
     RecipeIngredientDto recipeIngredientToRecipeIngredientDto(RecipeIngredient recipeIngredient);
 
     default Recipe toRecipeWithUser(RecipeDto recipeDto, User user) {
-        Recipe recipe = toRecipe(recipeDto); // map the fields first
-        recipe.setUser(user);                // then add the user
+        Recipe recipe = toRecipe(recipeDto);
+        recipe.setUser(user);
         return recipe;
     }
 }

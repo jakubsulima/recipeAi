@@ -1,12 +1,16 @@
 package org.jakub.backendapi.controllers;
 
+import com.google.genai.Client;
+import com.google.genai.types.GenerateContentResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.jakub.backendapi.dto.RecipeDto;
 import org.jakub.backendapi.dto.RecipeResponseDto;
 import org.jakub.backendapi.services.RecipeService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 import static org.jakub.backendapi.config.JwtUtils.getLoginFromToken;
@@ -16,6 +20,9 @@ import static org.jakub.backendapi.config.JwtUtils.getLoginFromToken;
 @RequiredArgsConstructor
 public class RecipesController {
     private final RecipeService recipeService;
+
+    @Value("${gemini.api.key}")
+    private String geminiApiKey;
 
     @PostMapping("/addRecipe")
     public ResponseEntity<RecipeDto> addRecipe(@RequestBody RecipeDto recipeDto, HttpServletRequest request) {
@@ -70,5 +77,21 @@ public class RecipesController {
     public ResponseEntity<RecipeResponseDto> adminDeleteRecipe(@PathVariable Long id) {
         RecipeResponseDto recipeResponseDto = recipeService.adminDeleteRecipe(id);
         return ResponseEntity.ok(recipeResponseDto);
+    }
+
+    @PostMapping("/generateRecipe")
+    public ResponseEntity<String> createRecipe(@RequestBody String recipePrompt) {
+        GenerateContentResponse response;
+        try (Client client = Client.builder().apiKey(geminiApiKey).build()) {
+            response = client.models.generateContent("gemini-2.5-flash-lite",
+                    recipePrompt,
+                    null);
+            System.out.println(response.text());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error creating recipe: " + e.getMessage());
+        }
+
+        return ResponseEntity.ok(response.text());
     }
 }
