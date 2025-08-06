@@ -12,8 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
-import java.util.stream.Stream;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -28,22 +28,49 @@ public class UserPreferencesService {
     }
 
     @Transactional
-    public UserPreferencesDto patchPreferences(String email, UserPreferencesDto preferencesDto) {
+    public UserPreferencesDto changeDiet(String email, String diet) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
 
         UserPreferences preferences = user.getUserPreferences();
         try {
-            if (preferencesDto.getDiet() != null) {
-                preferences.setDiet(Diet.valueOf(preferencesDto.getDiet().toUpperCase()));
-            }
+            preferences.setDiet(Diet.valueOf(diet.toUpperCase()));
         } catch (IllegalArgumentException e) {
             throw new AppException("Invalid diet value", HttpStatus.BAD_REQUEST);
         }
-        if (preferencesDto.getDislikedIngredients() != null) {
-            preferences.setDislikedIngredients(Stream.concat(Arrays.stream(preferencesDto.getDislikedIngredients()).toList().stream(),
-                    preferences.getDislikedIngredients().stream()).toList());
+
+        return preferencesMapper.toUserPreferencesDto(preferences);
+    }
+
+    @Transactional
+    public UserPreferencesDto addDislikedIngredient(String email, String ingredient) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
+
+        UserPreferences preferences = user.getUserPreferences();
+
+        if (!preferences.getDislikedIngredients().contains(ingredient)) {
+            System.out.println("Adding disliked ingredient: " + ingredient);
+            List<String> newDislikedIngredients = new ArrayList<>(preferences.getDislikedIngredients());
+            newDislikedIngredients.add(ingredient);
+            preferences.setDislikedIngredients(newDislikedIngredients);
         }
+
+        return preferencesMapper.toUserPreferencesDto(preferences);
+    }
+
+    @Transactional
+    public UserPreferencesDto removeDislikedIngredient(String email, String ingredient) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
+
+        UserPreferences preferences = user.getUserPreferences();
+        if (!preferences.getDislikedIngredients().contains(ingredient)) {
+            throw new AppException("Ingredient not found in disliked ingredients", HttpStatus.BAD_REQUEST);
+        }
+        List<String> newDislikedIngredients = new ArrayList<>(preferences.getDislikedIngredients());
+        newDislikedIngredients.removeIf(i -> i.equalsIgnoreCase(ingredient));
+        preferences.setDislikedIngredients(newDislikedIngredients);
 
         return preferencesMapper.toUserPreferencesDto(preferences);
     }

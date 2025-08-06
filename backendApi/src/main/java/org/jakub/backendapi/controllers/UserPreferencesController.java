@@ -23,10 +23,20 @@ public class UserPreferencesController {
     public ResponseEntity<UserPreferencesDto> getPreferences(HttpServletRequest request) {
         return ResponseEntity.ok(userPreferencesService.getPreferences(getLoginFromToken(request)));
     }
+    
+    @PostMapping("/user/changeDiet")
+    public ResponseEntity<UserPreferencesDto> changeDiet(HttpServletRequest request, @RequestBody String diet) {
+        return ResponseEntity.ok(userPreferencesService.changeDiet(getLoginFromToken(request), diet));
+    }
 
-    @PostMapping("/user/updatePreferences")
-    public ResponseEntity<UserPreferencesDto> patchPreferences(HttpServletRequest request, @RequestBody UserPreferencesDto preferencesDto) {
-        return ResponseEntity.ok(userPreferencesService.patchPreferences(getLoginFromToken(request), preferencesDto));
+    @PostMapping("/user/addDislikedIngredient")
+    public ResponseEntity<UserPreferencesDto> addDislikedIngredients(HttpServletRequest request, @RequestBody String ingredient) {
+        return ResponseEntity.ok(userPreferencesService.addDislikedIngredient(getLoginFromToken(request), ingredient));
+    }
+
+    @PostMapping("/user/removeDislikedIngredient")
+    public ResponseEntity<UserPreferencesDto> removeDislikedIngredients(HttpServletRequest request, @RequestBody String ingredient) {
+        return ResponseEntity.ok(userPreferencesService.removeDislikedIngredient(getLoginFromToken(request), ingredient));
     }
 
     @GetMapping("/user/getDiets")

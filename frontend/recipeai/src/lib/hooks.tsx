@@ -37,8 +37,14 @@ export const apiClient = async function (
   body: any = null
 ) {
   try {
+    const isPlainString = typeof body === "string";
+
     const fetchOperation = uploadData
-      ? axios.post(API_URL + url, body)
+      ? axios.post(API_URL + url, body, {
+          headers: isPlainString
+            ? { "Content-Type": "text/plain" }
+            : { "Content-Type": "application/json" },
+        })
       : axios.get(API_URL + url, {
           timeout: TIMEOUT * 1000,
         });

@@ -18,9 +18,6 @@ interface AuthContextType {
   setUser: React.Dispatch<React.SetStateAction<UserProps | null>>;
   loading: boolean;
   isAdmin: boolean;
-  updateUserPreferences: (
-    newPreferences: Partial<UserPreferences>
-  ) => Promise<void>;
   getUserPreferences: () => Promise<void>;
 }
 
@@ -34,35 +31,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const isAdmin = user?.role === "ADMIN" || false;
   console.log("isAdmin:", isAdmin);
-
-  const updateUserPreferences = async (
-    newPreferences: Partial<UserPreferences>
-  ) => {
-    if (!user) return;
-    try {
-      if (!newPreferences.dislikedIngredients) {
-        newPreferences.dislikedIngredients = [];
-      }
-      console.log("Updating user preferences:", newPreferences);
-      await apiClient("user/updatePreferences", true, {
-        diet: newPreferences.diet,
-        dislikedIngredients: newPreferences.dislikedIngredients.join(","),
-      });
-      setUser((prevUser) =>
-        prevUser
-          ? {
-              ...prevUser,
-              preferences: {
-                ...prevUser.preferences,
-                ...newPreferences,
-              },
-            }
-          : null
-      );
-    } catch (error) {
-      console.error("Failed to update user preferences:", error);
-    }
-  };
 
   const getUserPreferences = async () => {
     if (!user) return;
@@ -126,7 +94,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser,
         loading,
         isAdmin,
-        updateUserPreferences,
         getUserPreferences,
       }}
     >

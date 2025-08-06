@@ -6,12 +6,7 @@ import { apiClient } from "../lib/hooks";
 
 const MePage = () => {
   const navigate = useNavigate();
-  const {
-    user,
-    loading: userLoading,
-    getUserPreferences,
-    updateUserPreferences,
-  } = useUser();
+  const { user, loading: userLoading, getUserPreferences } = useUser();
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [dietOptions, setDietOptions] = useState<string[]>([]);
@@ -54,16 +49,19 @@ const MePage = () => {
     try {
       const currentDisliked = user?.preferences?.dislikedIngredients || [];
 
-      // Check if ingredient already exists
-      if (currentDisliked.includes(newIngredient.trim())) {
+      if (currentDisliked.includes(newIngredient.trim().toLowerCase())) {
         setError("This ingredient is already in your disliked list");
         return;
       }
 
-      const updatedDisliked = [...currentDisliked, newIngredient.trim()];
-      await updateUserPreferences({ dislikedIngredients: updatedDisliked });
+      await apiClient(
+        "user/addDislikedIngredient",
+        true,
+        newIngredient.trim().toLowerCase()
+      );
       setNewIngredient("");
       setError("");
+      await getUserPreferences();
     } catch (error) {
       setError("Failed to add disliked ingredient");
       console.error("Error adding disliked ingredient:", error);
@@ -72,15 +70,26 @@ const MePage = () => {
 
   const removeDislikedIngredient = async (ingredientToRemove: string) => {
     try {
-      const currentDisliked = user?.preferences?.dislikedIngredients || [];
-      const updatedDisliked = currentDisliked.filter(
-        (ingredient) => ingredient !== ingredientToRemove
+      await apiClient(
+        "user/removeDislikedIngredient",
+        true,
+        ingredientToRemove.toLowerCase()
       );
-      await updateUserPreferences({ dislikedIngredients: updatedDisliked });
       setError("");
+      await getUserPreferences();
     } catch (error) {
       setError("Failed to remove disliked ingredient");
       console.error("Error removing disliked ingredient:", error);
+    }
+  };
+
+  const handleChangeDiet = async (diet: string) => {
+    try {
+      await apiClient("user/changeDiet", true, diet);
+      await getUserPreferences();
+    } catch (error) {
+      setError("Failed to change diet");
+      console.error("Error changing diet:", error);
     }
   };
 
@@ -114,9 +123,7 @@ const MePage = () => {
             <DietForm
               dietOptions={dietOptions}
               currentDiet={user.preferences?.diet || ""}
-              onSaveDiet={async (diet) => {
-                await updateUserPreferences({ diet });
-              }}
+              onSaveDiet={handleChangeDiet}
             />
           </div>
           <div className="space-y-4">

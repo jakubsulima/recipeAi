@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Optional;
 
@@ -48,7 +49,7 @@ public class UserPreferencesServiceTest {
         userPreferences.setId(1L);
         userPreferences.setUser(user);
         userPreferences.setDiet(Diet.VEGETARIAN);
-        userPreferences.setDislikedIngredients(Collections.singletonList("Onion"));
+        userPreferences.setDislikedIngredients(new ArrayList<>(Collections.singletonList("Onion")));
         user.setUserPreferences(userPreferences);
 
         userPreferencesDto = new UserPreferencesDto();
@@ -83,32 +84,24 @@ public class UserPreferencesServiceTest {
     }
 
     @Test
-    void patchPreferences_shouldUpdatePreferences_whenDataIsValid() {
-        UserPreferencesDto newPreferencesDto = new UserPreferencesDto();
-        newPreferencesDto.setDiet("VEGETARIAN");
-        newPreferencesDto.setDislikedIngredients(Collections.singletonList("Garlic").toArray(new String[0]));
-
-        UserPreferences updatedUserPreferences = new UserPreferences();
-        updatedUserPreferences.setDislikedIngredients(Collections.singletonList("Garlic"));
-
+    void changeDiet_shouldUpdateDiet_whenDataIsValid() {
+        String newDiet = "VEGAN";
         when(userRepository.findByEmail(userEmail)).thenReturn(Optional.of(user));
-        when(preferencesMapper.toUserPreferencesDto(user.getUserPreferences())).thenReturn(newPreferencesDto);
+        when(preferencesMapper.toUserPreferencesDto(user.getUserPreferences())).thenReturn(userPreferencesDto);
 
-        UserPreferencesDto result = userPreferencesService.patchPreferences(userEmail, newPreferencesDto);
+        userPreferencesService.changeDiet(userEmail, newDiet);
 
-        assertNotNull(result);
-        assertEquals(newPreferencesDto, result);
-        assertEquals(Diet.VEGETARIAN, user.getUserPreferences().getDiet());
-        assertEquals(java.util.List.of("Garlic", "Onion"), user.getUserPreferences().getDislikedIngredients());
+        assertEquals(Diet.VEGAN, user.getUserPreferences().getDiet());
         verify(userRepository, times(1)).findByEmail(userEmail);
     }
 
     @Test
-    void patchPreferences_shouldThrowAppException_whenUserNotFound() {
+    void changeDiet_shouldThrowAppException_whenUserNotFound() {
+        String newDiet = "VEGAN";
         when(userRepository.findByEmail(userEmail)).thenReturn(Optional.empty());
 
         AppException exception = assertThrows(AppException.class, () -> {
-            userPreferencesService.patchPreferences(userEmail, userPreferencesDto);
+            userPreferencesService.changeDiet(userEmail, newDiet);
         });
 
         assertEquals("User not found", exception.getMessage());
@@ -117,14 +110,12 @@ public class UserPreferencesServiceTest {
     }
 
     @Test
-    void patchPreferences_shouldThrowAppException_whenDietIsInvalid() {
-        UserPreferencesDto invalidDietDto = new UserPreferencesDto();
-        invalidDietDto.setDiet("INVALID_DIET");
-
+    void changeDiet_shouldThrowAppException_whenDietIsInvalid() {
+        String invalidDiet = "INVALID_DIET";
         when(userRepository.findByEmail(userEmail)).thenReturn(Optional.of(user));
 
         AppException exception = assertThrows(AppException.class, () -> {
-            userPreferencesService.patchPreferences(userEmail, invalidDietDto);
+            userPreferencesService.changeDiet(userEmail, invalidDiet);
         });
 
         assertEquals("Invalid diet value", exception.getMessage());
@@ -133,35 +124,60 @@ public class UserPreferencesServiceTest {
     }
 
     @Test
-    void patchPreferences_shouldUpdateOnlyDiet_whenDislikedIngredientsAreNull() {
-        UserPreferencesDto newPreferencesDto = new UserPreferencesDto();
-        newPreferencesDto.setDiet("VEGETARIAN");
-
+    void addDislikedIngredient_shouldAddIngredient_whenIngredientIsNew() {
+        String newIngredient = "Tomato";
         when(userRepository.findByEmail(userEmail)).thenReturn(Optional.of(user));
-        when(preferencesMapper.toUserPreferencesDto(user.getUserPreferences())).thenReturn(newPreferencesDto);
+        when(preferencesMapper.toUserPreferencesDto(user.getUserPreferences())).thenReturn(userPreferencesDto);
 
-        UserPreferencesDto result = userPreferencesService.patchPreferences(userEmail, newPreferencesDto);
+        userPreferencesService.addDislikedIngredient(userEmail, newIngredient);
 
-        assertNotNull(result);
-        assertEquals(Diet.VEGETARIAN, user.getUserPreferences().getDiet());
-        assertEquals(Collections.singletonList("Onion"), user.getUserPreferences().getDislikedIngredients());
+        assertTrue(user.getUserPreferences().getDislikedIngredients().contains(newIngredient));
+        verify(userRepository, times(1)).findByEmail(userEmail);
     }
 
     @Test
-    void patchPreferences_shouldUpdateOnlyDislikedIngredients_whenDietIsNull() {
-        UserPreferencesDto newPreferencesDto = new UserPreferencesDto();
-        newPreferencesDto.setDislikedIngredients(Collections.singletonList("Tomato").toArray(new String[0]));
+    void addDislikedIngredient_shouldThrowAppException_whenUserNotFound() {
+        String newIngredient = "Tomato";
+        when(userRepository.findByEmail(userEmail)).thenReturn(Optional.empty());
 
-        UserPreferences updatedUserPreferences = new UserPreferences();
-        updatedUserPreferences.setDislikedIngredients(Collections.singletonList("Tomato"));
+        AppException exception = assertThrows(AppException.class, () -> {
+            userPreferencesService.addDislikedIngredient(userEmail, newIngredient);
+        });
 
+        assertEquals("User not found", exception.getMessage());
+        assertEquals(HttpStatus.NOT_FOUND, exception.getCode());
+        verify(userRepository, times(1)).findByEmail(userEmail);
+    }
+
+    @Test
+    void removeDislikedIngredient_shouldRemoveIngredient_whenIngredientExists() {
+        String ingredientToRemove = "Onion";
         when(userRepository.findByEmail(userEmail)).thenReturn(Optional.of(user));
-        when(preferencesMapper.toUserPreferencesDto(user.getUserPreferences())).thenReturn(newPreferencesDto);
+        when(preferencesMapper.toUserPreferencesDto(user.getUserPreferences())).thenReturn(userPreferencesDto);
 
-        UserPreferencesDto result = userPreferencesService.patchPreferences(userEmail, newPreferencesDto);
+        userPreferencesService.removeDislikedIngredient(userEmail, ingredientToRemove);
 
-        assertNotNull(result);
-        assertEquals(Diet.VEGETARIAN, user.getUserPreferences().getDiet());
-        assertEquals(java.util.List.of("Tomato", "Onion"), user.getUserPreferences().getDislikedIngredients());
+        assertFalse(user.getUserPreferences().getDislikedIngredients().contains(ingredientToRemove));
+        verify(userRepository, times(1)).findByEmail(userEmail);
+    }
+
+    @Test
+    void removeDislikedIngredient_shouldThrowAppException_whenUserNotFound() {
+        String ingredientToRemove = "Onion";
+        when(userRepository.findByEmail(userEmail)).thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(AppException.class, () -> {
+            userPreferencesService.removeDislikedIngredient(userEmail, ingredientToRemove);
+        });
+
+        assertEquals("User not found", exception.getMessage());
+        assertEquals(HttpStatus.NOT_FOUND, exception.getCode());
+        verify(userRepository, times(1)).findByEmail(userEmail);
+    }
+
+    @Test
+    void getDiets_shouldReturnAllDiets() {
+        Diet[] diets = userPreferencesService.getDiets();
+        assertArrayEquals(Diet.values(), diets);
     }
 }
