@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import FridgeIngredientContainer from "../components/FridgeIngredientContainer";
 import { unitType, useFridge } from "../context/fridgeContext";
 import OptionsForm from "../components/OptionsForm";
@@ -21,7 +21,12 @@ export const Fridge = () => {
 
   const isValidNumber = (value: string): boolean => {
     if (value.trim() === "") return false;
-    const num = parseFloat(value);
+
+    const numberRegex = /^[0-9]*\.?[0-9]+$/;
+
+    if (!numberRegex.test(value.trim())) return false;
+
+    const num = parseFloat(value.trim());
     return !isNaN(num) && num > 0;
   };
 
@@ -132,7 +137,8 @@ export const Fridge = () => {
               name="Unit"
               options={["g", "kg", "ml", "l", "pcs", ""]}
               currentOptions={unit}
-              onSaveOptions={(options) => setUnit(options)}
+              onChange={(value) => setUnit(value as unitType)}
+              classname="mb-2"
             />
             <label className="block mb-1 text-sm text-gray-600"></label>
             Amount <span className="text-gray-400">(optional)</span>
@@ -173,6 +179,8 @@ export const Fridge = () => {
                 <FridgeIngredientContainer
                   name={item.name}
                   expirationDate={item.expirationDate || ""}
+                  amount={item.amount || ""}
+                  unit={item.unit}
                   remove={() => removeItem(item.id)}
                 />
               </li>

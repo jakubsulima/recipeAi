@@ -34,8 +34,7 @@ public class FridgeService {
     public FridgeIngredient addFridgeIngredient(FridgeIngredientDto fridgeIngredientDto, String email) {
         if (fridgeIngredientDto.getUnit() != null) {
             try {
-                System.out.println(Unit.valueOfAbbreviation(fridgeIngredientDto.getUnit()).name());
-                Unit.valueOf(Unit.valueOfAbbreviation(fridgeIngredientDto.getUnit()).name());
+                Unit.valueOf(fridgeIngredientDto.getUnit().toUpperCase());
             } catch (IllegalArgumentException e) {
                 throw new AppException("Invalid unit value provided: " + fridgeIngredientDto.getUnit(), HttpStatus.BAD_REQUEST);
             }
@@ -49,7 +48,7 @@ public class FridgeService {
         return fridgeIngredientRepository.save(fridgeIngredient);
     }
 
-    public FridgeIngredientDto deleteFridgeIngredient(Long id, String email) {
+    public void deleteFridgeIngredient(Long id, String email) {
         UserDto userDto = userService.findByEmail(email);
         FridgeIngredient fridgeIngredient = fridgeIngredientRepository.findById(id).orElseThrow(() -> new AppException("Fridge ingredient not found", HttpStatus.NOT_FOUND));
 
@@ -58,7 +57,7 @@ public class FridgeService {
         }
         fridgeIngredientRepository.deleteById(id);
 
-        return fridgeIngredientMapper.toFridgeIngredientDto(fridgeIngredient);
+        fridgeIngredientMapper.toFridgeIngredientDto(fridgeIngredient);
     }
 
 }

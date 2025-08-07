@@ -7,6 +7,9 @@ interface OptionsFormProps {
   onSaveOptions?: (options: string) => void;
   children?: React.ReactNode;
   classname?: string;
+  onChange?: (value: string) => void;
+  showSubmitButton?: boolean;
+  buttonText?: string;
 }
 
 const OptionsForm = ({
@@ -14,13 +17,32 @@ const OptionsForm = ({
   options,
   currentOptions,
   onSaveOptions,
+  onChange,
   children,
   classname,
+  showSubmitButton = false,
+  buttonText = "Save",
 }: OptionsFormProps) => {
-  const [Options, setOptions] = useState(currentOptions);
+  const [selectedOption, setSelectedOption] = useState(currentOptions);
+
   useEffect(() => {
-    setOptions(currentOptions);
+    setSelectedOption(currentOptions);
   }, [currentOptions]);
+
+  const handleSelectChange = (value: string) => {
+    setSelectedOption(value);
+    // Call onChange immediately when selection changes
+    if (onChange) {
+      onChange(value);
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (onSaveOptions) {
+      onSaveOptions(selectedOption);
+    }
+  };
 
   return (
     <article className={classname}>
@@ -30,24 +52,30 @@ const OptionsForm = ({
       >
         {name}
       </label>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          onSaveOptions(Options);
-        }}
-      >
+      <form onSubmit={handleSubmit}>
         <select
           name={name}
-          value={Options}
-          onChange={(e) => setOptions(e.target.value)}
+          value={selectedOption}
+          onChange={(e) => handleSelectChange(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         >
           {options.map((option) => (
             <option key={option} value={option}>
-              {option}
+              {option || "None"}
             </option>
           ))}
         </select>
+
         {children}
+
+        {showSubmitButton && (
+          <button
+            type="submit"
+            className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {buttonText}
+          </button>
+        )}
       </form>
     </article>
   );

@@ -114,7 +114,7 @@ public class UserAuthProvider {
                 .httpOnly(true)
                 .secure(false) // Set true in production (requires HTTPS)
                 .path("/")
-                .maxAge(60 * 15) // 15 minutes
+                .maxAge(60 * 60) // 15 minutes
                 .sameSite("Lax")
                 .build();
 

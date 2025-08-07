@@ -2,9 +2,7 @@ package org.jakub.backendapi.controllers;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.jakub.backendapi.config.JwtUtils;
 import org.jakub.backendapi.dto.FridgeIngredientDto;
-import org.jakub.backendapi.entities.FridgeIngredient;
 import org.jakub.backendapi.services.FridgeService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,16 +18,13 @@ public class FridgeController {
 
     @GetMapping("/getFridgeIngredients")
     public ResponseEntity<List<FridgeIngredientDto>> getFridgeIngredients(HttpServletRequest request) {
-        String email = getLoginFromToken(request);
-        List<FridgeIngredientDto> fridgeIngredients = fridgeService.getFridgeIngredients(email);
+        List<FridgeIngredientDto> fridgeIngredients = fridgeService.getFridgeIngredients(getLoginFromToken(request));
         return ResponseEntity.ok(fridgeIngredients);
     }
 
     @PostMapping("/addFridgeIngredient")
     public ResponseEntity<FridgeIngredientDto> addFridgeIngredient(@RequestBody FridgeIngredientDto fridgeIngredientDto, HttpServletRequest request) {
-        String email = getLoginFromToken(request);
-        System.out.println("Adding fridge ingredient: " + fridgeIngredientDto);
-        fridgeService.addFridgeIngredient(fridgeIngredientDto, email);
+        fridgeService.addFridgeIngredient(fridgeIngredientDto, getLoginFromToken(request));
         return ResponseEntity.ok(fridgeIngredientDto);
     }
 

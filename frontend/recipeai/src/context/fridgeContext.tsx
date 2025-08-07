@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { apiClient } from "../lib/hooks";
 import { useUser } from "./context";
+import { U } from "vitest/dist/chunks/environment.d.Dmw5ulng.js";
 
 export interface FridgeIngredient {
   id: number;
@@ -22,7 +23,14 @@ interface FridgeContextType {
 }
 
 export type unitType = "g" | "kg" | "ml" | "l" | "pcs" | "";
-
+enum Unit {
+  g = "GRAMS",
+  kg = "KILOGRAMS",
+  ml = "MILLILITERS",
+  l = "LITERS",
+  pcs = "PIECES",
+  "" = "",
+}
 const FridgeContext = createContext<FridgeContextType>(null!);
 
 export const useFridge = () => {
@@ -81,11 +89,12 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
 
   const addFridgeItem = async (item: Omit<FridgeIngredient, "id">) => {
     try {
+      console.log("Adding fridge item:", Unit[item.unit]);
       await apiClient("addFridgeIngredient", true, {
         name: item.name,
         expirationDate: item.expirationDate,
         amount: item.amount,
-        unit: item.unit,
+        unit: Unit[item.unit],
       });
 
       refreshFridgeItems();

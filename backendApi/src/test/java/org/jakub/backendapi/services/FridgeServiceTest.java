@@ -241,4 +241,6 @@ class FridgeServiceTest {
         assertEquals("Milk", result.getName());
         verify(fridgeIngredientRepository).save(fridgeIngredient);
     }
+
+
 }
