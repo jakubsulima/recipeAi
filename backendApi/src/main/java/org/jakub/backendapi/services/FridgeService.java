@@ -34,7 +34,8 @@ public class FridgeService {
     public FridgeIngredient addFridgeIngredient(FridgeIngredientDto fridgeIngredientDto, String email) {
         if (fridgeIngredientDto.getUnit() != null) {
             try {
-                Unit.valueOf(fridgeIngredientDto.getUnit().toUpperCase());
+                System.out.println(Unit.valueOfAbbreviation(fridgeIngredientDto.getUnit()).name());
+                Unit.valueOf(Unit.valueOfAbbreviation(fridgeIngredientDto.getUnit()).name());
             } catch (IllegalArgumentException e) {
                 throw new AppException("Invalid unit value provided: " + fridgeIngredientDto.getUnit(), HttpStatus.BAD_REQUEST);
             }

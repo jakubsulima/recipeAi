@@ -1,8 +1,9 @@
 import { use, useEffect, useState } from "react";
 import { useUser } from "../context/context";
 import { useNavigate } from "react-router";
-import DietForm from "../components/DietForm";
+import DietForm from "../components/OptionsForm";
 import { apiClient } from "../lib/hooks";
+import OptionsForm from "../components/OptionsForm";
 
 const MePage = () => {
   const navigate = useNavigate();
@@ -117,13 +118,20 @@ const MePage = () => {
         )}
         <article className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <p className="text-lg">
-              Diet: {user.preferences?.diet || "Not specified"}
-            </p>
-            <DietForm
-              dietOptions={dietOptions}
-              currentDiet={user.preferences?.diet || ""}
-              onSaveDiet={handleChangeDiet}
+            <OptionsForm
+              name="diet"
+              options={dietOptions}
+              currentOptions={user.preferences?.diet || ""}
+              onSaveOptions={handleChangeDiet}
+              classname="mb-4"
+              children={
+                <button
+                  type="submit"
+                  className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                >
+                  Save Diet
+                </button>
+              }
             />
           </div>
           <div className="space-y-4">

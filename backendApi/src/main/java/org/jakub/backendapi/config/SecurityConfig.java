@@ -23,29 +23,29 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors(withDefaults()) // Enables CORS using corsConfigurationSource bean
-            .csrf(csrf -> csrf.disable()) // No CSRF for stateless APIs
-            .exceptionHandling(ex -> ex.authenticationEntryPoint(userAuthenticationEntryPoint))
-            .addFilterBefore(new JwtAuthFilter(userAuthProvider), BasicAuthenticationFilter.class)
-            .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .cors(withDefaults()) // Enables CORS using corsConfigurationSource bean
+                .csrf(csrf -> csrf.disable()) // No CSRF for stateless APIs
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(userAuthenticationEntryPoint))
+                .addFilterBefore(new JwtAuthFilter(userAuthProvider), BasicAuthenticationFilter.class)
+                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-            // Configure request authorization
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.POST, "/login", "/register", "/refresh").permitAll()
-                .requestMatchers(HttpMethod.GET, "/getAllRecipes", "/getRecipe/**").permitAll() // Allow GET requests to /getAllRecipes for everyone
-                .requestMatchers(HttpMethod.POST, "/addRecipe").hasAnyRole("USER", "ADMIN") // Allow USER and ADMIN to add recipe
-                .requestMatchers("/admin/**").hasRole("ADMIN") // Secure all /admin/** endpoints
-                .anyRequest().authenticated()
-            )
+                // Configure request authorization
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.POST, "/login", "/register", "/refresh", "/generateRecipe").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/getAllRecipes", "/getRecipe/**").permitAll() // Allow GET requests to /getAllRecipes for everyone
+                        .requestMatchers(HttpMethod.POST, "/addRecipe").hasAnyRole("USER", "ADMIN") // Allow USER and ADMIN to add recipe
+                        .requestMatchers("/admin/**").hasRole("ADMIN") // Secure all /admin/** endpoints
+                        .anyRequest().authenticated()
+                )
 
-            // Disable Spring Security's default logout handling to avoid redirecting to /login
-            .logout(logout -> logout
-                .logoutUrl("/logout")  // Ensure your custom logout endpoint
-                .clearAuthentication(true) // Clear authentication on logout
-                .invalidateHttpSession(true) // Invalidate the session on logout
-                .deleteCookies("JSESSIONID", "access_token", "refresh_token") // Delete cookies on logout if applicable
-                .permitAll() // Ensure logout is publicly accessible
-            );
+                // Disable Spring Security's default logout handling to avoid redirecting to /login
+                .logout(logout -> logout
+                        .logoutUrl("/logout")  // Ensure your custom logout endpoint
+                        .clearAuthentication(true) // Clear authentication on logout
+                        .invalidateHttpSession(true) // Invalidate the session on logout
+                        .deleteCookies("JSESSIONID", "access_token", "refresh_token") // Delete cookies on logout if applicable
+                        .permitAll() // Ensure logout is publicly accessible
+                );
 
         return http.build();
     }

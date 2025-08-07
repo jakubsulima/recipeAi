@@ -6,6 +6,8 @@ export interface FridgeIngredient {
   id: number;
   name: string;
   expirationDate: string | null;
+  amount?: string;
+  unit: unitType;
 }
 
 interface FridgeContextType {
@@ -18,6 +20,8 @@ interface FridgeContextType {
   refreshFridgeItems: () => Promise<void>;
   getFridgeItemNames: () => string[];
 }
+
+export type unitType = "g" | "kg" | "ml" | "l" | "pcs" | "";
 
 const FridgeContext = createContext<FridgeContextType>(null!);
 
@@ -80,6 +84,8 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
       await apiClient("addFridgeIngredient", true, {
         name: item.name,
         expirationDate: item.expirationDate,
+        amount: item.amount,
+        unit: item.unit,
       });
 
       refreshFridgeItems();

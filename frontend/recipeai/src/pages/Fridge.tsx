@@ -1,20 +1,8 @@
 import { useEffect, useState } from "react";
 import FridgeIngredientContainer from "../components/FridgeIngredientContainer";
-import { useFridge } from "../context/fridgeContext";
-
-const formatDateForBackend = (dateString: string): string => {
-  const date = new Date(dateString);
-
-  if (isNaN(date.getTime())) {
-    // Invalid date string
-    return "";
-  }
-
-  const day = date.getDate().toString().padStart(2, "0");
-  const month = (date.getMonth() + 1).toString().padStart(2, "0");
-  const year = date.getFullYear();
-  return `${day}-${month}-${year}`;
-};
+import { unitType, useFridge } from "../context/fridgeContext";
+import OptionsForm from "../components/OptionsForm";
+import { formatDateForBackend } from "../lib/hooks";
 
 export const Fridge = () => {
   const {
@@ -26,14 +14,31 @@ export const Fridge = () => {
   } = useFridge();
   const [newItem, setNewItem] = useState<string>("");
   const [newItemDate, setNewItemDate] = useState<string>("");
+  const [unit, setUnit] = useState<unitType>("kg");
+  const [amount, setAmount] = useState<string>("1");
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const isValidNumber = (value: string): boolean => {
+    if (value.trim() === "") return false;
+    const num = parseFloat(value);
+    return !isNaN(num) && num > 0;
+  };
+
+  const hasAmountError = (): boolean => {
+    return amount.trim() !== "" && !isValidNumber(amount);
+  };
 
   const addItem = async () => {
     setError("");
 
     if (!newItem.trim()) {
       setError("Item name is required");
+      return;
+    }
+
+    if (!isValidNumber(amount)) {
+      setError("Amount must be a valid positive number");
       return;
     }
 
@@ -58,10 +63,13 @@ export const Fridge = () => {
       await addFridgeItem({
         name: newItem.trim(),
         expirationDate: formattedDate,
+        unit: unit,
+        amount: amount,
       });
 
       setNewItem("");
       setNewItemDate("");
+      setAmount("1");
     } catch (err: any) {
       const errorMsg =
         typeof err === "object" && err !== null && "message" in err
@@ -92,6 +100,7 @@ export const Fridge = () => {
 
   const displayError = error || contextError;
   const displayLoading = isLoading || contextLoading;
+
   return (
     <>
       <div className="container mx-auto p-6 grid md:grid-cols-2 gap-8">
@@ -116,12 +125,36 @@ export const Fridge = () => {
               type="date"
               value={newItemDate}
               onChange={(e) => setNewItemDate(e.target.value)}
-              className={`border rounded p-2 w-full mb-2 `}
+              className={`border rounded p-2 w-full mb-2`}
               disabled={displayLoading}
             />
+            <OptionsForm
+              name="Unit"
+              options={["g", "kg", "ml", "l", "pcs", ""]}
+              currentOptions={unit}
+              onSaveOptions={(options) => setUnit(options)}
+            />
+            <label className="block mb-1 text-sm text-gray-600"></label>
+            Amount <span className="text-gray-400">(optional)</span>
+            <input
+              type="text"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="Amount (e.g., 1.5)"
+              className={`border rounded p-2 w-full mb-2 ${
+                hasAmountError() ? "border-red-500" : "border-gray-300"
+              }`}
+              disabled={displayLoading}
+              required
+            />
+            {hasAmountError() && (
+              <p className="text-red-500 text-sm mb-2">
+                Please enter a valid positive number
+              </p>
+            )}
             <button
               onClick={() => addItem()}
-              disabled={displayLoading}
+              disabled={displayLoading || hasAmountError() || !amount.trim()}
               className="mt-2 bg-main text-black px-4 py-2 rounded w-full hover:bg-yellow-400 disabled:opacity-50"
             >
               {displayLoading ? "Adding..." : "Add Item"}
