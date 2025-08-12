@@ -6,7 +6,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.jakub.backendapi.dto.RecipeDto;
 import org.jakub.backendapi.dto.RecipeResponseDto;
+import org.jakub.backendapi.dto.UserDto;
+import org.jakub.backendapi.dto.UserPreferencesDto;
 import org.jakub.backendapi.services.RecipeService;
+import org.jakub.backendapi.services.UserPreferencesService;
+import org.jakub.backendapi.services.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +24,8 @@ import static org.jakub.backendapi.config.JwtUtils.getLoginFromToken;
 @RequiredArgsConstructor
 public class RecipesController {
     private final RecipeService recipeService;
+    private final UserService userService;
+    private final UserPreferencesService userPreferencesService;
 
     @Value("${gemini.api.key}")
     private String geminiApiKey;
@@ -80,8 +86,23 @@ public class RecipesController {
     }
 
     @PostMapping("/generateRecipe")
-    public ResponseEntity<String> createRecipe(@RequestBody String recipePrompt) {
+    public ResponseEntity<String> createRecipe(@RequestBody String recipePrompt, HttpServletRequest request) {
         GenerateContentResponse response;
+        try {
+            String userEmail = getLoginFromToken(request);
+            if (userEmail != null && !userEmail.isEmpty()) {
+                UserDto user = userService.findByEmail(userEmail);
+                if (user != null) {
+                    UserPreferencesDto preferences = userPreferencesService.getPreferences(userEmail);
+                    if (preferences != null) {
+                        System.out.println("User preferences found: " + preferences);
+                        recipePrompt += "\n\nUser Preferences: " + preferences;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Could not retrieve user preferences: " + e.getMessage());
+        }
         try (Client client = Client.builder().apiKey(geminiApiKey).build()) {
             response = client.models.generateContent("gemini-2.5-flash-lite",
                     recipePrompt,

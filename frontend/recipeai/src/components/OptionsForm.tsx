@@ -31,7 +31,6 @@ const OptionsForm = ({
 
   const handleSelectChange = (value: string) => {
     setSelectedOption(value);
-    // Call onChange immediately when selection changes
     if (onChange) {
       onChange(value);
     }
