@@ -87,9 +87,6 @@ public class RecipeService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException("Unknown user", HttpStatus.NOT_FOUND));
         ArrayList<Recipe> recipes = user.getRecipes().isEmpty() ? new ArrayList<>() : new ArrayList<>(user.getRecipes());
-        if (recipes.isEmpty()) {
-            throw new AppException("User has no recipes", HttpStatus.NOT_FOUND);
-        }
         return recipes.stream()
                 .map(recipeMapper::toRecipeDto)
                 .collect(Collectors.toList());
@@ -122,6 +119,10 @@ public class RecipeService {
             }
         }
 
+        return getRecipeDto(recipeDto, recipe);
+    }
+
+    private RecipeDto getRecipeDto(RecipeDto recipeDto, Recipe recipe) {
         if (recipeDto.getIngredients() == null || recipeDto.getIngredients().isEmpty()) {
             throw new AppException("Recipe must have at least one ingredient", HttpStatus.BAD_REQUEST);
         }
@@ -152,39 +153,11 @@ public class RecipeService {
         return recipeMapper.toRecipeDto(recipeRepository.save(recipe));
     }
 
-    // Admin methods
     public RecipeDto adminUpdateRecipe(Long id, RecipeDto recipeDto) {
         Recipe recipe = recipeRepository.findById(id)
                 .orElseThrow(() -> new AppException("Recipe not found", HttpStatus.NOT_FOUND));
 
-        if (recipeDto.getIngredients() == null || recipeDto.getIngredients().isEmpty()) {
-            throw new AppException("Recipe must have at least one ingredient", HttpStatus.BAD_REQUEST);
-        }
-
-        recipe.setName(recipeDto.getName());
-        recipe.setDescription(recipeDto.getDescription());
-
-        List<RecipeIngredient> updatedIngredients = recipeDto.getIngredients().stream()
-                .map(dto -> {
-                    Ingredient ingredient = ingredientRepository.findByNameIgnoreCase(dto.getName())
-                            .orElseGet(() -> ingredientRepository.save(Ingredient.builder()
-                                    .name(dto.getName())
-                                    .build()));
-
-                    return RecipeIngredient.builder()
-                            .recipe(recipe)
-                            .ingredient(ingredient)
-                            .amount(dto.getAmount())
-                            .unit(dto.getUnit())
-                            .build();
-                })
-                .collect(Collectors.toList());
-
-        recipeIngredientRepository.deleteAll(recipe.getRecipeIngredients());
-        recipe.setRecipeIngredients(updatedIngredients);
-        recipeIngredientRepository.saveAll(updatedIngredients);
-
-        return recipeMapper.toRecipeDto(recipeRepository.save(recipe));
+        return getRecipeDto(recipeDto, recipe);
     }
 
     public RecipeResponseDto adminDeleteRecipe(Long id) {

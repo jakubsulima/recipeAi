@@ -1,4 +1,4 @@
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useState, useCallback } from "react";
 import { useUser } from "../context/context";
 import { useNavigate } from "react-router";
 import DietForm from "../components/OptionsForm";
@@ -12,6 +12,7 @@ const MePage = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [dietOptions, setDietOptions] = useState<string[]>([]);
   const [newIngredient, setNewIngredient] = useState<string>("");
+  const [preferencesLoaded, setPreferencesLoaded] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchDietOptions = async () => {
@@ -29,20 +30,23 @@ const MePage = () => {
     fetchDietOptions();
   }, []);
 
+  const fetchUserPreferences = useCallback(async () => {
+    if (!user || userLoading || preferencesLoaded) return;
+
+    try {
+      console.log("Fetching user preferences...");
+      await getUserPreferences();
+      setPreferencesLoaded(true);
+      console.log("User preferences loaded");
+    } catch (error) {
+      setError("Failed to fetch user preferences");
+      console.error("Error fetching user preferences:", error);
+    }
+  }, [user, userLoading, getUserPreferences, preferencesLoaded]);
+
   useEffect(() => {
-    if (!user || userLoading) return;
-
-    const fetchUserPreferences = async () => {
-      try {
-        await getUserPreferences();
-      } catch (error) {
-        setError("Failed to fetch user preferences");
-        console.error("Error fetching user preferences:", error);
-      }
-    };
-
     fetchUserPreferences();
-  }, [userLoading]);
+  }, [fetchUserPreferences]);
 
   const addDislikedIngredient = async () => {
     if (!newIngredient.trim()) return;
@@ -104,7 +108,8 @@ const MePage = () => {
     navigate("/login");
     return null;
   }
-  if (userLoading) {
+
+  if (userLoading || loading) {
     return <div>Loading user data...</div>;
   }
   if (user && !userLoading) {
@@ -116,6 +121,14 @@ const MePage = () => {
             {error}
           </div>
         )}
+
+        {/* Show loading for preferences if they haven't been loaded yet */}
+        {!preferencesLoaded && !error && (
+          <div className="mb-4 p-3 bg-blue-100 border border-blue-400 text-blue-700 rounded">
+            Loading preferences...
+          </div>
+        )}
+
         <article className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <OptionsForm
@@ -180,7 +193,9 @@ const MePage = () => {
                   )}
                 </div>
               ) : (
-                <p className="text-gray-500">None</p>
+                <p className="text-gray-500">
+                  {preferencesLoaded ? "None" : "Loading..."}
+                </p>
               )}
             </div>
           </div>
