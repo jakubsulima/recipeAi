@@ -1,8 +1,9 @@
 import { useState } from "react";
 import FridgeIngredientContainer from "../components/FridgeIngredientContainer";
-import { unitType, useFridge } from "../context/fridgeContext";
+import { CATEGORY_VALUES, unitType, useFridge } from "../context/fridgeContext";
 import OptionsForm from "../components/OptionsForm";
 import { formatDateForBackend } from "../lib/hooks";
+import { categoryType } from "../context/fridgeContext";
 
 export const Fridge = () => {
   const {
@@ -15,6 +16,7 @@ export const Fridge = () => {
   const [newItem, setNewItem] = useState<string>("");
   const [newItemDate, setNewItemDate] = useState<string>("");
   const [unit, setUnit] = useState<unitType>("kg");
+  const [categories, setCategory] = useState<categoryType>("FRIDGE");
   const [amount, setAmount] = useState<string>("1");
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -138,6 +140,13 @@ export const Fridge = () => {
               options={["g", "kg", "ml", "l", "pcs", ""]}
               currentOptions={unit}
               onChange={(value) => setUnit(value as unitType)}
+              classname="mb-2"
+            />
+            <OptionsForm
+              name="Category"
+              options={CATEGORY_VALUES}
+              currentOptions={categories}
+              onChange={(value) => setCategory(value as categoryType)}
               classname="mb-2"
             />
             <label className="block mb-1 text-sm text-gray-600"></label>

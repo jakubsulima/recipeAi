@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { apiClient } from "../lib/hooks";
 import { useUser } from "./context";
-import { U } from "vitest/dist/chunks/environment.d.Dmw5ulng.js";
 
 export interface FridgeIngredient {
   id: number;
@@ -22,15 +21,33 @@ interface FridgeContextType {
   getFridgeItemNames: () => string[];
 }
 
-export type unitType = "g" | "kg" | "ml" | "l" | "pcs" | "";
-enum Unit {
-  g = "GRAMS",
-  kg = "KILOGRAMS",
-  ml = "MILLILITERS",
-  l = "LITERS",
-  pcs = "PIECES",
-  "" = "",
-}
+// Replace enums with const objects
+export const UNITS = {
+  g: "GRAMS",
+  kg: "KILOGRAMS",
+  ml: "MILLILITERS",
+  l: "LITERS",
+  pcs: "PIECES",
+  "": "",
+} as const;
+
+export const CATEGORIES = {
+  FRIDGE: "FRIDGE",
+  FREEZER: "FREEZER",
+  FRUITS_VEGETABLES: "FRUITS_VEGETABLES",
+  SHELF: "SHELF",
+} as const;
+
+// Create types from the const objects
+export type unitType = keyof typeof UNITS;
+export type categoryType = keyof typeof CATEGORIES;
+
+// Create arrays for easy use in components
+export const UNIT_OPTIONS: unitType[] = Object.keys(UNITS) as unitType[];
+export const UNIT_VALUES = Object.values(UNITS);
+export const CATEGORY_OPTIONS = Object.keys(CATEGORIES) as categoryType[];
+export const CATEGORY_VALUES = Object.values(CATEGORIES);
+
 const FridgeContext = createContext<FridgeContextType>(null!);
 
 export const useFridge = () => {
@@ -89,12 +106,12 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
 
   const addFridgeItem = async (item: Omit<FridgeIngredient, "id">) => {
     try {
-      console.log("Adding fridge item:", Unit[item.unit]);
+      console.log("Adding fridge item:", UNITS[item.unit]);
       await apiClient("addFridgeIngredient", true, {
         name: item.name,
         expirationDate: item.expirationDate,
         amount: item.amount,
-        unit: Unit[item.unit],
+        unit: UNITS[item.unit], // Use UNITS instead of Unit enum
       });
 
       refreshFridgeItems();
@@ -132,7 +149,7 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
       localStorage.removeItem("expirationNotificationShown");
       return;
     }
-    refreshFridgeItems(); // Show alert after login
+    refreshFridgeItems();
   }, [user, userLoading]);
 
   const value: FridgeContextType = {
