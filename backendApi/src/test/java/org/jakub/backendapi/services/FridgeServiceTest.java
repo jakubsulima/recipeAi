@@ -16,9 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
 import java.time.LocalDate;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -107,6 +105,7 @@ class FridgeServiceTest {
                 .unit(null)
                 .amount(1.0)
                 .expirationDate(expirationDate)
+                .category("FRIDGE")
                 .build();
         User user = User.builder().id(1L).email(email).build();
 
@@ -148,7 +147,7 @@ class FridgeServiceTest {
     void addFridgeIngredient_shouldThrowAppException_whenUserNotFound() {
         // Given
         String email = "nonexistent@example.com";
-        FridgeIngredientDto fridgeIngredientDto = FridgeIngredientDto.builder().name("Milk").amount(1.0).build();
+        FridgeIngredientDto fridgeIngredientDto = FridgeIngredientDto.builder().name("Milk").amount(1.0).category("FRIDGE").build();
         String expectedErrorMessage = "User not found";
 
         when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
@@ -203,6 +202,7 @@ class FridgeServiceTest {
                 .name("Milk")
                 .unit("LITERS")
                 .amount(0)
+                .category("FRIDGE")
                 .build();
 
         // When & Then
@@ -223,6 +223,7 @@ class FridgeServiceTest {
                 .name("Milk")
                 .unit("LITERS")
                 .amount(1.0)
+                .category("FRIDGE")
                 .expirationDate(LocalDate.now().plusDays(7))
                 .build();
 
@@ -242,5 +243,128 @@ class FridgeServiceTest {
         verify(fridgeIngredientRepository).save(fridgeIngredient);
     }
 
+    @Test
+    void getFridgeIngredientGroupedByCategory_shouldGroupByCategory() {
+        String email = "test@example.com";
+        UserDto userDto = UserDto.builder().id(1L).email(email).build();
+        FridgeIngredient fi1 = FridgeIngredient.builder().id(1L).name("Milk").build();
+        FridgeIngredient fi2 = FridgeIngredient.builder().id(2L).name("Peas").build();
+        FridgeIngredient fi3 = FridgeIngredient.builder().id(3L).name("Cheese").build();
 
+        FridgeIngredientDto d1 = FridgeIngredientDto.builder().id(1L).name("Milk").category("FRIDGE").build();
+        FridgeIngredientDto d2 = FridgeIngredientDto.builder().id(2L).name("Peas").category("FREEZER").build();
+        FridgeIngredientDto d3 = FridgeIngredientDto.builder().id(3L).name("Cheese").category("FRIDGE").build();
+
+        when(userService.findByEmail(email)).thenReturn(userDto);
+        when(fridgeIngredientRepository.findByUser_Id(userDto.getId())).thenReturn(Arrays.asList(fi1, fi2, fi3));
+        when(fridgeIngredientMapper.toFridgeIngredientDto(fi1)).thenReturn(d1);
+        when(fridgeIngredientMapper.toFridgeIngredientDto(fi2)).thenReturn(d2);
+        when(fridgeIngredientMapper.toFridgeIngredientDto(fi3)).thenReturn(d3);
+
+        Map<String, List<FridgeIngredientDto>> result = fridgeService.getFridgeIngredientGroupedByCategory(email);
+
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals(2, result.get("FRIDGE").size());
+        assertEquals(1, result.get("FREEZER").size());
+    }
+
+    @Test
+    void getFridgeIngredientGroupedByCategory_shouldReturnEmptyMap_whenNoIngredients() {
+        String email = "empty@example.com";
+        UserDto userDto = UserDto.builder().id(10L).email(email).build();
+        when(userService.findByEmail(email)).thenReturn(userDto);
+        when(fridgeIngredientRepository.findByUser_Id(userDto.getId())).thenReturn(Collections.emptyList());
+
+        Map<String, List<FridgeIngredientDto>> result = fridgeService.getFridgeIngredientGroupedByCategory(email);
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void addFridgeIngredient_shouldThrowAppException_whenCategoryMissing() {
+        String email = "test@example.com";
+        FridgeIngredientDto dto = FridgeIngredientDto.builder()
+                .name("Milk")
+                .unit("LITERS")
+                .amount(1.0)
+                .build();
+
+        AppException ex = assertThrows(AppException.class, () -> fridgeService.addFridgeIngredient(dto, email));
+        assertEquals("Category is required", ex.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getCode());
+    }
+
+    @Test
+    void addFridgeIngredient_shouldThrowAppException_whenInvalidCategoryProvided() {
+        String email = "test@example.com";
+        FridgeIngredientDto dto = FridgeIngredientDto.builder()
+                .name("Milk")
+                .category("INVALID_CATEGORY")
+                .unit("LITERS")
+                .amount(1.0)
+                .build();
+
+        AppException ex = assertThrows(AppException.class, () -> fridgeService.addFridgeIngredient(dto, email));
+        assertEquals("Invalid category value provided: INVALID_CATEGORY", ex.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getCode());
+    }
+
+    @Test
+    void addFridgeIngredient_shouldAcceptCaseInsensitiveUnitAndCategory() {
+        String email = "test@example.com";
+        User user = User.builder().id(5L).email(email).build();
+        FridgeIngredientDto dto = FridgeIngredientDto.builder()
+                .name("Juice")
+                .category("fridge")
+                .unit("liters")
+                .amount(2.0)
+                .expirationDate(LocalDate.now().plusDays(3))
+                .build();
+
+        FridgeIngredient mapped = FridgeIngredient.builder().name("Juice").user(user).build();
+        FridgeIngredient saved = FridgeIngredient.builder().id(100L).name("Juice").user(user).build();
+
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+        when(fridgeIngredientMapper.toFridgeIngredientWithUser(dto, user)).thenReturn(mapped);
+        when(fridgeIngredientRepository.save(mapped)).thenReturn(saved);
+
+        FridgeIngredient result = fridgeService.addFridgeIngredient(dto, email);
+        assertNotNull(result);
+        assertEquals(100L, result.getId());
+        verify(fridgeIngredientRepository).save(mapped);
+    }
+
+    @Test
+    void deleteFridgeIngredient_shouldDelete_whenUserOwnsIngredient() {
+        String email = "test@example.com";
+        Long id = 1L;
+        UserDto userDto = UserDto.builder().id(1L).email(email).build();
+        User owner = User.builder().id(1L).email(email).build();
+        FridgeIngredient fi = FridgeIngredient.builder().id(id).name("Milk").user(owner).build();
+
+        when(userService.findByEmail(email)).thenReturn(userDto);
+        when(fridgeIngredientRepository.findById(id)).thenReturn(Optional.of(fi));
+
+        fridgeService.deleteFridgeIngredient(id, email);
+
+        verify(fridgeIngredientRepository).deleteById(id);
+        verify(fridgeIngredientMapper).toFridgeIngredientDto(fi);
+    }
+
+    @Test
+    void deleteFridgeIngredient_shouldThrowForbidden_whenUserDoesNotOwnIngredient() {
+        String email = "test@example.com";
+        Long id = 2L;
+        UserDto userDto = UserDto.builder().id(1L).email(email).build();
+        User other = User.builder().id(99L).email("other@example.com").build();
+        FridgeIngredient fi = FridgeIngredient.builder().id(id).name("Milk").user(other).build();
+
+        when(userService.findByEmail(email)).thenReturn(userDto);
+        when(fridgeIngredientRepository.findById(id)).thenReturn(Optional.of(fi));
+
+        AppException ex = assertThrows(AppException.class, () -> fridgeService.deleteFridgeIngredient(id, email));
+        assertEquals("You do not have permission to delete this fridge ingredient", ex.getMessage());
+        assertEquals(HttpStatus.FORBIDDEN, ex.getCode());
+    }
 }

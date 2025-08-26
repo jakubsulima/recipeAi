@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.jakub.backendapi.entities.Enums.CategoryFridgeIngredient;
 import org.jakub.backendapi.entities.Enums.Unit;
 
 import java.time.LocalDate;
@@ -29,6 +30,10 @@ public class FridgeIngredient {
     @Column()
     @Enumerated(EnumType.STRING)
     private Unit unit;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private CategoryFridgeIngredient category;
 
     @Column(nullable = false)
     private double amount;

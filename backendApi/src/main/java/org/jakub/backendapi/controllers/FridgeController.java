@@ -22,6 +22,12 @@ public class FridgeController {
         return ResponseEntity.ok(fridgeIngredients);
     }
 
+    @GetMapping("/getFridgeIngredientsGroupedByCategory")
+    public ResponseEntity<?> getFridgeIngredientsGroupedByCategory(HttpServletRequest request) {
+        var groupedIngredients = fridgeService.getFridgeIngredientGroupedByCategory(getLoginFromToken(request));
+        return ResponseEntity.ok(groupedIngredients);
+    }
+
     @PostMapping("/addFridgeIngredient")
     public ResponseEntity<FridgeIngredientDto> addFridgeIngredient(@RequestBody FridgeIngredientDto fridgeIngredientDto, HttpServletRequest request) {
         fridgeService.addFridgeIngredient(fridgeIngredientDto, getLoginFromToken(request));
