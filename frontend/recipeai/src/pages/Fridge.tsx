@@ -1,6 +1,13 @@
 import { useState } from "react";
 import FridgeIngredientContainer from "../components/FridgeIngredientContainer";
-import { CATEGORY_VALUES, unitType, useFridge } from "../context/fridgeContext";
+import {
+  CATEGORIES,
+  CATEGORY_OPTIONS,
+  CATEGORY_VALUES,
+  FridgeIngredient,
+  unitType,
+  useFridge,
+} from "../context/fridgeContext";
 import OptionsForm from "../components/OptionsForm";
 import { formatDateForBackend } from "../lib/hooks";
 import { categoryType } from "../context/fridgeContext";
@@ -16,11 +23,31 @@ export const Fridge = () => {
   const [newItem, setNewItem] = useState<string>("");
   const [newItemDate, setNewItemDate] = useState<string>("");
   const [unit, setUnit] = useState<unitType>("kg");
-  const [categories, setCategory] = useState<categoryType>("FRIDGE");
+  const [category, setCategory] = useState<categoryType>("FRIDGE");
   const [amount, setAmount] = useState<string>("1");
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [showedCategory, setShowedCategory] = useState<categoryType | null>(
+    CATEGORIES.FRIDGE
+  );
 
+  const getCurrentCategoryIndex = () => {
+    return showedCategory ? CATEGORY_OPTIONS.indexOf(showedCategory) : 0;
+  };
+
+  const goToPreviousCategory = () => {
+    const currentIndex = getCurrentCategoryIndex();
+    const previousIndex =
+      currentIndex === 0 ? CATEGORY_OPTIONS.length - 1 : currentIndex - 1;
+    setShowedCategory(CATEGORY_OPTIONS[previousIndex]);
+  };
+
+  const goToNextCategory = () => {
+    const currentIndex = getCurrentCategoryIndex();
+    const nextIndex =
+      currentIndex === CATEGORY_OPTIONS.length - 1 ? 0 : currentIndex + 1;
+    setShowedCategory(CATEGORY_OPTIONS[nextIndex]);
+  };
   const isValidNumber = (value: string): boolean => {
     if (value.trim() === "") return false;
 
@@ -72,6 +99,7 @@ export const Fridge = () => {
         expirationDate: formattedDate,
         unit: unit,
         amount: amount,
+        category: category,
       });
 
       setNewItem("");
@@ -145,7 +173,7 @@ export const Fridge = () => {
             <OptionsForm
               name="Category"
               options={CATEGORY_VALUES}
-              currentOptions={categories}
+              currentOptions={category}
               onChange={(value) => setCategory(value as categoryType)}
               classname="mb-2"
             />
@@ -182,18 +210,47 @@ export const Fridge = () => {
           {displayError && (
             <div className="text-red-500 mb-4">{displayError}</div>
           )}
+          <div className="flex justify-center mb-4">
+            {showedCategory && (
+              <div className="flex items-center bg-gray-200 rounded-lg">
+                <button
+                  onClick={goToPreviousCategory}
+                  className="flex items-center justify-center w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-l-lg transition-colors"
+                >
+                  &lt;
+                </button>
+
+                <div className="px-6 py-2 bg-white w-64 text-center">
+                  <h2 className="text-xl font-bold whitespace-nowrap">
+                    {showedCategory.replace(/_/g, " ")}
+                  </h2>
+                </div>
+
+                <button
+                  onClick={goToNextCategory}
+                  className="flex items-center justify-center w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-r-lg transition-colors"
+                >
+                  &gt;
+                </button>
+              </div>
+            )}
+          </div>
           <ul className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {fridgeItems.map((item) => (
-              <li key={item.id}>
-                <FridgeIngredientContainer
-                  name={item.name}
-                  expirationDate={item.expirationDate || ""}
-                  amount={item.amount || ""}
-                  unit={item.unit}
-                  remove={() => removeItem(item.id)}
-                />
-              </li>
-            ))}
+            {fridgeItems
+              .filter(
+                (item: FridgeIngredient) => item.category === showedCategory
+              )
+              .map((item: FridgeIngredient) => (
+                <li key={item.id}>
+                  <FridgeIngredientContainer
+                    name={item.name}
+                    expirationDate={item.expirationDate || ""}
+                    amount={item.amount || ""}
+                    unit={item.unit}
+                    remove={() => removeItem(item.id)}
+                  />
+                </li>
+              ))}
           </ul>
         </div>
       </div>

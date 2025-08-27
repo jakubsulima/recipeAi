@@ -53,7 +53,7 @@ const Login = () => {
 
   return (
     <div className="w-full h-screen flex items-center justify-center">
-      <div className="flex flex-col items-center justify-center p-5 bg-gray-100 border rounded shadow-md">
+      <div className="flex flex-col items-center justify-center p-5 bg-secondary border rounded shadow-md">
         {error && <div className="text-red-500 mb-4">{error}</div>}
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <div>
@@ -87,15 +87,19 @@ const Login = () => {
             type="submit"
             disabled={isSubmitting}
             className={`${
-              isSubmitting ? "bg-blue-300" : "bg-blue-500"
-            } text-white px-4 py-2 rounded`}
+              isSubmitting ? "bg-blue-300" : "bg-primary"
+            } text-black px-4 py-2 rounded`}
           >
             {isSubmitting ? "Logging in..." : "Login"}
           </button>
-          <div className="text-center mt-2">
-            <a href="/register" className="text-blue-500 hover:underline">
-              Don't have an account? Register
-            </a>
+          <div className="text-center mt-2 flex-col gap-2 justify-center">
+            <p className="text-black pb-2">Don't have an account?</p>
+            <button
+              onClick={() => navigate("/register")}
+              className="text-black hover:cursor-pointer bg-primary px-4 py-2 rounded"
+            >
+              Register
+            </button>
           </div>
         </form>
       </div>

@@ -36,7 +36,7 @@ const Navbar = () => {
   const navItems = getNavItems();
 
   return (
-    <div className={`flex bg-primary p-4 fixed top-0 left-0 w-full z-50`}>
+    <div className="flex bg-primary p-4 fixed top-0 left-0 w-full z-50">
       <nav className="container mx-auto">
         <ul className="flex space-x-4 text-black justify-between">
           <li className="hover:text-gray-400">

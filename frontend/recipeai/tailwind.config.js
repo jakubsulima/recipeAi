@@ -14,6 +14,10 @@ module.exports = {
         highlight: "#FFF9C4", // Marked elements
         background: "#FFFFFF", // Background
       },
+      fontFamily: {
+        roboto: ["Roboto", "sans-serif"],
+        sans: ["Roboto", "sans-serif"], // Make Roboto the default sans font
+      },
     },
   },
   plugins: [],

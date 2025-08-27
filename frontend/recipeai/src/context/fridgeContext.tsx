@@ -8,6 +8,7 @@ export interface FridgeIngredient {
   expirationDate: string | null;
   amount?: string;
   unit: unitType;
+  category: categoryType;
 }
 
 interface FridgeContextType {
@@ -111,6 +112,7 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
         name: item.name,
         expirationDate: item.expirationDate,
         amount: item.amount,
+        category: item.category,
         unit: UNITS[item.unit], // Use UNITS instead of Unit enum
       });
 

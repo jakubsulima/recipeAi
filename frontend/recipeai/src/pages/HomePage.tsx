@@ -22,18 +22,18 @@ const HomePage = () => {
 
   return (
     <>
-      <div className="flex flex-col">
-        <div className="text-center w-full md:p-11 p-">
+      <section className="flex flex-col">
+        <article className="text-center w-full md:p-11 pr-5 pl-5">
           <h1 className="flex-col p-5">
             Welcome to AI Kitchen! &#127869; &#129302;
           </h1>
-          <div className="relative w-full">
+          <article className="relative w-full">
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search for recipes..."
-              className="p-2 pr-10 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+              placeholder="Create recipe"
+              className="p-2 pr-10 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary w-full"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   let finalSearch = search;
@@ -79,44 +79,44 @@ const HomePage = () => {
                 </svg>
               </button>
             )}
-          </div>
-        </div>
-        <ButtonsForm
-          options={controlsMeal}
-          onButtonClick={setSelectedMeal}
-          selectedButton={selectedMeal}
-          title="Select Meal Type"
-        ></ButtonsForm>
-        <ButtonsForm
-          options={controlsCuisine}
-          onButtonClick={setSelectedCuisine}
-          selectedButton={selectedCuisine}
-          title="Select Cuisine"
-        ></ButtonsForm>
-        <ButtonsForm
-          options={controlsTime}
-          onButtonClick={setSelectedTime}
-          selectedButton={selectedTime}
-          title="Select Time to Prepare"
-        ></ButtonsForm>
-        <section
-          className="flex bg-[#FFF9C4] flex-col text-center md:flex-row p-5 md:pt-10 md:pb-10 
-        "
-        >
+          </article>
+          <section className="pb-5 pt-5 space-y-4">
+            <ButtonsForm
+              options={controlsMeal}
+              onButtonClick={setSelectedMeal}
+              selectedButton={selectedMeal}
+              title="Select Meal Type:"
+            ></ButtonsForm>
+            <ButtonsForm
+              options={controlsCuisine}
+              onButtonClick={setSelectedCuisine}
+              selectedButton={selectedCuisine}
+              title="Select Cuisine:"
+            ></ButtonsForm>
+            <ButtonsForm
+              options={controlsTime}
+              onButtonClick={setSelectedTime}
+              selectedButton={selectedTime}
+              title="Select Time to Prepare:"
+            ></ButtonsForm>
+          </section>
+        </article>
+
+        <section className="flex bg-primary flex-col text-center md:flex-row p-5 md:pt-10 md:pb-10 ">
           <p className="pt-2 md:pt-0">
-            ?? No idea what to cook? Let our AI suggest recipes based on your
+            🧑‍🍳 No idea what to cook? Let our AI suggest recipes based on your
             mood, time, and dietary preferences!
           </p>
           <p className="pt-2 md:pt-0">
-            ?? Virtual Fridge � Add whatever ingredients you have at home, and
+            🥗 Virtual Fridge 🍱 Add whatever ingredients you have at home, and
             we'll generate the perfect meal ideas for you.
           </p>
           <p className="pt-2 md:pt-0">
-            ?? Save & Organize � Keep your favorite recipes in one place and
+            🍽️ Save & Organize Keep your favorite recipes in one place and
             revisit them anytime!
           </p>
         </section>
-      </div>
+      </section>
     </>
   );
 };
