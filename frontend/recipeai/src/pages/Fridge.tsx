@@ -9,7 +9,7 @@ import {
   useFridge,
 } from "../context/fridgeContext";
 import OptionsForm from "../components/OptionsForm";
-import { formatDateForBackend } from "../lib/hooks";
+import { formatDateForBackend, hasAmountError } from "../lib/hooks";
 import { categoryType } from "../context/fridgeContext";
 
 export const Fridge = () => {
@@ -26,6 +26,7 @@ export const Fridge = () => {
   const [category, setCategory] = useState<categoryType>("FRIDGE");
   const [amount, setAmount] = useState<string>("1");
   const [error, setError] = useState<string>("");
+  const [dateError, setDateError] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showedCategory, setShowedCategory] = useState<categoryType | null>(
     CATEGORIES.FRIDGE
@@ -48,19 +49,32 @@ export const Fridge = () => {
       currentIndex === CATEGORY_OPTIONS.length - 1 ? 0 : currentIndex + 1;
     setShowedCategory(CATEGORY_OPTIONS[nextIndex]);
   };
-  const isValidNumber = (value: string): boolean => {
-    if (value.trim() === "") return false;
 
-    const numberRegex = /^[0-9]*\.?[0-9]+$/;
+  const validateDate = (dateString: string) => {
+    if (!dateString) {
+      setDateError("");
+      return true;
+    }
 
-    if (!numberRegex.test(value.trim())) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selectedDate = new Date(dateString);
+    selectedDate.setHours(0, 0, 0, 0);
 
-    const num = parseFloat(value.trim());
-    return !isNaN(num) && num > 0;
+    if (selectedDate < today) {
+      setDateError("Expiration date cannot be in the past");
+      return false;
+    }
+
+    setDateError("");
+    return true;
   };
 
-  const hasAmountError = (): boolean => {
-    return amount.trim() !== "" && !isValidNumber(amount);
+  // Handle date input change
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newDate = e.target.value;
+    setNewItemDate(newDate);
+    validateDate(newDate);
   };
 
   const addItem = async () => {
@@ -71,21 +85,9 @@ export const Fridge = () => {
       return;
     }
 
-    if (!isValidNumber(amount)) {
-      setError("Amount must be a valid positive number");
+    // Validate date before submitting
+    if (!validateDate(newItemDate)) {
       return;
-    }
-
-    if (newItemDate) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const selectedDate = new Date(newItemDate);
-      selectedDate.setHours(0, 0, 0, 0);
-
-      if (selectedDate < today) {
-        setError("Expiration date cannot be in the past");
-        return;
-      }
     }
 
     setIsLoading(true);
@@ -105,6 +107,7 @@ export const Fridge = () => {
       setNewItem("");
       setNewItemDate("");
       setAmount("1");
+      setDateError(""); // Clear date error on success
     } catch (err: any) {
       const errorMsg =
         typeof err === "object" && err !== null && "message" in err
@@ -138,8 +141,11 @@ export const Fridge = () => {
 
   return (
     <>
-      <div className="container mx-auto p-6 grid md:grid-cols-2 gap-8">
+      <div className="container mx-auto p-6 grid grid-cols-1 md:grid-cols-3">
         <div className="w-full p-6 bg-white rounded-lg shadow-md h-fit">
+          {displayError && (
+            <div className="text-red-500 mb-4">{displayError}</div>
+          )}
           <h1 className="text-2xl font-bold mb-4">Add to Fridge</h1>
           <div className="mb-4">
             <input
@@ -147,22 +153,32 @@ export const Fridge = () => {
               value={newItem}
               onChange={(e) => setNewItem(e.target.value)}
               placeholder="Add new item *"
-              className={`border rounded p-2 w-full mb-2 ${
+              className={`border rounded p-2 w-full mb-2 focus:outline-none focus:ring-2 focus:ring-highlight focus:border-highlight ${
                 error && !newItem.trim() ? "border-red-500" : "border-gray-300"
               }`}
+              style={{ WebkitTapHighlightColor: "transparent" }}
               disabled={displayLoading}
               required
             />
+
             <label className="block mb-1 text-sm text-gray-600">
               Expiration date <span className="text-gray-400">(optional)</span>
             </label>
             <input
               type="date"
               value={newItemDate}
-              onChange={(e) => setNewItemDate(e.target.value)}
-              className={`border rounded p-2 w-full mb-2`}
+              onChange={handleDateChange}
+              className={`border rounded p-2 w-full mb-2 focus:outline-none focus:ring-2 focus:ring-highlight focus:border-highlight ${
+                dateError ? "border-red-500" : "border-gray-300"
+              }`}
+              style={{ WebkitTapHighlightColor: "transparent" }}
               disabled={displayLoading}
             />
+            {/* Date error message below the date input */}
+            {dateError && (
+              <p className="text-red-500 text-sm mb-2">{dateError}</p>
+            )}
+
             <OptionsForm
               name="Unit"
               options={["g", "kg", "ml", "l", "pcs", ""]}
@@ -177,45 +193,52 @@ export const Fridge = () => {
               onChange={(value) => setCategory(value as categoryType)}
               classname="mb-2"
             />
-            <label className="block mb-1 text-sm text-gray-600"></label>
-            Amount <span className="text-gray-400">(optional)</span>
+            <label className="block mb-1 text-sm text-gray-600">
+              Amount <span className="text-gray-400">(optional)</span>
+            </label>
             <input
               type="text"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="Amount (e.g., 1.5)"
-              className={`border rounded p-2 w-full mb-2 ${
-                hasAmountError() ? "border-red-500" : "border-gray-300"
+              className={`border rounded p-2 w-full mb-2 focus:outline-none focus:ring-2 focus:ring-highlight focus:border-highlight ${
+                hasAmountError(amount) ? "border-red-500" : "border-gray-300"
               }`}
+              style={{ WebkitTapHighlightColor: "transparent" }}
               disabled={displayLoading}
               required
             />
-            {hasAmountError() && (
+            {hasAmountError(amount) && (
               <p className="text-red-500 text-sm mb-2">
                 Please enter a valid positive number
               </p>
             )}
             <button
               onClick={() => addItem()}
-              disabled={displayLoading || hasAmountError() || !amount.trim()}
-              className="mt-2 bg-main text-black px-4 py-2 rounded w-full hover:bg-yellow-400 disabled:opacity-50"
+              disabled={
+                displayLoading ||
+                hasAmountError(amount) ||
+                !amount.trim() ||
+                !!dateError
+              }
+              className="mt-2 bg-primary text-black px-4 py-2 rounded w-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {displayLoading ? "Adding..." : "Add Item"}
             </button>
           </div>
         </div>
 
-        <div className="w-full p-6 bg-white rounded-lg shadow-md">
+        <div
+          className="w-full p-6 bg-white rounded-lg shadow-md
+        col-span-2"
+        >
           <h1 className="text-2xl font-bold mb-4">My Fridge</h1>
-          {displayError && (
-            <div className="text-red-500 mb-4">{displayError}</div>
-          )}
           <div className="flex justify-center mb-4">
             {showedCategory && (
               <div className="flex items-center bg-gray-200 rounded-lg">
                 <button
                   onClick={goToPreviousCategory}
-                  className="flex items-center justify-center w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-l-lg transition-colors"
+                  className="flex items-center justify-center w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-l-lg transition-colors cursor-pointer"
                 >
                   &lt;
                 </button>
@@ -228,14 +251,14 @@ export const Fridge = () => {
 
                 <button
                   onClick={goToNextCategory}
-                  className="flex items-center justify-center w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-r-lg transition-colors"
+                  className="flex items-center justify-center w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-r-lg transition-colors cursor-pointer"
                 >
                   &gt;
                 </button>
               </div>
             )}
           </div>
-          <ul className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <ul className="grid md:grid-cols-3 gap-4">
             {fridgeItems
               .filter(
                 (item: FridgeIngredient) => item.category === showedCategory

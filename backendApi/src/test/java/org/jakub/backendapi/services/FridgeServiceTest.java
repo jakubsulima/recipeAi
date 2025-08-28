@@ -147,7 +147,7 @@ class FridgeServiceTest {
     void addFridgeIngredient_shouldThrowAppException_whenUserNotFound() {
         // Given
         String email = "nonexistent@example.com";
-        FridgeIngredientDto fridgeIngredientDto = FridgeIngredientDto.builder().name("Milk").amount(1.0).category("FRIDGE").build();
+        FridgeIngredientDto fridgeIngredientDto = FridgeIngredientDto.builder().name("Milk").amount(1.0).category("FRIDGE   ").build();
         String expectedErrorMessage = "User not found";
 
         when(userRepository.findByEmail(email)).thenReturn(Optional.empty());

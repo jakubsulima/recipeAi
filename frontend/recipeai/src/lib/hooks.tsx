@@ -130,3 +130,18 @@ export const formatDateForBackend = (dateString: string): string => {
   const year = date.getFullYear();
   return `${day}-${month}-${year}`;
 };
+
+export const isValidNumber = (value: string): boolean => {
+  if (value.trim() === "") return false;
+
+  const numberRegex = /^[0-9]*\.?[0-9]+$/;
+
+  if (!numberRegex.test(value.trim())) return false;
+
+  const num = parseFloat(value.trim());
+  return !isNaN(num) && num > 0;
+};
+
+export const hasAmountError = (amount: string): boolean => {
+  return amount.trim() !== "" && !isValidNumber(amount);
+};
