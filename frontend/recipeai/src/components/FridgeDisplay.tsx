@@ -1,0 +1,73 @@
+import React from "react";
+import { FridgeIngredient, categoryType } from "../context/fridgeContext";
+import CategorySwitcher from "./CategorySwitcher";
+import FridgeIngredientContainer from "./FridgeIngredientContainer";
+
+interface FridgeDisplayProps {
+  fridgeItems: FridgeIngredient[];
+  showedCategory: categoryType | null;
+  goToPreviousCategory: () => void;
+  goToNextCategory: () => void;
+  removeItem: (id: number) => void;
+  error: string;
+}
+
+// Helper function to format the date
+const formatShortDate = (dateString: string | null): string => {
+  if (!dateString) {
+    return "";
+  }
+  // Assuming the format is always DD-MM-YYYY
+  const parts = dateString.split("-");
+  if (parts.length === 3 && parts[2].length === 4) {
+    const shortYear = parts[2].slice(-2); // Get the last 2 digits of the year
+    return `${parts[0]}-${parts[1]}-${shortYear}`;
+  }
+  // Return original string if format is not as expected
+  return dateString;
+};
+
+const FridgeDisplay: React.FC<FridgeDisplayProps> = ({
+  fridgeItems,
+  showedCategory,
+  goToPreviousCategory,
+  goToNextCategory,
+  removeItem,
+  error,
+}) => {
+  const filteredItems = showedCategory
+    ? fridgeItems.filter((item) => item.category === showedCategory)
+    : [];
+
+  return (
+    <div className="md:col-span-2 w-full p-6 bg-white rounded-lg shadow-md">
+      <h1 className="text-2xl font-bold mb-4">My Fridge</h1>
+      {error && <div className="text-red-500 mb-4">{error}</div>}
+      <CategorySwitcher
+        currentCategory={showedCategory}
+        onPrevious={goToPreviousCategory}
+        onNext={goToNextCategory}
+      />
+      <ul className="grid md:grid-cols-3 gap-4">
+        {filteredItems.map((item: FridgeIngredient) => (
+          <li key={item.id}>
+            <FridgeIngredientContainer
+              name={item.name}
+              expirationDate={formatShortDate(item.expirationDate)}
+              amount={item.amount || ""}
+              unit={item.unit}
+              remove={() => removeItem(item.id)}
+            />
+          </li>
+        ))}
+      </ul>
+      {filteredItems.length === 0 && showedCategory && (
+        <div className="text-center text-gray-500 py-8">
+          No items in {showedCategory.replace(/_/g, " ").toLowerCase()}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default FridgeDisplay;

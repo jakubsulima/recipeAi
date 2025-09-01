@@ -250,7 +250,7 @@ const RecipePage = () => {
         {!recipeId && user && (
           <div className="mb-8">
             <button
-              className="bg-main text-black px-4 py-2 rounded"
+              className="bg-primary text-black px-4 py-2 rounded-md"
               onClick={() => saveRecipe()}
             >
               Save Recipe
@@ -261,7 +261,7 @@ const RecipePage = () => {
         {recipeId && user && (
           <div className="mb-8">
             <button
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md"
               onClick={handleDelete}
             >
               Delete Recipe
@@ -272,7 +272,7 @@ const RecipePage = () => {
         {!recipeId && (
           <div className="mb-8">
             <button
-              className="bg-main text-black px-4 py-2 rounded"
+              className="bg-primary rounded-md text-black px-4 py-2"
               onClick={() => loadNewRecipeCallback(search)}
             >
               I want new recipe

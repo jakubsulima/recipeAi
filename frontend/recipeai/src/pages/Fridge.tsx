@@ -1,16 +1,14 @@
 import { useState } from "react";
-import FridgeIngredientContainer from "../components/FridgeIngredientContainer";
 import {
   CATEGORIES,
   CATEGORY_OPTIONS,
-  CATEGORY_VALUES,
-  FridgeIngredient,
   unitType,
   useFridge,
 } from "../context/fridgeContext";
-import OptionsForm from "../components/OptionsForm";
-import { formatDateForBackend, hasAmountError } from "../lib/hooks";
+import { formatDateForBackend } from "../lib/hooks";
 import { categoryType } from "../context/fridgeContext";
+import AddFridgeItemForm from "../components/AddFridgeItemForm";
+import FridgeDisplay from "../components/FridgeDisplay";
 
 export const Fridge = () => {
   const {
@@ -141,141 +139,32 @@ export const Fridge = () => {
 
   return (
     <>
-      <div className="container mx-auto p-6 grid grid-cols-1 md:grid-cols-3">
-        <div className="w-full p-6 bg-white rounded-lg shadow-md h-fit">
-          {displayError && (
-            <div className="text-red-500 mb-4">{displayError}</div>
-          )}
-          <h1 className="text-2xl font-bold mb-4">Add to Fridge</h1>
-          <div className="mb-4">
-            <input
-              type="text"
-              value={newItem}
-              onChange={(e) => setNewItem(e.target.value)}
-              placeholder="Add new item *"
-              className={`border rounded p-2 w-full mb-2 focus:outline-none focus:ring-2 focus:ring-highlight focus:border-highlight ${
-                error && !newItem.trim() ? "border-red-500" : "border-gray-300"
-              }`}
-              style={{ WebkitTapHighlightColor: "transparent" }}
-              disabled={displayLoading}
-              required
-            />
+      <div className="container mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-8">
+        <AddFridgeItemForm
+          newItem={newItem}
+          setNewItem={setNewItem}
+          newItemDate={newItemDate}
+          handleDateChange={handleDateChange}
+          unit={unit}
+          setUnit={setUnit}
+          category={category}
+          setCategory={setCategory}
+          amount={amount}
+          setAmount={setAmount}
+          addItem={addItem}
+          error={displayError}
+          dateError={dateError}
+          displayLoading={displayLoading}
+        />
 
-            <label className="block mb-1 text-sm text-gray-600">
-              Expiration date <span className="text-gray-400">(optional)</span>
-            </label>
-            <input
-              type="date"
-              value={newItemDate}
-              onChange={handleDateChange}
-              className={`border rounded p-2 w-full mb-2 focus:outline-none focus:ring-2 focus:ring-highlight focus:border-highlight ${
-                dateError ? "border-red-500" : "border-gray-300"
-              }`}
-              style={{ WebkitTapHighlightColor: "transparent" }}
-              disabled={displayLoading}
-            />
-            {/* Date error message below the date input */}
-            {dateError && (
-              <p className="text-red-500 text-sm mb-2">{dateError}</p>
-            )}
-
-            <OptionsForm
-              name="Unit"
-              options={["g", "kg", "ml", "l", "pcs", ""]}
-              currentOptions={unit}
-              onChange={(value) => setUnit(value as unitType)}
-              classname="mb-2"
-            />
-            <OptionsForm
-              name="Category"
-              options={CATEGORY_VALUES}
-              currentOptions={category}
-              onChange={(value) => setCategory(value as categoryType)}
-              classname="mb-2"
-            />
-            <label className="block mb-1 text-sm text-gray-600">
-              Amount <span className="text-gray-400">(optional)</span>
-            </label>
-            <input
-              type="text"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="Amount (e.g., 1.5)"
-              className={`border rounded p-2 w-full mb-2 focus:outline-none focus:ring-2 focus:ring-highlight focus:border-highlight ${
-                hasAmountError(amount) ? "border-red-500" : "border-gray-300"
-              }`}
-              style={{ WebkitTapHighlightColor: "transparent" }}
-              disabled={displayLoading}
-              required
-            />
-            {hasAmountError(amount) && (
-              <p className="text-red-500 text-sm mb-2">
-                Please enter a valid positive number
-              </p>
-            )}
-            <button
-              onClick={() => addItem()}
-              disabled={
-                displayLoading ||
-                hasAmountError(amount) ||
-                !amount.trim() ||
-                !!dateError
-              }
-              className="mt-2 bg-primary text-black px-4 py-2 rounded w-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {displayLoading ? "Adding..." : "Add Item"}
-            </button>
-          </div>
-        </div>
-
-        <div
-          className="w-full p-6 bg-white rounded-lg shadow-md
-        col-span-2"
-        >
-          <h1 className="text-2xl font-bold mb-4">My Fridge</h1>
-          <div className="flex justify-center mb-4">
-            {showedCategory && (
-              <div className="flex items-center bg-gray-200 rounded-lg">
-                <button
-                  onClick={goToPreviousCategory}
-                  className="flex items-center justify-center w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-l-lg transition-colors cursor-pointer"
-                >
-                  &lt;
-                </button>
-
-                <div className="px-6 py-2 bg-white w-64 text-center">
-                  <h2 className="text-xl font-bold whitespace-nowrap">
-                    {showedCategory.replace(/_/g, " ")}
-                  </h2>
-                </div>
-
-                <button
-                  onClick={goToNextCategory}
-                  className="flex items-center justify-center w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-r-lg transition-colors cursor-pointer"
-                >
-                  &gt;
-                </button>
-              </div>
-            )}
-          </div>
-          <ul className="grid md:grid-cols-3 gap-4">
-            {fridgeItems
-              .filter(
-                (item: FridgeIngredient) => item.category === showedCategory
-              )
-              .map((item: FridgeIngredient) => (
-                <li key={item.id}>
-                  <FridgeIngredientContainer
-                    name={item.name}
-                    expirationDate={item.expirationDate || ""}
-                    amount={item.amount || ""}
-                    unit={item.unit}
-                    remove={() => removeItem(item.id)}
-                  />
-                </li>
-              ))}
-          </ul>
-        </div>
+        <FridgeDisplay
+          fridgeItems={fridgeItems}
+          showedCategory={showedCategory}
+          goToPreviousCategory={goToPreviousCategory}
+          goToNextCategory={goToNextCategory}
+          removeItem={removeItem}
+          error={displayError}
+        />
       </div>
     </>
   );

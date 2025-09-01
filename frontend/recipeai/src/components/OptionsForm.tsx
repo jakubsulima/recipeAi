@@ -10,6 +10,7 @@ interface OptionsFormProps {
   onChange?: (value: string) => void;
   showSubmitButton?: boolean;
   buttonText?: string;
+  label?: string;
 }
 
 const OptionsForm = ({
@@ -18,10 +19,10 @@ const OptionsForm = ({
   currentOptions,
   onSaveOptions,
   onChange,
-  children,
   classname,
   showSubmitButton = false,
   buttonText = "Save",
+  label,
 }: OptionsFormProps) => {
   const [selectedOption, setSelectedOption] = useState(currentOptions);
 
@@ -38,45 +39,38 @@ const OptionsForm = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (onSaveOptions) {
+    if (onSaveOptions && selectedOption) {
       onSaveOptions(selectedOption);
     }
   };
 
   return (
-    <article className={classname}>
-      <label
-        htmlFor={name}
-        className="block mb-2 text-sm font-medium text-gray-700"
+    <form onSubmit={handleSubmit} className={`space-y-4 ${classname}`}>
+      <label className="text-sm font-medium text-gray-700">{label}</label>
+      <select
+        name={name}
+        value={selectedOption}
+        onChange={(e) => handleSelectChange(e.target.value)}
+        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
       >
-        {name}
-      </label>
-      <form onSubmit={handleSubmit}>
-        <select
-          name={name}
-          value={selectedOption}
-          onChange={(e) => handleSelectChange(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        <option value="">{currentOptions ? "None" : "Select a diet..."}</option>
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+
+      {showSubmitButton && (
+        <button
+          type="submit"
+          disabled={selectedOption === currentOptions}
+          className="w-full px-4 py-2 bg-main text-black rounded-md focus:outline-none focus:ring-2 focus:ring-main bg-primary"
         >
-          {options.map((option) => (
-            <option key={option} value={option}>
-              {option || "None"}
-            </option>
-          ))}
-        </select>
-
-        {children}
-
-        {showSubmitButton && (
-          <button
-            type="submit"
-            className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            {buttonText}
-          </button>
-        )}
-      </form>
-    </article>
+          {buttonText}
+        </button>
+      )}
+    </form>
   );
 };
 

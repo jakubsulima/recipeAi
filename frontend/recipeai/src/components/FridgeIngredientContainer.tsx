@@ -16,22 +16,28 @@ const FridgeIngredientContainer = ({
   remove,
 }: Props) => {
   return (
-    <>
-      <section className="flex flex-row w-full justify-between items-center">
-        <article className="flex flex-col">
-          <h1>{name}|</h1>
-          <article className="flex flex-row">
-            <p>
-              {amount} {unit}
-              {expirationDate && ` | ${expirationDate}`}
-            </p>
-          </article>
-        </article>
-        <button className=" text-black px-4 py-2 rounded" onClick={remove}>
-          X
-        </button>
-      </section>
-    </>
+    <div className="flex w-full items-center justify-between border-b border-primary py-4">
+      <div className="flex flex-col">
+        <h1 className="font-semibold text-gray-800">{name}</h1>
+        <div className="flex flex-row text-sm text-gray-500">
+          <p>
+            {amount} {unit}
+            {expirationDate && (
+              <span className="ml-2 border-l border-gray-300 pl-2">
+                {expirationDate}
+              </span>
+            )}
+          </p>
+        </div>
+      </div>
+      <button
+        className="text-gray-400 hover:text-red-500 text-2xl font-light transition-colors"
+        onClick={remove}
+        aria-label={`Remove ${name}`}
+      >
+        &times;
+      </button>
+    </div>
   );
 };
 
