@@ -1,12 +1,12 @@
 server:
   address: 0.0.0.0
-  port: ${PORT:8080}  # Use environment variable for cloud deployment
+  port: ${PORT:8080} # Use environment variable for cloud deployment
 
 spring:
   datasource:
-    url: ${DATABASE_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: ${POSTGRES_URL}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 20
@@ -17,8 +17,8 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate  # Never use 'update' in production
-    show-sql: false  # Disable SQL logging
+      ddl-auto: validate # Never use 'update' in production
+    show-sql: false # Disable SQL logging
     properties:
       hibernate:
         format_sql: false
@@ -28,6 +28,12 @@ spring:
         order_updates: true
     database: postgresql
     database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    validate-on-migrate: true
 
 logging:
   level:

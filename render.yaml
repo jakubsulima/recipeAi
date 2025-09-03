@@ -12,7 +12,25 @@ services:
       - key: NGINX_PROXY_PASS
         value: http://backend:8080
 
-  # 2. The Backend Private Service (Internal)
+  # 2. The PostgreSQL Database Service (Docker Container)
+  - type: pserv
+    name: postgres-db
+    env: docker
+    dockerfilePath: ./Dockerfile.postgres
+    dockerContext: .
+    disk:
+      name: postgres-data
+      mountPath: /var/lib/postgresql/data
+      sizeGB: 1
+    envVars:
+      - key: POSTGRES_DB
+        value: recipeai
+      - key: POSTGRES_USER
+        value: recipe_user
+      - key: POSTGRES_PASSWORD
+        sync: false # Manage this secret in the dashboard
+
+  # 3. The Backend Private Service (Internal)
   - type: pserv # 'pserv' means Private Service
     name: backend
     env: docker
@@ -21,24 +39,11 @@ services:
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
-      - key: DATABASE_URL
-        fromDatabase:
-          name: recipe-db # Matches the database name below
-          property: connectionString
-      - key: DB_USERNAME
-        fromDatabase:
-          name: recipe-db
-          property: user
-      - key: DB_PASSWORD
-        fromDatabase:
-          name: recipe-db
-          property: password
+      - key: POSTGRES_URL
+        value: jdbc:postgresql://postgres-db:5432/recipeai
+      - key: POSTGRES_USER
+        value: recipe_user
+      - key: POSTGRES_PASSWORD
+        sync: false # This is a secret, manage it in the dashboard
       - key: GEMINI_API_KEY
         sync: false # This is a secret, manage it in the dashboard
-
-  # 3. The PostgreSQL Managed Database
-  - type: db
-    name: recipe-db
-    databaseName: recipeai # The name of the database inside Postgres
-    user: recipe_user
-    plan: free # Or a paid plan for production
