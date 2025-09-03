@@ -12,7 +12,7 @@ services:
   # 2. The PostgreSQL Database Service (Official Image, no build)
   - type: pserv
     name: postgres-db
-    env: docker
+    env: image
     image: postgres:15
     disk:
       name: postgres-data
