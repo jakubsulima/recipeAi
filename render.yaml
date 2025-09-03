@@ -13,7 +13,7 @@ services:
   - type: pserv
     name: postgres-db
     env: docker
-    dockerImage: postgres:15
+    image: postgres:15
     disk:
       name: postgres-data
       mountPath: /var/lib/postgresql/data
