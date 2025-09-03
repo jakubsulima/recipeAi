@@ -14,7 +14,6 @@ public class CommaSeparatedStringToArrayDeserializer extends JsonDeserializer<St
         if (value == null || value.trim().isEmpty()) {
             return new String[0];
         }
-        // Split by comma, and trim whitespace from each element.
         return value.trim().split("\\s*,\\s*");
     }
 }

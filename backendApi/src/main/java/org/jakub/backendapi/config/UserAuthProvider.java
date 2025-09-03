@@ -33,28 +33,25 @@ public class UserAuthProvider {
         secretKey = Base64.getEncoder().encodeToString(secretKey.getBytes());
     }
 
-    // **Create Access Token**
-    public String createToken(String email) { // Changed parameter from login to email
+    public String createToken(String email) { 
         UserDto userDto = userService.findByEmail(email);
         Date now = new Date();
-        Date expirationDate = new Date(now.getTime() + 1_800_000); // 30 minutes
+        Date expirationDate = new Date(now.getTime() + 1_800_000); 
         return JWT.create()
-                .withIssuer(email) // Changed from login to email
-                .withClaim("type", "access") // Custom claim to identify access token
-                .withClaim("role", userDto.getRole().name()) // Add role to token
+                .withIssuer(email) 
+                .withClaim("type", "access") 
+                .withClaim("role", userDto.getRole().name()) 
                 .withIssuedAt(now)
                 .withExpiresAt(expirationDate)
                 .sign(Algorithm.HMAC256(secretKey));
     }
 
-    // **Validate Access Token**
     public Authentication validateToken(String token) {
         DecodedJWT decodedJWT;
         try {
             JWTVerifier verifier = JWT.require(Algorithm.HMAC256(secretKey)).build();
             decodedJWT = verifier.verify(token);
         } catch (com.auth0.jwt.exceptions.JWTVerificationException e) {
-            // Token is invalid (expired, signature mismatch, etc.)
             throw new BadCredentialsException("Invalid token", e);
         }
 
@@ -112,9 +109,9 @@ public class UserAuthProvider {
     public ArrayList<ResponseCookie> setHttpOnlyCookie(String accessToken, String refreshToken) {
         ResponseCookie accessCookie = ResponseCookie.from("access_token", accessToken)
                 .httpOnly(true)
-                .secure(false) // Set true in production (requires HTTPS)
+                .secure(false)  
                 .path("/")
-                .maxAge(60 * 60) // 15 minutes
+                .maxAge(60 * 60) // 1 hour
                 .sameSite("Lax")
                 .build();
 
