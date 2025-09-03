@@ -3,8 +3,8 @@ services:
   - type: web
     name: frontend
     env: docker
-    dockerfilePath: frontend/recipeai/Dockerfile
-    dockerContext: frontend/recipeai
+    dockerfilePath: ./frontend/recipeai/Dockerfile
+    dockerContext: ./frontend/recipeai
     envVars:
       - key: NGINX_PROXY_PASS
         value: http://backend:8080
@@ -30,8 +30,8 @@ services:
   - type: pserv
     name: backend
     env: docker
-    dockerfilePath: backendApi/Dockerfile
-    dockerContext: backendApi
+    dockerfilePath: ./backendApi/Dockerfile
+    dockerContext: ./backendApi
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
