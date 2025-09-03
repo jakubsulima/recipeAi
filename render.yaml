@@ -16,8 +16,8 @@ services:
   - type: pserv
     name: postgres-db
     env: docker
-    dockerfilePath: ./Dockerfile.postgres
-    dockerContext: .
+    dockerfilePath: ./postgres/Dockerfile
+    dockerContext: ./postgres
     disk:
       name: postgres-data
       mountPath: /var/lib/postgresql/data

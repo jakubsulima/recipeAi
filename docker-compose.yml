@@ -42,7 +42,7 @@ services:
       - recipe-net
 
   db:
-    image: postgres:15
+    image: postgres:13
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
