@@ -5,19 +5,15 @@ services:
     env: docker
     dockerfilePath: ./frontend/recipeai/Dockerfile
     dockerContext: ./frontend/recipeai
-    # Nginx proxy_pass will use this internal URL
-    # The backend service name is 'backend' (defined below)
-    # and Render exposes it on port 8080.
     envVars:
       - key: NGINX_PROXY_PASS
         value: http://backend:8080
 
-  # 2. The PostgreSQL Database Service (Docker Container)
+  # 2. The PostgreSQL Database Service (Official Image, no build)
   - type: pserv
     name: postgres-db
     env: docker
-    dockerfilePath: ./postgres/Dockerfile
-    dockerContext: ./postgres
+    dockerImage: postgres:15
     disk:
       name: postgres-data
       mountPath: /var/lib/postgresql/data
@@ -30,8 +26,8 @@ services:
       - key: POSTGRES_PASSWORD
         sync: false # Manage this secret in the dashboard
 
-  # 3. The Backend Private Service (Internal)
-  - type: pserv # 'pserv' means Private Service
+  # 3. The Backend Private Service (Spring Boot API)
+  - type: pserv
     name: backend
     env: docker
     dockerfilePath: ./backendApi/Dockerfile
@@ -39,11 +35,11 @@ services:
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
-      - key: POSTGRES_URL
+      - key: SPRING_DATASOURCE_URL
         value: jdbc:postgresql://postgres-db:5432/recipeai
-      - key: POSTGRES_USER
+      - key: SPRING_DATASOURCE_USERNAME
         value: recipe_user
-      - key: POSTGRES_PASSWORD
-        sync: false # This is a secret, manage it in the dashboard
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false # secret managed in Render dashboard
       - key: GEMINI_API_KEY
-        sync: false # This is a secret, manage it in the dashboard
+        sync: false # secret managed in Render dashboardage it in the dashboard
