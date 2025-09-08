@@ -5,9 +5,11 @@ COPY mvnw .
 RUN chmod +x mvnw
 COPY .mvn .mvn
 COPY pom.xml .
-RUN ./mvnw dependency:go-offline
+# Use a persistent cache and parallel builds for speed
+RUN --mount=type=cache,target=/root/.m2 ./mvnw -T 1C dependency:go-offline
 COPY src ./src
-RUN ./mvnw clean install -DskipTests
+# Use the cache and parallel builds again
+RUN --mount=type=cache,target=/root/.m2 ./mvnw -T 1C clean install -DskipTests
 
 # Stage 2: Extract the layered JAR
 FROM builder AS layered
