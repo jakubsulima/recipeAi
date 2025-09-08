@@ -1,14 +1,8 @@
-FROM postgres:15-alpine
+FROM postgres:13-alpine
 
-# Set environment variables
-ENV POSTGRES_DB=recipeai
-ENV POSTGRES_USER=recipe_user
-
-# Create the database user and database
-RUN mkdir -p /docker-entrypoint-initdb.d
+# Copy init script
+COPY init-user.sh /docker-entrypoint-initdb.d/
+RUN chmod +x /docker-entrypoint-initdb.d/init-user.sh
 
 # Expose the PostgreSQL port
 EXPOSE 5432
-
-# Use the default postgres entrypoint
-CMD ["postgres"]

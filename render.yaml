@@ -28,7 +28,7 @@ services:
       - key: POSTGRES_USER
         value: recipe_user
       - key: POSTGRES_PASSWORD
-        sync: false # Manage this secret in the dashboard
+        value: recipe_password_123
 
   # 3. The Backend Private Service (Internal)
   - type: pserv # 'pserv' means Private Service
@@ -44,6 +44,6 @@ services:
       - key: POSTGRES_USER
         value: recipe_user
       - key: POSTGRES_PASSWORD
-        sync: false # This is a secret, manage it in the dashboard
+        value: recipe_password_123
       - key: GEMINI_API_KEY
         sync: false # This is a secret, man change It and send 
