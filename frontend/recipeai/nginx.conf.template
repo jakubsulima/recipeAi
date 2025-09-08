@@ -1,5 +1,5 @@
 server {
-    listen 80;
+    listen ${PORT};
 
     # This first location block handles serving your React App
     location / {
