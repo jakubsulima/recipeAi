@@ -12,13 +12,12 @@ RUN npm run build
 FROM nginx:stable-alpine
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Install gettext for envsubst and copy the template
 RUN apk add --no-cache gettext
 COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 
-# Expose a default port (will be overridden by Railway's PORT)
-EXPOSE 8080
+# Copy and set up the entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-# When the container starts, substitute the environment variables
-# and then start Nginx.
-CMD ["/bin/sh", "-c", "envsubst < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
+EXPOSE 8080
+ENTRYPOINT ["/entrypoint.sh"]
