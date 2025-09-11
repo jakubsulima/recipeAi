@@ -1,18 +1,18 @@
 # Stage 1: Build the application with Maven
 FROM eclipse-temurin:17-jdk-jammy AS builder
-WORKDIR /app
 
-# Copy Maven wrapper and configuration
-COPY mvnw .
-COPY .mvn .mvn
+# Install Maven
+RUN apt-get update && apt-get install -y maven && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
 
 # Copy pom.xml and download dependencies
 COPY pom.xml .
-RUN ./mvnw dependency:go-offline -B
+RUN mvn dependency:go-offline -B --no-transfer-progress
 
 # Copy source code and build
 COPY src ./src
-RUN ./mvnw clean package -DskipTests -B
+RUN mvn clean package -DskipTests -B --no-transfer-progress
 
 # Stage 2: Create the final runtime image
 FROM eclipse-temurin:17-jre-jammy
