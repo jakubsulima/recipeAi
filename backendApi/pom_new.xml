@@ -72,7 +72,7 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
-        
+
         <dependency>
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
@@ -84,25 +84,25 @@
             <artifactId>mapstruct-processor</artifactId>
             <version>1.6.1</version>
         </dependency>
-        
+
         <dependency>
             <groupId>com.auth0</groupId>
             <artifactId>java-jwt</artifactId>
             <version>4.4.0</version>
         </dependency>
-        
+
         <dependency>
             <groupId>jakarta.validation</groupId>
             <artifactId>jakarta.validation-api</artifactId>
             <version>3.1.0</version>
         </dependency>
-        
+
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
             <version>4.12.0</version>
         </dependency>
-        
+
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
@@ -132,8 +132,8 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
+                <groupId>org.apache.maven.plugin</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
