@@ -1,22 +1,28 @@
 # Stage 1: Build the application with Maven
 FROM eclipse-temurin:17-jdk-jammy AS builder
 WORKDIR /app
+
+# Copy Maven wrapper and configuration
 COPY mvnw .
 COPY .mvn .mvn
+
+# Copy pom.xml and download dependencies
 COPY pom.xml .
-RUN ./mvnw dependency:go-offline
+RUN ./mvnw dependency:go-offline -B
+
+# Copy source code and build
 COPY src ./src
-RUN ./mvnw clean install -DskipTests
+RUN ./mvnw clean package -DskipTests -B
 
-# Stage 2: Extract the layered JAR
-FROM builder AS layered
-WORKDIR /app
-COPY --from=builder /app/target/*.jar app.jar
-RUN java -Djarmode=layertools -jar app.jar extract
-
-# Stage 3: Create the final, smaller image
+# Stage 2: Create the final runtime image
 FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
-COPY --from=layered /app/target/*.jar app.jar
+
+# Copy the built JAR from the builder stage
+COPY --from=builder /app/target/*.jar app.jar
+
+# Expose port
 EXPOSE 8080
-ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]
+
+# Run the application
+ENTRYPOINT ["java", "-jar", "app.jar"]
