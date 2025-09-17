@@ -7,14 +7,14 @@ import {
 import "./App.css";
 import Layout from "./pages/Layout";
 import HomePage from "./pages/HomePage";
-import Recipes from "./pages/UserRecipes";
+import Recipes from "./pages/UserRecipes.tsx";
 import { Fridge } from "./pages/Fridge";
 import Login from "./pages/Login";
 import RecipePage from "./pages/RecipePage";
 import Register from "./pages/Register";
 import MePage from "./pages/MePage";
 import AdminPage from "./pages/AdminPage"; // Import the AdminPage component
-import UserRecipes from "./pages/UserRecipes";
+import UserRecipes from "./pages/UserRecipes.tsx";
 import { AuthProvider } from "./context/context"; // Add import for AuthProvider
 import { FridgeProvider } from "./context/fridgeContext"; // Add import for FridgeProvider
 

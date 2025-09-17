@@ -12,18 +12,15 @@ interface FridgeDisplayProps {
   error: string;
 }
 
-// Helper function to format the date
 const formatShortDate = (dateString: string | null): string => {
   if (!dateString) {
     return "";
   }
-  // Assuming the format is always DD-MM-YYYY
   const parts = dateString.split("-");
   if (parts.length === 3 && parts[2].length === 4) {
-    const shortYear = parts[2].slice(-2); // Get the last 2 digits of the year
+    const shortYear = parts[2].slice(-2);
     return `${parts[0]}-${parts[1]}-${shortYear}`;
   }
-  // Return original string if format is not as expected
   return dateString;
 };
 

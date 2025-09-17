@@ -52,27 +52,29 @@ const Recipes = () => {
   }
 
   return (
-    <div className="p-4 w-full max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6 text-center">My Recipes</h1>
-      {error && <div className="text-red-500 text-center mb-4">{error}</div>}
-      {recipes && recipes.length > 0 ? (
-        <div className="space-y-6">
-          {recipes.map((recipe) => (
-            <RecipeContainer
-              key={recipe.id}
-              id={Number(recipe.id)}
-              title={recipe.name}
-              timeToPrepare={recipe.timeToPrepare}
-            />
-          ))}
-        </div>
-      ) : (
-        !isLoading &&
-        !error && (
-          <div className="text-center text-gray-500">No recipes found.</div>
-        )
-      )}
-    </div>
+    <>
+      <div className="p-4 w-full max-w-3xl mx-auto">
+        <h1 className="text-2xl font-bold mb-6 text-center">My Recipes</h1>
+        {error && <div className="text-red-500 text-center mb-4">{error}</div>}
+        {recipes && recipes.length > 0 ? (
+          <div className="space-y-6">
+            {recipes.map((recipe) => (
+              <RecipeContainer
+                key={recipe.id}
+                id={Number(recipe.id)}
+                title={recipe.name}
+                timeToPrepare={recipe.timeToPrepare}
+              />
+            ))}
+          </div>
+        ) : (
+          !isLoading &&
+          !error && (
+            <div className="text-center text-gray-500">No recipes found.</div>
+          )
+        )}
+      </div>
+    </>
   );
 };
 
