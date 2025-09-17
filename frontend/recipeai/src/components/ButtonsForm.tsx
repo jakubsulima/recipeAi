@@ -20,7 +20,7 @@ const ButtonsForm = ({
             className={`font-semibold w-full md:min-w-64 md:rounded p-4 ${
               selectedButton === button
                 ? "bg-primary"
-                : "bg-secondary hover:bg-gray-300"
+                : "bg-secondary hover:bg-primary"
             }`}
             onClick={() => onButtonClick(button)}
           >
