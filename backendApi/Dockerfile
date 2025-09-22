@@ -12,8 +12,8 @@ COPY settings.gradle .
 # Make gradlew executable
 RUN chmod +x gradlew
 
-# Download dependencies only (no source code yet)
-RUN ./gradlew dependencies --no-daemon || return 0
+# Download dependencies (without running the whole build)
+RUN ./gradlew build -x test --no-daemon || true
 
 # Copy source code
 COPY src ./src
@@ -28,7 +28,5 @@ WORKDIR /app
 # Copy the built JAR from the builder stage
 COPY --from=builder /app/build/libs/*.jar app.jar
 
-# Expose port
 EXPOSE 8080
-
 ENTRYPOINT ["java", "-jar", "app.jar"]
