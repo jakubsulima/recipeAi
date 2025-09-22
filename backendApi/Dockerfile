@@ -3,15 +3,17 @@ FROM eclipse-temurin:17-jdk-jammy AS builder
 
 WORKDIR /app
 
-# Copy Gradle wrapper and build files first for dependency caching
+# Copy Gradle wrapper and build files first (for dependency caching)
 COPY gradlew .
 COPY gradle ./gradle
 COPY build.gradle .
 COPY settings.gradle .
 
-# Make gradlew executable and build the application
+# Make gradlew executable
 RUN chmod +x gradlew
-RUN ./gradlew build --no-daemon
+
+# Download dependencies only (no source code yet)
+RUN ./gradlew dependencies --no-daemon || return 0
 
 # Copy source code
 COPY src ./src
@@ -29,5 +31,4 @@ COPY --from=builder /app/build/libs/*.jar app.jar
 # Expose port
 EXPOSE 8080
 
-# Use the standard Java command to run the JAR
 ENTRYPOINT ["java", "-jar", "app.jar"]
