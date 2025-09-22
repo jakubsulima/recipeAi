@@ -9,17 +9,16 @@ COPY gradle ./gradle
 COPY build.gradle .
 COPY settings.gradle .
 
-# Make gradlew executable
 RUN chmod +x gradlew
 
-# Download dependencies (without running the whole build)
-RUN ./gradlew build -x test --no-daemon || true
+# Download dependencies only (avoid bootJar)
+RUN ./gradlew compileJava -x test --no-daemon || true
 
 # Copy source code
 COPY src ./src
 
 # Build the application, skipping tests
-RUN ./gradlew build --no-daemon -x test
+RUN ./gradlew bootJar --no-daemon -x test
 
 # Stage 2: Create the final runtime image
 FROM eclipse-temurin:17-jre-jammy
