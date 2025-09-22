@@ -11,14 +11,17 @@ COPY settings.gradle .
 
 RUN chmod +x gradlew
 
-# Download dependencies only (avoid bootJar)
-RUN ./gradlew compileJava -x test --no-daemon || true
+# Pre-download dependencies without triggering bootJar
+RUN ./gradlew compileJava -x test --no-daemon -Dorg.gradle.vfs.watch=false || true
 
 # Copy source code
 COPY src ./src
 
 # Build the application, skipping tests
-RUN ./gradlew bootJar --no-daemon -x test
+# Add memory settings + disable file watcher to avoid freezes
+ENV JAVA_TOOL_OPTIONS="-Xmx1g -XX:+UseContainerSupport"
+RUN java -version && javac -version && \
+    ./gradlew bootJar --no-daemon -x test -Dorg.gradle.vfs.watch=false --stacktrace --info
 
 # Stage 2: Create the final runtime image
 FROM eclipse-temurin:17-jre-jammy
