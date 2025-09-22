@@ -102,7 +102,7 @@ class FridgeServiceTest {
         LocalDate expirationDate = LocalDate.of(2028, 12, 20);
         FridgeIngredientDto fridgeIngredientDto = FridgeIngredientDto.builder()
                 .name("Tomato")
-                .unit(null)
+                .unit("PIECE")
                 .amount(1.0)
                 .expirationDate(expirationDate)
                 .category("FRIDGE")
@@ -147,7 +147,7 @@ class FridgeServiceTest {
     void addFridgeIngredient_shouldThrowAppException_whenUserNotFound() {
         // Given
         String email = "nonexistent@example.com";
-        FridgeIngredientDto fridgeIngredientDto = FridgeIngredientDto.builder().name("Milk").amount(1.0).category("FRIDGE   ").build();
+        FridgeIngredientDto fridgeIngredientDto = FridgeIngredientDto.builder().name("Milk").amount(1.0).unit("LITER").category("FRIDGE").build();
         String expectedErrorMessage = "User not found";
 
         when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
