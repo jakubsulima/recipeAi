@@ -3,14 +3,14 @@ services:
     build:
       context: ./backendApi
       dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
+    # PORTS REMOVED - Nginx will handle traffic
     environment:
       SPRING_PROFILES_ACTIVE: "docker"
       POSTGRES_URL: "jdbc:postgresql://db:5432/${POSTGRES_DB}"
       GEMINI_API_KEY: "${GEMINI_API_KEY}"
       POSTGRES_USER: "${POSTGRES_USER}"
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      # IMPORTANT: Update this on your server to your domain
       ALLOWED_ORIGINS: "${ALLOWED_ORIGINS}"
     depends_on:
       db:
@@ -31,13 +31,10 @@ services:
     build:
       context: ./frontend/recipeai
       dockerfile: Dockerfile
-    ports:
-      - "80:80"
-      - "443:443"
+    # PORTS REMOVED - Nginx will handle traffic
     environment:
-      ENABLE_HTTPS: "true"
+      # This now points to the Nginx proxy
       BACKEND_URL: "${BACKEND_URL}"
-      PORT: "80"
     depends_on:
       backend:
         condition: service_healthy
@@ -53,7 +50,7 @@ services:
       POSTGRES_USER: "${POSTGRES_USER}"
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
     ports:
-      - "5434:5432"
+      - "5434:5432" # You can keep this for external DB access or remove it
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -63,6 +60,33 @@ services:
       retries: 5
     networks:
       - recipe-net
+
+  # --- NEW NGINX SERVICE ---
+  nginx:
+    image: nginx:latest
+    container_name: recipeai-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Mount the Nginx config, Let's Encrypt certs, and challenge files
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./letsencrypt:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    networks:
+      - recipe-net
+    depends_on:
+      - frontend
+      - backend
+
+  # --- NEW CERTBOT SERVICE ---
+  certbot:
+    image: certbot/certbot
+    container_name: recipeai-certbot
+    volumes:
+      - ./letsencrypt:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
 
 volumes:
   postgres_data:
