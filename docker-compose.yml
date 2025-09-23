@@ -35,7 +35,7 @@ services:
       - "443:443"
     environment:
       ENABLE_HTTPS: "true"
-      BACKEND_URL: "http://backend:8080"
+      BACKEND_URL: "${BACKEND_URL}"
       PORT: "80"
     depends_on:
       backend:
