@@ -12,7 +12,7 @@ import java.util.List;
 @Configuration
 public class WebConfig {
 
-    @Value("${ALLOWED_ORIGINS}")
+    @Value("${allowed.origins}")
     private String allowedOrigins;
 
     @Bean

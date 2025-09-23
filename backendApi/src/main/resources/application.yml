@@ -24,3 +24,7 @@ spring:
           gemini:
             location: "us-central1"
             model-name: "gemini-pro"
+
+# CORS configuration
+allowed:
+  origins: ${ALLOWED_ORIGINS:http://localhost:3000}
