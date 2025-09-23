@@ -12,6 +12,10 @@ public interface UserMapper {
 
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "role", ignore = true) // Add this line to ignore role during signUpToUser mapping
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "recipes", ignore = true)
+    @Mapping(target = "userPreferences", ignore = true)
+    @Mapping(target = "fridgeIngredients", ignore = true)
     User signUpToUser(SignUpDto userDto);
 
 }

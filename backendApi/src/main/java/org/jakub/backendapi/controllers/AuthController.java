@@ -3,17 +3,16 @@ package org.jakub.backendapi.controllers;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.jakub.backendapi.config.JwtUtils;
 import org.jakub.backendapi.config.UserAuthProvider;
 import org.jakub.backendapi.dto.CredentialsDto;
+import org.jakub.backendapi.dto.ErrorDto;
 import org.jakub.backendapi.dto.SignUpDto;
 import org.jakub.backendapi.dto.UserDto;
-import org.jakub.backendapi.dto.ErrorDto; // Added import
 import org.jakub.backendapi.exceptions.AppException;
 import org.jakub.backendapi.services.UserService;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus; // Added import
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,12 +21,16 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Map;
 
-@RequiredArgsConstructor
 @RestController
 public class AuthController {
 
     private final UserService userService;
     private final UserAuthProvider userAuthProvider;
+
+    public AuthController(UserService userService, UserAuthProvider userAuthProvider) {
+        this.userService = userService;
+        this.userAuthProvider = userAuthProvider;
+    }
 
     // Login endpoint: generates an access token and refresh token
     @PostMapping("/login")
@@ -70,7 +73,7 @@ public class AuthController {
             String newAccessToken = userAuthProvider.refreshAccessToken(refreshToken);
             String newRefreshToken = userAuthProvider.refreshRefreshToken(refreshToken);
 
-            ArrayList<ResponseCookie> tokens = userAuthProvider.setHttpOnlyCookie(newAccessToken, refreshToken);
+            ArrayList<ResponseCookie> tokens = userAuthProvider.setHttpOnlyCookie(newAccessToken, newRefreshToken);
 
             response.addHeader(HttpHeaders.SET_COOKIE, tokens.get(0).toString());
             response.addHeader(HttpHeaders.SET_COOKIE, tokens.get(1).toString());
@@ -80,9 +83,10 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Invalid or expired refresh token"));
         }
-}
+    }
+
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpServletResponse response) {
+    public ResponseEntity<?> logout() {
         return ResponseEntity.ok().body(Map.of("message", "Logged out successfully"));
     }
 
@@ -92,7 +96,7 @@ public class AuthController {
         if (token == null) {
             // It's better to return 401 if authentication is expected but no token is provided for /me
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                                 .body(new ErrorDto("Access token missing."));
+                    .body(new ErrorDto("Access token missing."));
         }
 
         String emailFromToken = JwtUtils.getLoginFromToken(token); // 'getLoginFromToken' actually returns the issuer/email
@@ -102,7 +106,7 @@ public class AuthController {
             // Log this as a server-side issue (token should always have an issuer).
             System.err.println("Critical: Access token found with null issuer."); // Replace with proper logging
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                                 .body(new ErrorDto("Invalid token: User identifier missing."));
+                    .body(new ErrorDto("Invalid token: User identifier missing."));
         }
 
         try {
@@ -111,7 +115,7 @@ public class AuthController {
         } catch (AppException e) {
             // Handle cases where user might not be found based on a valid-looking email from token (e.g., user deleted after token issuance)
             return ResponseEntity.status(e.getCode() != null ? e.getCode() : HttpStatus.INTERNAL_SERVER_ERROR)
-                                 .body(new ErrorDto(e.getMessage()));
+                    .body(new ErrorDto(e.getMessage()));
         }
     }
 

@@ -5,7 +5,6 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
 import org.jakub.backendapi.dto.UserDto;
 import org.jakub.backendapi.services.UserService;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,7 +18,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.*;
 
-@RequiredArgsConstructor
 @Component
 public class UserAuthProvider {
 
@@ -28,19 +26,23 @@ public class UserAuthProvider {
 
     private final UserService userService;
 
+    public UserAuthProvider(UserService userService) {
+        this.userService = userService;
+    }
+
     @PostConstruct
     protected void init() {
         secretKey = Base64.getEncoder().encodeToString(secretKey.getBytes());
     }
 
-    public String createToken(String email) { 
+    public String createToken(String email) {
         UserDto userDto = userService.findByEmail(email);
         Date now = new Date();
-        Date expirationDate = new Date(now.getTime() + 1_800_000); 
+        Date expirationDate = new Date(now.getTime() + 1_800_000);
         return JWT.create()
-                .withIssuer(email) 
-                .withClaim("type", "access") 
-                .withClaim("role", userDto.getRole().name()) 
+                .withIssuer(email)
+                .withClaim("type", "access")
+                .withClaim("role", userDto.getRole().name())
                 .withIssuedAt(now)
                 .withExpiresAt(expirationDate)
                 .sign(Algorithm.HMAC256(secretKey));
@@ -109,7 +111,7 @@ public class UserAuthProvider {
     public ArrayList<ResponseCookie> setHttpOnlyCookie(String accessToken, String refreshToken) {
         ResponseCookie accessCookie = ResponseCookie.from("access_token", accessToken)
                 .httpOnly(true)
-                .secure(false)  
+                .secure(false)
                 .path("/")
                 .maxAge(60 * 60) // 1 hour
                 .sameSite("Lax")

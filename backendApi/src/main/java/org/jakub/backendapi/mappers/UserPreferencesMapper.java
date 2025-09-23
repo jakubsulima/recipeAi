@@ -1,8 +1,8 @@
 package org.jakub.backendapi.mappers;
 
 import org.jakub.backendapi.dto.UserPreferencesDto;
-import org.jakub.backendapi.entities.UserPreferences;
 import org.jakub.backendapi.entities.Enums.Diet;
+import org.jakub.backendapi.entities.UserPreferences;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -16,7 +16,8 @@ public interface UserPreferencesMapper {
     UserPreferencesDto toUserPreferencesDto(UserPreferences userPreferences);
 
     @Mapping(target = "user", ignore = true)
-    @Mapping(target="diet", source = "diet", qualifiedByName = "stringToDiet")
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "diet", source = "diet", qualifiedByName = "stringToDiet")
     UserPreferences toUserPreferences(UserPreferencesDto userPreferencesDto);
 
     default List<String> map(String value) {

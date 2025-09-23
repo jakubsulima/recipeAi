@@ -1,6 +1,5 @@
 package org.jakub.backendapi.services;
 
-import lombok.RequiredArgsConstructor;
 import org.jakub.backendapi.dto.UserPreferencesDto;
 import org.jakub.backendapi.entities.Enums.Diet;
 import org.jakub.backendapi.entities.User;
@@ -16,15 +15,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 public class UserPreferencesService {
 
     private final UserRepository userRepository;
-    private final UserPreferencesMapper preferencesMapper;
+    private final UserPreferencesMapper userPreferencesMapper;
+
+    public UserPreferencesService(UserRepository userRepository, UserPreferencesMapper userPreferencesMapper) {
+        this.userRepository = userRepository;
+        this.userPreferencesMapper = userPreferencesMapper;
+    }
 
     public UserPreferencesDto getPreferences(String email) {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
-        return preferencesMapper.toUserPreferencesDto(user.getUserPreferences());
+        return userPreferencesMapper.toUserPreferencesDto(user.getUserPreferences());
     }
 
     @Transactional
@@ -39,7 +42,7 @@ public class UserPreferencesService {
             throw new AppException("Invalid diet value", HttpStatus.BAD_REQUEST);
         }
 
-        return preferencesMapper.toUserPreferencesDto(preferences);
+        return userPreferencesMapper.toUserPreferencesDto(preferences);
     }
 
     @Transactional
@@ -56,7 +59,7 @@ public class UserPreferencesService {
             preferences.setDislikedIngredients(newDislikedIngredients);
         }
 
-        return preferencesMapper.toUserPreferencesDto(preferences);
+        return userPreferencesMapper.toUserPreferencesDto(preferences);
     }
 
     @Transactional
@@ -72,7 +75,7 @@ public class UserPreferencesService {
         newDislikedIngredients.removeIf(i -> i.equalsIgnoreCase(ingredient));
         preferences.setDislikedIngredients(newDislikedIngredients);
 
-        return preferencesMapper.toUserPreferencesDto(preferences);
+        return userPreferencesMapper.toUserPreferencesDto(preferences);
     }
 
 

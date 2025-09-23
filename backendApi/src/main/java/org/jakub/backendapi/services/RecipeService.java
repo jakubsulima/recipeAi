@@ -1,7 +1,6 @@
 package org.jakub.backendapi.services;
 
 import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
 import org.jakub.backendapi.dto.RecipeDto;
 import org.jakub.backendapi.dto.RecipeResponseDto;
 import org.jakub.backendapi.entities.Enums.Role;
@@ -23,14 +22,22 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-@RequiredArgsConstructor
 @Service
 public class RecipeService {
+
     private final RecipeRepository recipeRepository;
+    private final UserRepository userRepository;
     private final IngredientRepository ingredientRepository;
     private final RecipeIngredientRepository recipeIngredientRepository;
     private final RecipeMapper recipeMapper;
-    private final UserRepository userRepository;
+
+    public RecipeService(RecipeRepository recipeRepository, UserRepository userRepository, IngredientRepository ingredientRepository, RecipeIngredientRepository recipeIngredientRepository, RecipeMapper recipeMapper) {
+        this.recipeRepository = recipeRepository;
+        this.userRepository = userRepository;
+        this.ingredientRepository = ingredientRepository;
+        this.recipeIngredientRepository = recipeIngredientRepository;
+        this.recipeMapper = recipeMapper;
+    }
 
     public RecipeDto getRecipeById(Long id) {
         return recipeMapper.toRecipeDto(
@@ -65,16 +72,14 @@ public class RecipeService {
         List<RecipeIngredient> recipeIngredients = recipeDto.getIngredients().stream()
                 .map(dto -> {
                     Ingredient ingredient = ingredientRepository.findByNameIgnoreCase(dto.getName())
-                            .orElseGet(() -> ingredientRepository.save(Ingredient.builder()
-                                    .name(dto.getName())
-                                    .build()));
+                            .orElseGet(() -> ingredientRepository.save(new Ingredient(null, dto.getName(), new ArrayList<>())));
 
-                    return RecipeIngredient.builder()
-                            .recipe(recipe)
-                            .ingredient(ingredient)
-                            .amount(dto.getAmount())
-                            .unit(dto.getUnit())
-                            .build();
+                    RecipeIngredient recipeIngredient = new RecipeIngredient();
+                    recipeIngredient.setRecipe(recipe);
+                    recipeIngredient.setIngredient(ingredient);
+                    recipeIngredient.setAmount(dto.getAmount());
+                    recipeIngredient.setUnit(dto.getUnit());
+                    return recipeIngredient;
                 })
                 .collect(Collectors.toCollection(ArrayList::new));
 
@@ -133,16 +138,14 @@ public class RecipeService {
         List<RecipeIngredient> updatedIngredients = recipeDto.getIngredients().stream()
                 .map(dto -> {
                     Ingredient ingredient = ingredientRepository.findByNameIgnoreCase(dto.getName())
-                            .orElseGet(() -> ingredientRepository.save(Ingredient.builder()
-                                    .name(dto.getName())
-                                    .build()));
+                            .orElseGet(() -> ingredientRepository.save(new Ingredient(null, dto.getName(), new ArrayList<>())));
 
-                    return RecipeIngredient.builder()
-                            .recipe(recipe)
-                            .ingredient(ingredient)
-                            .amount(dto.getAmount())
-                            .unit(dto.getUnit())
-                            .build();
+                    RecipeIngredient recipeIngredient = new RecipeIngredient();
+                    recipeIngredient.setRecipe(recipe);
+                    recipeIngredient.setIngredient(ingredient);
+                    recipeIngredient.setAmount(dto.getAmount());
+                    recipeIngredient.setUnit(dto.getUnit());
+                    return recipeIngredient;
                 })
                 .collect(Collectors.toList());
 

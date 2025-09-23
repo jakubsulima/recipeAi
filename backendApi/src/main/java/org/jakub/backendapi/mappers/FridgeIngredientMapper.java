@@ -13,10 +13,8 @@ public interface FridgeIngredientMapper {
     @Mapping(source = "category", target = "category")
     FridgeIngredientDto toFridgeIngredientDto(FridgeIngredient fridgeIngredient);
 
-    @Mapping(source = "expirationDate", target = "expirationDate")
-    @Mapping(source = "unit", target = "unit")
-    @Mapping(source = "category", target = "category")
     @Mapping(target = "user", ignore = true)
+    @Mapping(target = "id", ignore = true)
     FridgeIngredient toFridgeIngredient(FridgeIngredientDto fridgeIngredientDto);
 
     default FridgeIngredient toFridgeIngredientWithUser(FridgeIngredientDto fridgeIngredientDto, User user) {

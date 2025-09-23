@@ -1,6 +1,6 @@
 package org.jakub.backendapi.services;
 
-import lombok.RequiredArgsConstructor;
+
 import org.jakub.backendapi.dto.CredentialsDto;
 import org.jakub.backendapi.dto.SignUpDto;
 import org.jakub.backendapi.dto.UserDto;
@@ -20,12 +20,18 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-@RequiredArgsConstructor
+
 @Service
 public class UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+
+    public UserService(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.userMapper = userMapper;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     public UserDto findByEmail(String email) {
         User user = userRepository.findByEmail(email)
@@ -51,10 +57,9 @@ public class UserService {
         User user = userMapper.signUpToUser(signUpDto);
         user.setPassword(passwordEncoder.encode(CharBuffer.wrap(signUpDto.getPassword())));
         user.setRole(Role.USER);
-        user.setUserPreferences(new UserPreferences());
 
-        UserPreferences userPreferences = UserPreferences.builder().diet(Diet.NONE).dislikedIngredients(List.of()).user(user).build();
-
+        UserPreferences userPreferences = new UserPreferences();
+        userPreferences.setUser(user);
         user.setUserPreferences(userPreferences);
         User savedUser = userRepository.save(user);
 
@@ -62,7 +67,11 @@ public class UserService {
     }
 
     public UserDto getUserById(Long id) {
+        UserPreferences userPreferences = new UserPreferences();
+        userPreferences.setDiet(Diet.NONE);
         User user = userRepository.findById(id).orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
+        userPreferences.setDislikedIngredients(List.of());
+        userPreferences.setUser(user);
         return userMapper.toUserDto(user);
     }
 

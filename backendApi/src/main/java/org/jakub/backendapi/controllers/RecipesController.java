@@ -3,7 +3,6 @@ package org.jakub.backendapi.controllers;
 import com.google.genai.Client;
 import com.google.genai.types.GenerateContentResponse;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
 import org.jakub.backendapi.dto.RecipeDto;
 import org.jakub.backendapi.dto.RecipeResponseDto;
 import org.jakub.backendapi.dto.UserDto;
@@ -21,14 +20,18 @@ import static org.jakub.backendapi.config.JwtUtils.getLoginFromToken;
 
 
 @RestController
-@RequiredArgsConstructor
 public class RecipesController {
     private final RecipeService recipeService;
     private final UserService userService;
     private final UserPreferencesService userPreferencesService;
-
     @Value("${gemini.api.key}")
     private String geminiApiKey;
+
+    public RecipesController(RecipeService recipeService, UserService userService, UserPreferencesService userPreferencesService) {
+        this.recipeService = recipeService;
+        this.userService = userService;
+        this.userPreferencesService = userPreferencesService;
+    }
 
     @PostMapping("/addRecipe")
     public ResponseEntity<RecipeDto> addRecipe(@RequestBody RecipeDto recipeDto, HttpServletRequest request) {

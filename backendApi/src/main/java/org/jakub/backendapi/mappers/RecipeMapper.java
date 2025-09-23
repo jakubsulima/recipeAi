@@ -14,13 +14,15 @@ public interface RecipeMapper {
     @Mapping(target = "ingredients", source = "recipeIngredients")
     RecipeDto toRecipeDto(Recipe recipe);
 
+    @Mapping(target = "recipeDto", source = "recipe")
     RecipeResponseDto toResponseDto(String message, Recipe recipe);
 
+    @Mapping(target = "recipeIngredients", source = "ingredients")
+    @Mapping(target = "user", ignore = true)
+    @Mapping(target = "id", ignore = true)
     Recipe toRecipe(RecipeDto recipeDto);
 
     @Mapping(source = "ingredient.name", target = "name")
-    @Mapping(source = "amount", target = "amount")
-    @Mapping(source = "unit", target = "unit")
     RecipeIngredientDto recipeIngredientToRecipeIngredientDto(RecipeIngredient recipeIngredient);
 
     default Recipe toRecipeWithUser(RecipeDto recipeDto, User user) {

@@ -1,7 +1,6 @@
 package org.jakub.backendapi.controllers;
 
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
 import org.jakub.backendapi.dto.UserPreferencesDto;
 import org.jakub.backendapi.entities.Enums.Diet;
 import org.jakub.backendapi.services.UserPreferencesService;
@@ -14,16 +13,19 @@ import org.springframework.web.bind.annotation.RestController;
 import static org.jakub.backendapi.config.JwtUtils.getLoginFromToken;
 
 @RestController
-@RequiredArgsConstructor
 public class UserPreferencesController {
 
     private final UserPreferencesService userPreferencesService;
+
+    public UserPreferencesController(UserPreferencesService userPreferencesService) {
+        this.userPreferencesService = userPreferencesService;
+    }
 
     @GetMapping("/user/getPreferences")
     public ResponseEntity<UserPreferencesDto> getPreferences(HttpServletRequest request) {
         return ResponseEntity.ok(userPreferencesService.getPreferences(getLoginFromToken(request)));
     }
-    
+
     @PostMapping("/user/changeDiet")
     public ResponseEntity<UserPreferencesDto> changeDiet(HttpServletRequest request, @RequestBody String diet) {
         return ResponseEntity.ok(userPreferencesService.changeDiet(getLoginFromToken(request), diet));
@@ -44,4 +46,3 @@ public class UserPreferencesController {
         return ResponseEntity.ok(userPreferencesService.getDiets());
     }
 }
-

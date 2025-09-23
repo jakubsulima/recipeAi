@@ -1,7 +1,6 @@
 package org.jakub.backendapi.controllers;
 
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
 import org.jakub.backendapi.dto.FridgeIngredientDto;
 import org.jakub.backendapi.services.FridgeService;
 import org.springframework.http.ResponseEntity;
@@ -12,9 +11,12 @@ import java.util.List;
 import static org.jakub.backendapi.config.JwtUtils.getLoginFromToken;
 
 @RestController
-@RequiredArgsConstructor
 public class FridgeController {
     private final FridgeService fridgeService;
+
+    public FridgeController(FridgeService fridgeService) {
+        this.fridgeService = fridgeService;
+    }
 
     @GetMapping("/getFridgeIngredients")
     public ResponseEntity<List<FridgeIngredientDto>> getFridgeIngredients(HttpServletRequest request) {

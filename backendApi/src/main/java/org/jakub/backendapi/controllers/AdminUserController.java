@@ -1,6 +1,5 @@
 package org.jakub.backendapi.controllers;
 
-import lombok.RequiredArgsConstructor;
 import org.jakub.backendapi.dto.UserDto;
 import org.jakub.backendapi.entities.Enums.Role;
 import org.jakub.backendapi.services.UserService;
@@ -11,10 +10,13 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/admin/users")
-@RequiredArgsConstructor
 public class AdminUserController {
 
     private final UserService userService;
+
+    public AdminUserController(UserService userService) {
+        this.userService = userService;
+    }
 
     @GetMapping
     public ResponseEntity<List<UserDto>> getAllUsers() {
@@ -37,4 +39,3 @@ public class AdminUserController {
         return ResponseEntity.noContent().build();
     }
 }
-

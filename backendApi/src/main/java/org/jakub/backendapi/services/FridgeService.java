@@ -1,7 +1,6 @@
 package org.jakub.backendapi.services;
 
 import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
 import org.jakub.backendapi.dto.FridgeIngredientDto;
 import org.jakub.backendapi.dto.UserDto;
 import org.jakub.backendapi.entities.Enums.CategoryFridgeIngredient;
@@ -19,13 +18,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@RequiredArgsConstructor
 @Service
 public class FridgeService {
+
     private final FridgeIngredientRepository fridgeIngredientRepository;
-    private final UserService userService;
-    private final FridgeIngredientMapper fridgeIngredientMapper;
     private final UserRepository userRepository;
+    private final FridgeIngredientMapper fridgeIngredientMapper;
+    private final UserService userService;
+
+    public FridgeService(FridgeIngredientRepository fridgeIngredientRepository, UserRepository userRepository, FridgeIngredientMapper fridgeIngredientMapper, UserService userService) {
+        this.fridgeIngredientRepository = fridgeIngredientRepository;
+        this.userRepository = userRepository;
+        this.fridgeIngredientMapper = fridgeIngredientMapper;
+        this.userService = userService;
+    }
 
     public List<FridgeIngredientDto> getFridgeIngredients(String email) {
         UserDto userDto = userService.findByEmail(email);

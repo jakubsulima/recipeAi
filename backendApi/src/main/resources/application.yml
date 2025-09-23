@@ -1,25 +1,26 @@
-server:
-  address: 0.0.0.0
+#server:
+#  address: 0.0.0.0
 spring:
   datasource:
-    url: ${POSTGRES_URL}
-    username: ${POSTGRES_USER}
-    password: ${POSTGRES_PASSWORD}
-    driver-class-name: org.postgresql.Driver
+    url: jdbc:h2:mem:testdb
+    driverClassName: org.h2.Driver
+    username: sa
+    password:
   jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
-      ddl-auto: validate  # Changed from update to validate - Flyway will handle schema changes
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
         format_sql: true
-    database: postgresql
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
   flyway:
-    enabled: true
-    locations: classpath:db/migration
-    baseline-on-migrate: true
-    validate-on-migrate: true
-gemini:
-  api:
-    key: ${GEMINI_API_KEY}
+    enabled: false
+  cloud:
+    gcp:
+      project-id: "your-gcp-project-id"
+      vertex:
+        ai:
+          gemini:
+            location: "us-central1"
+            model-name: "gemini-pro"

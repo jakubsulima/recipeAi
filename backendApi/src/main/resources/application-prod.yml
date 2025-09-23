@@ -46,7 +46,7 @@ logging:
 
 gemini:
   api:
-    key: ${GEMINI_API_KEY}
+
 management:
   endpoints:
     web:
