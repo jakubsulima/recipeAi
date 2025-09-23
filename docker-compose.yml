@@ -11,6 +11,7 @@ services:
       GEMINI_API_KEY: "${GEMINI_API_KEY}"
       POSTGRES_USER: "${POSTGRES_USER}"
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      ALLOWED_ORIGINS: "${ALLOWED_ORIGINS}"
     depends_on:
       db:
         condition: service_healthy
