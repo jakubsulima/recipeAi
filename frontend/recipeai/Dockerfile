@@ -2,6 +2,8 @@
 FROM node:20-alpine AS build
 RUN apk update && apk upgrade
 WORKDIR /app
+ARG VITE_BACKEND_URL
+ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
 COPY package.json ./
 COPY package-lock.json ./
 RUN npm install
