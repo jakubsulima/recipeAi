@@ -67,7 +67,6 @@ public class RecipeService {
         }
 
         Recipe recipe = recipeMapper.toRecipeWithUser(recipeDto, user);
-        recipeRepository.save(recipe); // Save recipe first to generate ID
 
         List<RecipeIngredient> recipeIngredients = recipeDto.getIngredients().stream()
                 .map(dto -> {
@@ -83,9 +82,8 @@ public class RecipeService {
                 })
                 .collect(Collectors.toCollection(ArrayList::new));
 
-        recipeIngredientRepository.saveAll(recipeIngredients);
         recipe.setRecipeIngredients(recipeIngredients);
-        return recipeRepository.save(recipe); // Save with ingredients
+        return recipeRepository.save(recipe);
     }
 
     public List<RecipeDto> findRecipesByUserId(long userId) {

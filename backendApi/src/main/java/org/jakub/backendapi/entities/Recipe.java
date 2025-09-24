@@ -62,6 +62,26 @@ public class Recipe {
         this.recipeIngredients = recipeIngredients;
     }
 
+    public void addRecipeIngredient(RecipeIngredient recipeIngredient) {
+        recipeIngredients.add(recipeIngredient);
+        recipeIngredient.setRecipe(this);
+    }
+
+    public void removeRecipeIngredient(RecipeIngredient recipeIngredient) {
+        recipeIngredients.remove(recipeIngredient);
+        recipeIngredient.setRecipe(null);
+    }
+
+    public void addRecipeIngredient(RecipeIngredient recipeIngredient) {
+        recipeIngredients.add(recipeIngredient);
+        recipeIngredient.setRecipe(this);
+    }
+
+    public void removeRecipeIngredient(RecipeIngredient recipeIngredient) {
+        recipeIngredients.remove(recipeIngredient);
+        recipeIngredient.setRecipe(null);
+    }
+
     public User getUser() {
         return user;
     }
