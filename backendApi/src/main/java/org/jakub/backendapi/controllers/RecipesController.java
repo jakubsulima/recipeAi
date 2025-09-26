@@ -48,6 +48,7 @@ public class RecipesController {
     @GetMapping("/getRecipe/{id}")
     public ResponseEntity<RecipeDto> getRecipe(@PathVariable Long id) {
         RecipeDto recipe = recipeService.getRecipeById(id);
+        System.out.println("Fetched Recipe: " + recipe);
         return ResponseEntity.ok(recipe);
     }
 
@@ -98,7 +99,6 @@ public class RecipesController {
                 if (user != null) {
                     UserPreferencesDto preferences = userPreferencesService.getPreferences(userEmail);
                     if (preferences != null) {
-                        System.out.println("User preferences found: " + preferences);
                         recipePrompt += "\n\nUser Preferences: " + preferences;
                     }
                 }
@@ -110,9 +110,7 @@ public class RecipesController {
             response = client.models.generateContent("gemini-2.5-flash-lite",
                     recipePrompt,
                     null);
-            System.out.println(response.text());
         } catch (Exception e) {
-            e.printStackTrace();
             return ResponseEntity.status(500).body("Error creating recipe: " + e.getMessage());
         }
 

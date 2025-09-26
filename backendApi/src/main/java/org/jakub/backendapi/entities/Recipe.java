@@ -27,15 +27,24 @@ public class Recipe {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @ElementCollection
+    @CollectionTable(name = "recipe_instructions", joinColumns = @JoinColumn(name = "recipe_id"))
+    @Column(name = "instruction", columnDefinition = "TEXT")
+    private List<String> instructions = new ArrayList<>();
+
+    @Column
+    private String timeToPrepare;
+
     public Recipe() {
     }
 
-    public Recipe(Long id, String name, List<RecipeIngredient> recipeIngredients, User user, String description) {
+    public Recipe(Long id, String name, List<RecipeIngredient> recipeIngredients, User user, String description, List<String> instructions) {
         this.id = id;
         this.name = name;
         this.recipeIngredients = recipeIngredients;
         this.user = user;
         this.description = description;
+        this.instructions = instructions;
     }
 
     public Long getId() {
@@ -72,16 +81,6 @@ public class Recipe {
         recipeIngredient.setRecipe(null);
     }
 
-    public void addRecipeIngredient(RecipeIngredient recipeIngredient) {
-        recipeIngredients.add(recipeIngredient);
-        recipeIngredient.setRecipe(this);
-    }
-
-    public void removeRecipeIngredient(RecipeIngredient recipeIngredient) {
-        recipeIngredients.remove(recipeIngredient);
-        recipeIngredient.setRecipe(null);
-    }
-
     public User getUser() {
         return user;
     }
@@ -98,17 +97,33 @@ public class Recipe {
         this.description = description;
     }
 
+    public List<String> getInstructions() {
+        return instructions;
+    }
+
+    public void setInstructions(List<String> instructions) {
+        this.instructions = instructions;
+    }
+
+    public String getTimeToPrepare() {
+        return timeToPrepare;
+    }
+
+    public void setTimeToPrepare(String timeToPrepare) {
+        this.timeToPrepare = timeToPrepare;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Recipe recipe = (Recipe) o;
-        return Objects.equals(id, recipe.id) && Objects.equals(name, recipe.name) && Objects.equals(recipeIngredients, recipe.recipeIngredients) && Objects.equals(user, recipe.user) && Objects.equals(description, recipe.description);
+        return Objects.equals(id, recipe.id) && Objects.equals(name, recipe.name) && Objects.equals(recipeIngredients, recipe.recipeIngredients) && Objects.equals(user, recipe.user) && Objects.equals(description, recipe.description) && Objects.equals(instructions, recipe.instructions);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, recipeIngredients, user, description);
+        return Objects.hash(id, name, recipeIngredients, user, description, instructions);
     }
 
     @Override
@@ -119,6 +134,7 @@ public class Recipe {
                 ", recipeIngredients=" + recipeIngredients +
                 ", user=" + user +
                 ", description='" + description + '\'' +
+                ", instructions=" + instructions +
                 '}';
     }
 }

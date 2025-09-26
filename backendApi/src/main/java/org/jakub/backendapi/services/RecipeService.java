@@ -39,13 +39,17 @@ public class RecipeService {
         this.recipeMapper = recipeMapper;
     }
 
+    @Transactional
     public RecipeDto getRecipeById(Long id) {
+        System.out.println(recipeRepository.findById(id)
+                .orElseThrow(() -> new AppException("Recipe not found", HttpStatus.NOT_FOUND)).getInstructions());
         return recipeMapper.toRecipeDto(
                 recipeRepository.findById(id)
                         .orElseThrow(() -> new AppException("Recipe not found", HttpStatus.NOT_FOUND))
         );
     }
 
+    @Transactional
     public List<RecipeDto> getAllRecipes() {
         return recipeRepository.findAll().stream()
                 .map(recipeMapper::toRecipeDto)
