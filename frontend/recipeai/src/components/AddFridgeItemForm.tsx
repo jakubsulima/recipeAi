@@ -74,14 +74,6 @@ const AddFridgeItemForm: React.FC<AddFridgeItemFormProps> = ({
         {dateError && <p className="text-red-500 text-sm mb-2">{dateError}</p>}
 
         <OptionsForm
-          label="Unit"
-          name="Unit"
-          options={["g", "kg", "ml", "l", "pcs", ""]}
-          currentOptions={unit}
-          onChange={(value) => setUnit(value as unitType)}
-          classname="mb-2"
-        />
-        <OptionsForm
           label="Category"
           name="Category"
           options={CATEGORY_VALUES}
@@ -109,6 +101,14 @@ const AddFridgeItemForm: React.FC<AddFridgeItemFormProps> = ({
             Please enter a valid positive number
           </p>
         )}
+        <OptionsForm
+          label="Unit"
+          name="Unit"
+          options={["g", "kg", "ml", "l", "pcs", ""]}
+          currentOptions={unit}
+          onChange={(value) => setUnit(value as unitType)}
+          classname="mb-2"
+        />
         <button
           onClick={addItem}
           disabled={

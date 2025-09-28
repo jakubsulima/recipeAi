@@ -27,8 +27,8 @@ const CategorySwitcher: React.FC<CategorySwitcherProps> = ({
         </button>
 
         <div className="px-6 py-2 bg-white w-64 text-center">
-          <h2 className="text-xl font-bold whitespace-nowrap">
-            {currentCategory.replace(/_/g, " ")}
+          <h2 className="text-xl font-semibold whitespace-nowrap">
+            {currentCategory.replace(/_/g, " ").toLowerCase().trim()}
           </h2>
         </div>
 
