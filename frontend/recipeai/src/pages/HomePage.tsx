@@ -14,6 +14,26 @@ const HomePage = () => {
   const [selectedMeal, setSelectedMeal] = useState<string | null>(null);
   const [selectedCuisine, setSelectedCuisine] = useState<string | null>(null);
 
+  const handleSearch = () => {
+    let finalSearch = search;
+    if (!search.trim()) {
+      finalSearch = "random recipe";
+    } else if (hasIngredients && search.trim()) {
+      const ingredientsText = fridgeItems.map((item) => item.name).join(", ");
+      finalSearch += " and try to use those ingredients: " + ingredientsText;
+    }
+    if (selectedMeal) {
+      finalSearch += ` for ${selectedMeal}`;
+    }
+    if (selectedCuisine) {
+      finalSearch += ` in ${selectedCuisine} cuisine`;
+    }
+    if (selectedTime) {
+      finalSearch += ` in ${selectedTime} time`;
+    }
+    navigate("Recipe", { state: { search: finalSearch } });
+  };
+
   const handleClear = () => {
     setSearch("");
   };
@@ -36,26 +56,7 @@ const HomePage = () => {
               className="p-2 pr-10 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary w-full"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                  let finalSearch = search;
-                  if (!search.trim()) {
-                    finalSearch = "random recipe";
-                  } else if (hasIngredients && search.trim()) {
-                    const ingredientsText = fridgeItems
-                      .map((item) => item.name)
-                      .join(", ");
-                    finalSearch +=
-                      " and try to use those ingredients: " + ingredientsText;
-                  }
-                  if (selectedMeal) {
-                    finalSearch += ` for ${selectedMeal}`;
-                  }
-                  if (selectedCuisine) {
-                    finalSearch += ` in ${selectedCuisine} cuisine`;
-                  }
-                  if (selectedTime) {
-                    finalSearch += ` in ${selectedTime} time`;
-                  }
-                  navigate("Recipe", { state: { search: finalSearch } });
+                  handleSearch();
                 }
               }}
             />
@@ -99,6 +100,12 @@ const HomePage = () => {
               selectedButton={selectedTime}
               title="Select Time to Prepare:"
             ></ButtonsForm>
+            <button
+              onClick={handleSearch}
+              className="w-40 bg-primary text-black font-bold py-2 px-4 rounded-full hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary-dark mt-6 sm:w-62 "
+            >
+              Generate Recipe
+            </button>
           </section>
         </article>
 

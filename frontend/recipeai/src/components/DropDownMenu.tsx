@@ -29,7 +29,10 @@ const DropDownMenu = ({
         <DropDownItem
           to={item === "Logout" ? "#" : "/" + item}
           key={index}
-          className={`pt-2 cursor-pointer bg-primary border-none hover:bg-gray-200 text-center`}
+          className={
+            `pt-4 cursor-pointer bg-primary border-none hover:bg-gray-200 text-center text-xl` +
+            (item === "Logout" ? " font-bold" : "")
+          }
           onClick={() => handleClick(item)}
         >
           {item}

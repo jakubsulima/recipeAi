@@ -1,9 +1,10 @@
 import {
   createBrowserRouter,
   createRoutesFromElements,
+  Navigate,
   Route,
   RouterProvider,
-} from "react-router";
+} from "react-router-dom";
 import "./App.css";
 import Layout from "./pages/Layout";
 import HomePage from "./pages/HomePage";
@@ -27,11 +28,12 @@ function App() {
         <Route path="/Fridge" element={<Fridge />} />
         <Route path="/Login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/Me" element={<MePage />} />
+        <Route path="/My Preferences" element={<MePage />} />
         <Route path="/Recipe" element={<RecipePage />} />
         <Route path="/Recipe/:id" element={<RecipePage />} />
         <Route path="/myRecipes" element={<UserRecipes />} />
         <Route path="/admin" element={<AdminPage />} />
+        <Route path="/Homepage" element={<Navigate to="/" replace />} />
         <Route path="*" element={<div>Not Found</div>} />
       </Route>
     )

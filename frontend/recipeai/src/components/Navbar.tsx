@@ -27,7 +27,7 @@ const Navbar = () => {
     }
 
     if (user) {
-      return [...baseItems, "Fridge", "Me", isAdmin ? "Admin" : ""];
+      return ["Fridge", ...baseItems, "My Preferences", isAdmin ? "Admin" : ""];
     } else {
       return [...baseItems, "Login"];
     }
@@ -38,45 +38,64 @@ const Navbar = () => {
   return (
     <div className="flex bg-primary p-4 fixed top-0 left-0 w-full z-50">
       <nav className="container mx-auto">
-        <ul className="flex space-x-4 text-black justify-between">
-          <li className="hover:text-gray-400">
+        <ul className="flex w-full text-black justify-between items-center">
+          {/* Spacer that appears when menu is open to push the X to the right */}
+          {isOpen && <div className="sm:hidden"></div>}
+
+          {/* --- Left Side: Logo --- */}
+          <li className={`hover:text-gray-400 ${isOpen ? "hidden" : ""}`}>
             <a href="/">Recipe.ai</a>
           </li>
-          <div className="flex space-x-3 al max-sm:hidden">
-            {navItems.map((item, index) => (
-              <li key={index} className="hover:text-gray-400">
-                <a href={"/" + item}>{item}</a>
-              </li>
-            ))}
-            {user && (
-              <li
-                className="hover:text-gray-400 cursor-pointer"
-                onClick={handleLogout}
-              >
-                Logout
-              </li>
-            )}
+
+          {/* --- Right Side: Controls (Desktop) / Burger (Mobile) --- */}
+          <div className="flex items-center space-x-3">
+            {/* Desktop Nav Links */}
+            <div className="flex items-center space-x-3 max-sm:hidden">
+              {navItems.map((item, index) => (
+                <li key={index} className="hover:text-gray-400">
+                  <a href={"/" + item}>{item}</a>
+                </li>
+              ))}
+              {user && (
+                <li
+                  className="hover:text-gray-400 cursor-pointer font-bold"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </li>
+              )}
+            </div>
+
+            {/* Mobile Burger Button */}
+            <li className="sm:hidden text-xl pr-1">
+              <DropDownButton
+                onClick={toggleOpen}
+                isOpen={isOpen}
+                className=""
+              />
+            </li>
           </div>
-          <li className="sm:hidden">
-            <DropDownButton onClick={toggleOpen} isOpen={isOpen} className="" />
-          </li>
         </ul>
         <div
           className={`
-            w-full bg-gray-800 shadow-lg rounded-md flex flex-col
-            transition-all duration-700 ease-in-out
+            w-full bg-primary rounded-md flex flex-col
+            transition-all duration-700 ease-in-out overflow-y-auto
             ${
               isOpen
-                ? "opacity-100 max-h-96 translate-y-0"
+                ? "opacity-100 max-h-[50vh] translate-y-0"
                 : "opacity-0 max-h-0 -translate-y-4 pointer-events-none overflow-hidden"
             }
           `}
         >
           <DropDownMenu
-            className={`w-full transition-all duration-700  ease-in-out flex flex-col ${
+            className={`w-full h-full transition-all duration-700  ease-in-out flex flex-col pb-4 ${
               isOpen ? "opacity-100" : "opacity-0"
             } `}
-            dropdownItems={user ? [...navItems, "Logout"] : navItems}
+            dropdownItems={
+              user
+                ? ["Homepage", ...navItems, "Logout"]
+                : ["Homepage", ...navItems]
+            }
             handleLogout={handleLogout}
             onItemClick={() => setIsOpen(false)}
           />

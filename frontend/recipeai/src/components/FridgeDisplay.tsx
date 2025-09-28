@@ -60,7 +60,12 @@ const FridgeDisplay: React.FC<FridgeDisplayProps> = ({
       </ul>
       {filteredItems.length === 0 && showedCategory && (
         <div className="text-center text-gray-500 py-8">
-          No items in {showedCategory.replace(/_/g, " ").toLowerCase()}
+          No items in{" "}
+          {showedCategory
+            .replace(/_/g, " ")
+            .toLowerCase()
+            .charAt(0)
+            .toUpperCase()}
         </div>
       )}
     </div>
