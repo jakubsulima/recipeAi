@@ -11,14 +11,21 @@ const MePage = () => {
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [dietOptions, setDietOptions] = useState<string[]>([]);
+  const [displayDietOptions, setDisplayDietOptions] = useState<string[]>([]); // State for display-friendly options
   const [newIngredient, setNewIngredient] = useState<string>("");
   const [preferencesLoaded, setPreferencesLoaded] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchDietOptions = async () => {
       try {
-        const response = await apiClient("user/getDiets");
-        setDietOptions(response);
+        const response: string[] = await apiClient("user/getDiets");
+        setDietOptions(response); // Store original values
+
+        // Create and store display-friendly values (e.g., capitalized)
+        const formattedForDisplay = response.map(
+          (diet) => diet.charAt(0).toUpperCase() + diet.slice(1).toLowerCase()
+        );
+        setDisplayDietOptions(formattedForDisplay);
       } catch (error) {
         console.error("Failed to fetch diet options:", error);
       } finally {
@@ -132,6 +139,7 @@ const MePage = () => {
             <OptionsForm
               name="diet"
               options={dietOptions}
+              displayOptions={displayDietOptions} // Pass the display options here
               currentOptions={user.preferences?.diet || ""}
               onSaveOptions={handleChangeDiet}
               showSubmitButton={true}

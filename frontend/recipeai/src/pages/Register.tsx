@@ -68,15 +68,17 @@ const Register = () => {
 
   return (
     <div className="w-full h-screen flex items-center justify-center">
-      <div className="flex flex-col items-center justify-center p-5 bg-gray-100 border rounded shadow-md">
+      <div className="flex flex-col items-center justify-center p-5 bg-secondary rounded shadow-md w-full">
         {error && <div className="text-red-500 mb-4">{error}</div>}
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <div>
-            <label htmlFor="email">email:</label>
+            <label htmlFor="email" className="w-full">
+              Email:
+            </label>
             <input
               id="email"
               {...register("email")}
-              className="border rounded p-2 w-full"
+              className="rounded-xl p-2 w-full shadow-md bg-white"
             />
             {errors.email && (
               <p className="text-red-500 text-sm mt-1">
@@ -90,7 +92,7 @@ const Register = () => {
               type="password"
               id="password"
               {...register("password")}
-              className="border rounded p-2 w-full"
+              className="rounded-xl p-2 w-full shadow-md bg-white"
             />
             {errors.password && (
               <p className="text-red-500 text-sm mt-1">
@@ -104,7 +106,7 @@ const Register = () => {
               type="password"
               id="confirmPassword"
               {...register("confirmPassword")}
-              className="border rounded p-2 w-full"
+              className="rounded-xl p-2 w-full shadow-md bg-white"
             />
             {errors.confirmPassword && (
               <p className="text-red-500 text-sm mt-1">
@@ -116,8 +118,8 @@ const Register = () => {
             type="submit"
             disabled={isSubmitting}
             className={`${
-              isSubmitting ? "bg-blue-300" : "bg-blue-500"
-            } text-white px-4 py-2 rounded`}
+              isSubmitting ? "bg-blue-300" : "bg-primary"
+            } text-black px-4 py-2 rounded-sm`}
           >
             {isSubmitting ? "Registering..." : "Register"}
           </button>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   CATEGORIES,
   CATEGORY_OPTIONS,
+  CATEGORY_VALUES, // Import CATEGORY_VALUES
   unitType,
   useFridge,
 } from "../context/fridgeContext";
@@ -28,6 +29,11 @@ export const Fridge = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showedCategory, setShowedCategory] = useState<categoryType | null>(
     CATEGORIES.FRIDGE
+  );
+
+  // Create a display-friendly version of the category names
+  const categoryDisplayOptions = CATEGORY_VALUES.map(
+    (cat) => cat.charAt(0).toUpperCase() + cat.slice(1).toLowerCase()
   );
 
   const getCurrentCategoryIndex = () => {
@@ -155,6 +161,7 @@ export const Fridge = () => {
           error={displayError}
           dateError={dateError}
           displayLoading={displayLoading}
+          categoryDisplayOptions={categoryDisplayOptions} // Pass the new prop here
         />
 
         <FridgeDisplay

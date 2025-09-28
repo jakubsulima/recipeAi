@@ -13,7 +13,7 @@ import { Fridge } from "./pages/Fridge";
 import Login from "./pages/Login";
 import RecipePage from "./pages/RecipePage";
 import Register from "./pages/Register";
-import MePage from "./pages/MePage";
+import MePage from "./pages/UserPreferencesPage.tsx";
 import AdminPage from "./pages/AdminPage"; // Import the AdminPage component
 import UserRecipes from "./pages/UserRecipes.tsx";
 import { AuthProvider } from "./context/context"; // Add import for AuthProvider

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 interface OptionsFormProps {
   name: string;
   options: string[];
+  displayOptions?: string[]; // New prop for display text
   currentOptions: string;
   onSaveOptions?: (options: string) => void;
   children?: React.ReactNode;
@@ -16,6 +17,7 @@ interface OptionsFormProps {
 const OptionsForm = ({
   name,
   options,
+  displayOptions, // Use the new prop
   currentOptions,
   onSaveOptions,
   onChange,
@@ -25,6 +27,7 @@ const OptionsForm = ({
   label,
 }: OptionsFormProps) => {
   const [selectedOption, setSelectedOption] = useState(currentOptions);
+  const optionsToDisplay = displayOptions || options; // Fallback to original options if no displayOptions are provided
 
   useEffect(() => {
     setSelectedOption(currentOptions);
@@ -54,9 +57,9 @@ const OptionsForm = ({
         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
       >
         <option value="">{currentOptions ? "None" : "Select a diet..."}</option>
-        {options.map((option) => (
+        {options.map((option, index) => (
           <option key={option} value={option}>
-            {option}
+            {optionsToDisplay[index]}
           </option>
         ))}
       </select>

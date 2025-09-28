@@ -190,7 +190,7 @@ const RecipePage = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-screen">
+      <div className="fixed inset-0 flex justify-center items-center bg-white bg-opacity-75 z-50">
         <div className="text-xl">Loading recipe...</div>
       </div>
     );

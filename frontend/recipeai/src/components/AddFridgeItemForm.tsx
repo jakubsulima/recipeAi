@@ -22,6 +22,7 @@ interface AddFridgeItemFormProps {
   error: string;
   dateError: string;
   displayLoading: boolean;
+  categoryDisplayOptions: string[]; // New prop for display names
 }
 
 const AddFridgeItemForm: React.FC<AddFridgeItemFormProps> = ({
@@ -39,6 +40,7 @@ const AddFridgeItemForm: React.FC<AddFridgeItemFormProps> = ({
   error,
   dateError,
   displayLoading,
+  categoryDisplayOptions, // Use the new prop
 }) => {
   return (
     <div className="w-full p-6 bg-white rounded-lg shadow-md h-fit">
@@ -77,6 +79,7 @@ const AddFridgeItemForm: React.FC<AddFridgeItemFormProps> = ({
           label="Category"
           name="Category"
           options={CATEGORY_VALUES}
+          displayOptions={categoryDisplayOptions} // Pass display options to the form
           currentOptions={category}
           onChange={(value) => setCategory(value as categoryType)}
           classname="mb-2"
