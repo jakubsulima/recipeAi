@@ -76,7 +76,6 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const response = await apiClient("getFridgeIngredients", false);
       setFridgeItems(response);
-      console.log(expirationNotificationShown);
       if (expirationNotificationShown === false) {
         const today = new Date();
         const expiredItems = response.filter((item: FridgeIngredient) => {
@@ -99,7 +98,6 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
       }
     } catch (err: any) {
       setError(err.message || "Failed to fetch fridge items");
-      console.error("Failed to fetch fridge items:", err);
     } finally {
       setLoading(false);
     }
@@ -107,13 +105,12 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
 
   const addFridgeItem = async (item: Omit<FridgeIngredient, "id">) => {
     try {
-      console.log("Adding fridge item:", UNITS[item.unit]);
       await apiClient("addFridgeIngredient", true, {
         name: item.name,
         expirationDate: item.expirationDate,
         amount: item.amount,
         category: item.category,
-        unit: UNITS[item.unit], // Use UNITS instead of Unit enum
+        unit: UNITS[item.unit],
       });
 
       refreshFridgeItems();

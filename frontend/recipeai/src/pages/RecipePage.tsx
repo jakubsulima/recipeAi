@@ -106,7 +106,6 @@ const RecipePage = () => {
         if (!fridgeLoading) {
           if (currentRecipeIdentifierRef.current !== search) {
             try {
-              console.log("Generating new recipe for search:", search);
               setIsLoading(true);
               setError("");
               const fridgeIngredients = getFridgeItemNames();
@@ -161,7 +160,6 @@ const RecipePage = () => {
         instructions: recipeData?.instructions,
       });
     } catch (error: any) {
-      console.log(error);
       if (error.status === 401) {
         setError("You must be logged in to save a recipe.");
         return;

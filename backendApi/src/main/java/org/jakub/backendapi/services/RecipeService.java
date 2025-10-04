@@ -14,6 +14,8 @@ import org.jakub.backendapi.repositories.IngredientRepository;
 import org.jakub.backendapi.repositories.RecipeIngredientRepository;
 import org.jakub.backendapi.repositories.RecipeRepository;
 import org.jakub.backendapi.repositories.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -41,12 +43,9 @@ public class RecipeService {
 
     @Transactional
     public RecipeDto getRecipeById(Long id) {
-        System.out.println(recipeRepository.findById(id)
-                .orElseThrow(() -> new AppException("Recipe not found", HttpStatus.NOT_FOUND)).getInstructions());
-        return recipeMapper.toRecipeDto(
-                recipeRepository.findById(id)
-                        .orElseThrow(() -> new AppException("Recipe not found", HttpStatus.NOT_FOUND))
-        );
+        Recipe recipe = recipeRepository.findById(id)
+                .orElseThrow(() -> new AppException("Recipe not found", HttpStatus.NOT_FOUND));
+        return recipeMapper.toRecipeDto(recipe);
     }
 
     @Transactional
@@ -72,31 +71,17 @@ public class RecipeService {
 
         Recipe recipe = recipeMapper.toRecipeWithUser(recipeDto, user);
 
-        List<RecipeIngredient> recipeIngredients = recipeDto.getIngredients().stream()
-                .map(dto -> {
-                    Ingredient ingredient = ingredientRepository.findByNameIgnoreCase(dto.getName())
-                            .orElseGet(() -> ingredientRepository.save(new Ingredient(null, dto.getName(), new ArrayList<>())));
-
-                    RecipeIngredient recipeIngredient = new RecipeIngredient();
-                    recipeIngredient.setRecipe(recipe);
-                    recipeIngredient.setIngredient(ingredient);
-                    recipeIngredient.setAmount(dto.getAmount());
-                    recipeIngredient.setUnit(dto.getUnit());
-                    return recipeIngredient;
-                })
-                .collect(Collectors.toCollection(ArrayList::new));
+        List<RecipeIngredient> recipeIngredients = getRecipeIngredients(recipeDto, recipe);
 
         recipe.setRecipeIngredients(recipeIngredients);
         return recipeRepository.save(recipe);
     }
 
-    public List<RecipeDto> findRecipesByUserId(long userId) {
+    public Page<RecipeDto> findRecipesByUserId(long userId, Pageable pageable) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException("Unknown user", HttpStatus.NOT_FOUND));
-        ArrayList<Recipe> recipes = user.getRecipes().isEmpty() ? new ArrayList<>() : new ArrayList<>(user.getRecipes());
-        return recipes.stream()
-                .map(recipeMapper::toRecipeDto)
-                .collect(Collectors.toList());
+        Page<Recipe> recipes = recipeRepository.findByUser(user, pageable);
+        return recipes.map(recipeMapper::toRecipeDto);
     }
 
     public RecipeDto getRecipeByName(String name) {
@@ -105,14 +90,17 @@ public class RecipeService {
         return recipeMapper.toRecipeDto(recipe);
     }
 
+    @Transactional
     public RecipeResponseDto deleteRecipe(Long id, String login) {
         Recipe recipe = recipeRepository.findById(id)
                 .orElseThrow(() -> new AppException("Recipe not found", HttpStatus.NOT_FOUND));
         if (!Objects.equals(recipe.getUser().getEmail(), login)) {
             throw new AppException("You are not the owner of this recipe", HttpStatus.FORBIDDEN);
         }
+        recipe.getInstructions().size(); // Initialize instructions
+        RecipeResponseDto recipeResponseDto = recipeMapper.toResponseDto("Recipe deleted successfully", recipe);
         recipeRepository.delete(recipe);
-        return recipeMapper.toResponseDto("Recipe deleted successfully", recipe);
+        return recipeResponseDto;
     }
 
     public RecipeDto updateRecipe(Long id, RecipeDto recipeDto, String login) {
@@ -137,19 +125,7 @@ public class RecipeService {
         recipe.setName(recipeDto.getName());
         recipe.setDescription(recipeDto.getDescription());
 
-        List<RecipeIngredient> updatedIngredients = recipeDto.getIngredients().stream()
-                .map(dto -> {
-                    Ingredient ingredient = ingredientRepository.findByNameIgnoreCase(dto.getName())
-                            .orElseGet(() -> ingredientRepository.save(new Ingredient(null, dto.getName(), new ArrayList<>())));
-
-                    RecipeIngredient recipeIngredient = new RecipeIngredient();
-                    recipeIngredient.setRecipe(recipe);
-                    recipeIngredient.setIngredient(ingredient);
-                    recipeIngredient.setAmount(dto.getAmount());
-                    recipeIngredient.setUnit(dto.getUnit());
-                    return recipeIngredient;
-                })
-                .collect(Collectors.toList());
+        List<RecipeIngredient> updatedIngredients = getRecipeIngredients(recipeDto, recipe);
 
         recipeIngredientRepository.deleteAll(recipe.getRecipeIngredients());
         recipe.setRecipeIngredients(updatedIngredients);
@@ -165,10 +141,29 @@ public class RecipeService {
         return getRecipeDto(recipeDto, recipe);
     }
 
+    @Transactional
     public RecipeResponseDto adminDeleteRecipe(Long id) {
         Recipe recipe = recipeRepository.findById(id)
                 .orElseThrow(() -> new AppException("Recipe not found", HttpStatus.NOT_FOUND));
+        recipe.getInstructions().size(); // Initialize instructions
+        RecipeResponseDto recipeResponseDto = recipeMapper.toResponseDto("Recipe deleted successfully by admin", recipe);
         recipeRepository.delete(recipe);
-        return recipeMapper.toResponseDto("Recipe deleted successfully by admin", recipe);
+        return recipeResponseDto;
+    }
+
+    private List<RecipeIngredient> getRecipeIngredients(RecipeDto recipeDto, Recipe recipe) {
+        return recipeDto.getIngredients().stream()
+                .map(dto -> {
+                    Ingredient ingredient = ingredientRepository.findByNameIgnoreCase(dto.getName())
+                            .orElseGet(() -> ingredientRepository.save(new Ingredient(null, dto.getName(), new ArrayList<>())));
+
+                    RecipeIngredient recipeIngredient = new RecipeIngredient();
+                    recipeIngredient.setRecipe(recipe);
+                    recipeIngredient.setIngredient(ingredient);
+                    recipeIngredient.setAmount(dto.getAmount());
+                    recipeIngredient.setUnit(dto.getUnit());
+                    return recipeIngredient;
+                })
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 }

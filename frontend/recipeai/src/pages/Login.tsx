@@ -41,7 +41,6 @@ const Login = () => {
       const userData = await apiClient("login", true, data);
       localStorage.setItem("isLoggedIn", "true");
       setUser(userData);
-      console.log("login successful");
       navigate("/");
     } catch (error: any) {
       setError(error.message || "login failed");

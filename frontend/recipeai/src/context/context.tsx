@@ -30,7 +30,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const isAdmin = user?.role === "ADMIN" || false;
-  console.log("isAdmin:", isAdmin);
 
   const getUserPreferences = async () => {
     if (!user) return;
@@ -39,7 +38,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         "user/getPreferences",
         false
       );
-      console.log("Fetched user preferences:", response);
       if (response) {
         setUser((prevUser) =>
           prevUser

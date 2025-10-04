@@ -11,10 +11,10 @@ import org.jakub.backendapi.services.RecipeService;
 import org.jakub.backendapi.services.UserPreferencesService;
 import org.jakub.backendapi.services.UserService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 import static org.jakub.backendapi.config.JwtUtils.getLoginFromToken;
 
@@ -65,8 +65,8 @@ public class RecipesController {
     }
 
     @GetMapping("/getUserRecipes/{userId}")
-    public ResponseEntity<List<RecipeDto>> getUserRecipes(@PathVariable long userId, HttpServletRequest request) {
-        List<RecipeDto> recipes = recipeService.findRecipesByUserId(userId);
+    public ResponseEntity<Page<RecipeDto>> getUserRecipes(@PathVariable long userId, Pageable p) {
+        Page<RecipeDto> recipes = recipeService.findRecipesByUserId(userId, p);
         return ResponseEntity.ok(recipes);
     }
 
