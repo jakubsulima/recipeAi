@@ -11,16 +11,16 @@ const ButtonsForm = ({
   title,
 }: ButtonsFormProps) => {
   return (
-    <section className="flex flex-col items-center ">
-      <h2 className="p-2">{title}</h2>
+    <section className="flex flex-col items-center">
+      <h2 className="p-2 text-text">{title}</h2>
       <article className="flex flex-row bg-secondary justify-between rounded-md overflow-hidden">
         {options.map((button) => (
           <button
             key={button}
-            className={`font-semibold w-full md:min-w-64 md:rounded p-4 ${
+            className={`font-semibold w-full md:min-w-64 md:rounded p-4 transition-colors ${
               selectedButton === button
-                ? "bg-primary"
-                : "bg-secondary hover:bg-primary"
+                ? "bg-accent text-text"
+                : "bg-secondary text-text hover:bg-secondary/80"
             }`}
             onClick={() => onButtonClick(button)}
           >

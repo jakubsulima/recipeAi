@@ -42,9 +42,9 @@ const HomePage = () => {
 
   return (
     <>
-      <section className="flex flex-col">
+      <section className="flex flex-col bg-background min-h-screen">
         <article className="text-center w-full md:p-11 pr-5 pl-5">
-          <h1 className="flex-col p-5">
+          <h1 className="flex-col p-5 text-text">
             Welcome to AI Kitchen! &#127869; &#129302;
           </h1>
           <article className="relative w-full">
@@ -53,7 +53,7 @@ const HomePage = () => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Create recipe"
-              className="p-2 pr-10 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary w-full"
+              className="p-2 pr-10 rounded-full border border-primary/20 bg-secondary text-text focus:outline-none focus:ring-2 focus:ring-accent w-full placeholder:text-text/50"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   handleSearch();
@@ -63,7 +63,7 @@ const HomePage = () => {
             {search && (
               <button
                 onClick={handleClear}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-text/70 hover:text-accent focus:outline-none transition-colors"
                 aria-label="Clear search"
               >
                 <svg
@@ -102,23 +102,23 @@ const HomePage = () => {
             ></ButtonsForm>
             <button
               onClick={handleSearch}
-              className="w-40 bg-primary text-black font-bold py-2 px-4 rounded-full hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary-dark mt-6 sm:w-62 "
+              className="w-full bg-accent text-text font-bold py-2 px-4 rounded-full hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent mt-6 transition-colors"
             >
               Generate Recipe
             </button>
           </section>
         </article>
 
-        <section className="flex bg-primary flex-col text-center md:flex-row p-5 md:pt-10 md:pb-10 ">
-          <p className="pt-2 md:pt-0">
+        <section className="flex bg-secondary flex-col text-center md:flex-row p-5 md:pt-10 md:pb-10 gap-4">
+          <p className="pt-2 md:pt-0 text-text">
             🧑‍🍳 No idea what to cook? Let our AI suggest recipes based on your
             mood, time, and dietary preferences!
           </p>
-          <p className="pt-2 md:pt-0">
+          <p className="pt-2 md:pt-0 text-text">
             🥗 Virtual Fridge 🍱 Add whatever ingredients you have at home, and
             we'll generate the perfect meal ideas for you.
           </p>
-          <p className="pt-2 md:pt-0">
+          <p className="pt-2 md:pt-0 text-text">
             🍽️ Save & Organize Keep your favorite recipes in one place and
             revisit them anytime!
           </p>

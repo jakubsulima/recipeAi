@@ -188,43 +188,45 @@ const RecipePage = () => {
 
   if (isLoading) {
     return (
-      <div className="fixed inset-0 flex justify-center items-center bg-white bg-opacity-75 z-50">
-        <div className="text-xl">Loading recipe...</div>
+      <div className="fixed inset-0 flex justify-center items-center bg-background/95 z-50">
+        <div className="text-xl text-text">Loading recipe...</div>
       </div>
     );
   }
 
   if (!recipeData) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="text-xl">No recipe data available</div>
+      <div className="flex justify-center items-center h-screen bg-background">
+        <div className="text-xl text-text">No recipe data available</div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-6 bg-background min-h-screen">
       {error && (
-        <div className="flex justify-center">
-          <div className="text-xl text-red-500">{error}</div>
+        <div className="flex justify-center mb-4">
+          <div className="text-xl text-accent">{error}</div>
         </div>
       )}
-      <h1 className="text-3xl font-bold mb-2">{recipeData.name}</h1>
+      <h1 className="text-3xl font-bold mb-2 text-text">{recipeData.name}</h1>
       {recipeData.timeToPrepare && (
-        <h2 className="text-2xl font-bold mb-2">{recipeData.timeToPrepare}</h2>
+        <h2 className="text-2xl font-bold mb-2 text-accent">
+          {recipeData.timeToPrepare}
+        </h2>
       )}
       {recipeData.description && (
-        <p className="text-gray-600 mb-6">{recipeData.description}</p>
+        <p className="text-text/80 mb-6">{recipeData.description}</p>
       )}
 
       <div className="grid md:grid-cols-2 gap-8">
-        <div>
-          <h2 className="text-2xl font-semibold mb-4">Ingredients</h2>
+        <div className="bg-secondary p-6 rounded-lg">
+          <h2 className="text-2xl font-semibold mb-4 text-text">Ingredients</h2>
           <ul className="space-y-2">
             {(recipeData.ingredients || []).map((ingredient, index) => (
-              <li key={index} className="flex justify-between">
+              <li key={index} className="flex justify-between text-text">
                 <span>{ingredient.name}</span>
-                <span>
+                <span className="text-accent">
                   {ingredient.amount} {ingredient.unit}
                 </span>
               </li>
@@ -232,23 +234,25 @@ const RecipePage = () => {
           </ul>
         </div>
 
-        <div>
-          <h2 className="text-2xl font-semibold mb-4">Instructions</h2>
+        <div className="bg-secondary p-6 rounded-lg">
+          <h2 className="text-2xl font-semibold mb-4 text-text">
+            Instructions
+          </h2>
           <ol className="space-y-3">
             {(recipeData.instructions || []).map((instruction, index) => (
-              <li key={index} className="flex">
-                <span className="text-main font-bold mr-3">{index + 1}.</span>
+              <li key={index} className="flex text-text">
+                <span className="text-accent font-bold mr-3">{index + 1}.</span>
                 <span>{instruction}</span>
               </li>
             ))}
           </ol>
         </div>
       </div>
-      <div className="display flex justify-between flex-row items-center mt-8">
+      <div className="display flex justify-between flex-row items-center mt-8 flex-wrap gap-4">
         {!recipeId && user && (
-          <div className="mb-8">
+          <div>
             <button
-              className="bg-primary text-black px-4 py-2 rounded-md"
+              className="bg-accent text-background px-4 py-2 rounded-lg font-semibold hover:bg-accent/90 transition-colors"
               onClick={() => saveRecipe()}
             >
               Save Recipe
@@ -257,9 +261,9 @@ const RecipePage = () => {
         )}
 
         {recipeId && user && (
-          <div className="mb-8">
+          <div>
             <button
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md"
+              className="bg-accent text-background px-4 py-2 rounded-lg font-semibold hover:bg-accent/90 transition-colors"
               onClick={handleDelete}
             >
               Delete Recipe
@@ -268,9 +272,9 @@ const RecipePage = () => {
         )}
 
         {!recipeId && (
-          <div className="mb-8">
+          <div>
             <button
-              className="bg-primary rounded-md text-black px-4 py-2"
+              className="bg-primary text-background rounded-lg px-4 py-2 font-semibold hover:bg-primary/90 transition-colors"
               onClick={() => loadNewRecipeCallback(search)}
             >
               I want new recipe

@@ -16,14 +16,14 @@ const FridgeIngredientContainer = ({
   remove,
 }: Props) => {
   return (
-    <div className="flex w-full items-center justify-between border-b border-primary py-4">
+    <div className="flex w-full items-center justify-between border-b border-primary/20 py-4">
       <div className="flex flex-col">
-        <h1 className="font-semibold text-gray-800">{name}</h1>
-        <div className="flex flex-row text-sm text-gray-500">
+        <h1 className="font-semibold text-text">{name}</h1>
+        <div className="flex flex-row text-sm text-text/70">
           <p>
             {amount} {unit}
             {expirationDate && (
-              <span className="ml-2 border-l border-gray-300 pl-2">
+              <span className="ml-2 border-l border-primary/20 pl-2">
                 {expirationDate}
               </span>
             )}
@@ -31,7 +31,7 @@ const FridgeIngredientContainer = ({
         </div>
       </div>
       <button
-        className="text-gray-400 hover:text-red-500 text-2xl font-light transition-colors"
+        className="text-text/50 hover:text-accent text-2xl font-light transition-colors"
         onClick={remove}
         aria-label={`Remove ${name}`}
       >

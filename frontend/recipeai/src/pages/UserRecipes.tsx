@@ -55,17 +55,21 @@ const Recipes = () => {
   }, [user, userLoading, currentPage]);
 
   if (isLoading || userLoading) {
-    return <div>Loading recipes...</div>;
+    return (
+      <div className="fixed inset-0 flex justify-center items-center bg-background">
+        <div className="text-text text-xl">Loading recipes...</div>
+      </div>
+    );
   }
 
   return (
     <>
-      <section className="flex flex-col max-w-3xl mx-auto w-full">
-        <article className="p-4 ">
-          <h1 className="text-2xl font-bold mb-6 text-center">My Recipes</h1>
-          {error && (
-            <div className="text-red-500 text-center mb-4">{error}</div>
-          )}
+      <section className="flex flex-col max-w-3xl mx-auto w-full bg-background min-h-screen p-4">
+        <article className="p-4">
+          <h1 className="text-2xl font-bold mb-6 text-center text-text">
+            My Recipes
+          </h1>
+          {error && <div className="text-accent text-center mb-4">{error}</div>}
           {recipes && recipes.length > 0 ? (
             <div className="space-y-6">
               {recipes.map((recipe) => (
@@ -80,7 +84,7 @@ const Recipes = () => {
           ) : (
             !isLoading &&
             !error && (
-              <div className="text-center text-gray-500">No recipes found.</div>
+              <div className="text-center text-text/70">No recipes found.</div>
             )
           )}
         </article>

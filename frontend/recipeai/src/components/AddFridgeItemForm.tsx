@@ -43,37 +43,37 @@ const AddFridgeItemForm: React.FC<AddFridgeItemFormProps> = ({
   categoryDisplayOptions, // Use the new prop
 }) => {
   return (
-    <div className="w-full p-6 bg-white rounded-lg shadow-md h-fit">
-      {error && <div className="text-red-500 mb-4">{error}</div>}
-      <h1 className="text-2xl font-bold mb-4">Add to Fridge</h1>
+    <div className="w-full p-6 bg-secondary rounded-lg shadow-md h-fit">
+      {error && <div className="text-accent mb-4">{error}</div>}
+      <h1 className="text-2xl font-bold mb-4 text-text">Add to Fridge</h1>
       <div className="mb-4">
         <input
           type="text"
           value={newItem}
           onChange={(e) => setNewItem(e.target.value)}
           placeholder="Add new item *"
-          className={`border rounded p-2 w-full mb-2 focus:outline-none focus:ring-2 focus:ring-highlight focus:border-highlight ${
-            error && !newItem.trim() ? "border-red-500" : "border-gray-300"
+          className={`border rounded p-2 w-full mb-2 bg-background text-text focus:outline-none focus:ring-2 focus:ring-accent ${
+            error && !newItem.trim() ? "border-accent" : "border-primary/20"
           }`}
           style={{ WebkitTapHighlightColor: "transparent" }}
           disabled={displayLoading}
           required
         />
 
-        <label className="block mb-1 text-sm text-gray-600">
-          Expiration date <span className="text-gray-400">(optional)</span>
+        <label className="block mb-1 text-sm text-text/70">
+          Expiration date <span className="text-text/50">(optional)</span>
         </label>
         <input
           type="date"
           value={newItemDate}
           onChange={handleDateChange}
-          className={`border rounded p-2 w-full mb-2 focus:outline-none focus:ring-2 focus:ring-highlight focus:border-highlight ${
-            dateError ? "border-red-500" : "border-gray-300"
+          className={`border rounded p-2 w-full mb-2 bg-background text-text focus:outline-none focus:ring-2 focus:ring-accent ${
+            dateError ? "border-accent" : "border-primary/20"
           }`}
           style={{ WebkitTapHighlightColor: "transparent" }}
           disabled={displayLoading}
         />
-        {dateError && <p className="text-red-500 text-sm mb-2">{dateError}</p>}
+        {dateError && <p className="text-accent text-sm mb-2">{dateError}</p>}
 
         <OptionsForm
           label="Category"
@@ -84,23 +84,23 @@ const AddFridgeItemForm: React.FC<AddFridgeItemFormProps> = ({
           onChange={(value) => setCategory(value as categoryType)}
           classname="mb-2"
         />
-        <label className="block mb-1 text-sm text-gray-600">
-          Amount <span className="text-gray-400">(optional)</span>
+        <label className="block mb-1 text-sm text-text/70">
+          Amount <span className="text-text/50">(optional)</span>
         </label>
         <input
           type="text"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           placeholder="Amount (e.g., 1.5)"
-          className={`border rounded p-2 w-full mb-2 focus:outline-none focus:ring-2 focus:ring-highlight focus:border-highlight ${
-            hasAmountError(amount) ? "border-red-500" : "border-gray-300"
+          className={`border rounded p-2 w-full mb-2 bg-background text-text focus:outline-none focus:ring-2 focus:ring-accent ${
+            hasAmountError(amount) ? "border-accent" : "border-primary/20"
           }`}
           style={{ WebkitTapHighlightColor: "transparent" }}
           disabled={displayLoading}
           required
         />
         {hasAmountError(amount) && (
-          <p className="text-red-500 text-sm mb-2">
+          <p className="text-accent text-sm mb-2">
             Please enter a valid positive number
           </p>
         )}
@@ -120,7 +120,7 @@ const AddFridgeItemForm: React.FC<AddFridgeItemFormProps> = ({
             !amount.trim() ||
             !!dateError
           }
-          className="mt-2 bg-primary text-black px-4 py-2 rounded w-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          className="mt-2 bg-accent text-background px-4 py-2 rounded w-full font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent/90 transition-colors"
         >
           {displayLoading ? "Adding..." : "Add Item"}
         </button>

@@ -145,7 +145,7 @@ export const Fridge = () => {
 
   return (
     <>
-      <div className="container mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="container mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-8 bg-background min-h-screen">
         <AddFridgeItemForm
           newItem={newItem}
           setNewItem={setNewItem}

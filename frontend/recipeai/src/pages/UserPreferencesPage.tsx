@@ -107,7 +107,11 @@ const MePage = () => {
   };
 
   if (userLoading || loading) {
-    return <div className="p-4 text-center">Loading...</div>;
+    return (
+      <div className="p-4 text-center bg-background min-h-screen text-text">
+        Loading...
+      </div>
+    );
   }
 
   if (!user) {
@@ -116,15 +120,13 @@ const MePage = () => {
   }
 
   return (
-    <div className="min-h-screen w-full">
+    <div className="min-h-screen w-full bg-background">
       <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">
-          My Preferences
-        </h1>
+        <h1 className="text-3xl font-bold text-text mb-8">My Preferences</h1>
 
         {error && (
           <div
-            className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg"
+            className="mb-6 p-4 bg-accent/20 border border-accent text-accent rounded-lg"
             role="alert"
           >
             {error}
@@ -132,8 +134,8 @@ const MePage = () => {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="bg-white p-6 rounded-lg shadow-sm">
-            <h2 className="text-xl font-semibold text-black mb-4">
+          <div className="bg-secondary p-6 rounded-lg shadow-sm">
+            <h2 className="text-xl font-semibold text-text mb-4">
               Dietary Plan
             </h2>
             <OptionsForm
@@ -147,8 +149,8 @@ const MePage = () => {
             />
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm">
-            <h2 className="text-xl font-semibold text-gray-700 mb-4">
+          <div className="bg-secondary p-6 rounded-lg shadow-sm">
+            <h2 className="text-xl font-semibold text-text mb-4">
               Disliked Ingredients
             </h2>
             <div className="flex gap-2 mb-4">
@@ -158,11 +160,11 @@ const MePage = () => {
                 onChange={(e) => setNewIngredient(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && addDislikedIngredient()}
                 placeholder="e.g., Olives"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                className="flex-1 px-3 py-2 border border-primary/20 bg-background text-text rounded-md focus:outline-none focus:ring-2 focus:ring-accent placeholder:text-text/50"
               />
               <button
                 onClick={addDislikedIngredient}
-                className="px-4 py-2 bg-primary text-black rounded-md focus:outline-none focus:ring-2 focus:ring-main"
+                className="px-4 py-2 bg-accent text-background rounded-md font-semibold focus:outline-none focus:ring-2 focus:ring-accent hover:bg-accent/90 transition-colors"
               >
                 Add
               </button>
@@ -173,12 +175,12 @@ const MePage = () => {
                   (ingredient, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between bg-secondary px-3 py-2 rounded-md"
+                      className="flex items-center justify-between bg-background px-3 py-2 rounded-md"
                     >
-                      <span className="capitalize">{ingredient}</span>
+                      <span className="capitalize text-text">{ingredient}</span>
                       <button
                         onClick={() => removeDislikedIngredient(ingredient)}
-                        className="text-black hover:text-red-500 text-xl font-bold transition-colors"
+                        className="text-text/50 hover:text-accent text-xl font-bold transition-colors"
                         title={`Remove ${ingredient}`}
                       >
                         &times;
@@ -187,7 +189,7 @@ const MePage = () => {
                   )
                 )
               ) : (
-                <p className="text-gray-500 text-center py-4">
+                <p className="text-text/70 text-center py-4">
                   {preferencesLoaded
                     ? "No disliked ingredients added."
                     : "Loading..."}

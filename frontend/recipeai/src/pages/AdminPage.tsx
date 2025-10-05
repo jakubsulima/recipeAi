@@ -60,31 +60,39 @@ const AdminPage: React.FC = () => {
   };
 
   if (loading)
-    return <div className="container mx-auto p-4">Loading users...</div>;
+    return (
+      <div className="container mx-auto p-4 bg-background min-h-screen text-text">
+        Loading users...
+      </div>
+    );
   if (error)
     return (
-      <div className="container mx-auto p-4 text-red-500">Error: {error}</div>
+      <div className="container mx-auto p-4 bg-background min-h-screen text-accent">
+        Error: {error}
+      </div>
     );
   if (!authContext || authContext.user?.role !== "ADMIN") {
     return (
-      <div className="container mx-auto p-4 text-red-500">
+      <div className="container mx-auto p-4 bg-background min-h-screen text-accent">
         Access Denied. You must be an admin to view this page.
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
+    <div className="container mx-auto p-4 bg-background min-h-screen">
+      <h1 className="text-3xl font-bold mb-6 text-text">Admin Dashboard</h1>
 
       <div className="mb-12">
-        <h2 className="text-2xl font-semibold mb-4">User Management</h2>
+        <h2 className="text-2xl font-semibold mb-4 text-text">
+          User Management
+        </h2>
         {users.length === 0 && !loading && !error ? (
-          <p>No users found.</p>
+          <p className="text-text/70">No users found.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full bg-white shadow-md rounded-lg">
-              <thead className="bg-gray-800 text-white">
+            <table className="min-w-full bg-secondary shadow-md rounded-lg">
+              <thead className="bg-primary/10 text-text">
                 <tr>
                   <th className="py-3 px-4 text-left">ID</th>
                   <th className="py-3 px-4 text-left">Email</th>
@@ -92,11 +100,11 @@ const AdminPage: React.FC = () => {
                   <th className="py-3 px-4 text-left">Actions</th>
                 </tr>
               </thead>
-              <tbody className="text-gray-700">
+              <tbody className="text-text">
                 {users.map((user) => (
                   <tr
                     key={user.id}
-                    className="border-b border-gray-200 hover:bg-gray-100"
+                    className="border-b border-primary/20 hover:bg-primary/5 transition-colors"
                   >
                     <td className="py-3 px-4">{user.id}</td>
                     <td className="py-3 px-4">{user.email}</td>
@@ -104,7 +112,7 @@ const AdminPage: React.FC = () => {
                     <td className="py-3 px-4">
                       <button
                         onClick={() => handleDeleteUser(user.id)}
-                        className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                        className="bg-accent hover:bg-accent/80 text-background font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         disabled={user.email === authContext.user?.email} // Prevent admin from deleting themselves
                       >
                         Delete

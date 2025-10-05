@@ -37,9 +37,9 @@ const FridgeDisplay: React.FC<FridgeDisplayProps> = ({
     : [];
 
   return (
-    <div className="md:col-span-2 w-full p-6 bg-white rounded-lg shadow-md">
-      <h1 className="text-2xl font-bold mb-4">My Fridge</h1>
-      {error && <div className="text-red-500 mb-4">{error}</div>}
+    <div className="md:col-span-2 w-full p-6 bg-secondary rounded-lg shadow-md">
+      <h1 className="text-2xl font-bold mb-4 text-text">My Fridge</h1>
+      {error && <div className="text-accent mb-4">{error}</div>}
       <CategorySwitcher
         currentCategory={showedCategory}
         onPrevious={goToPreviousCategory}

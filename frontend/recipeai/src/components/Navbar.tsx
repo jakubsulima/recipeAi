@@ -36,14 +36,18 @@ const Navbar = () => {
   const navItems = getNavItems();
 
   return (
-    <div className="flex bg-primary p-4 fixed top-0 left-0 w-full z-50">
+    <div className="flex bg-primary p-4 fixed top-0 left-0 w-full z-50 shadow-md">
       <nav className="container mx-auto">
-        <ul className="flex w-full text-black justify-between items-center">
+        <ul className="flex w-full text-background justify-between items-center">
           {/* Spacer that appears when menu is open to push the X to the right */}
           {isOpen && <div className="sm:hidden"></div>}
 
           {/* --- Left Side: Logo --- */}
-          <li className={`hover:text-gray-400 ${isOpen ? "hidden" : ""}`}>
+          <li
+            className={`hover:text-accent transition-colors font-bold text-lg ${
+              isOpen ? "hidden" : ""
+            }`}
+          >
             <a href="/">Recipe.ai</a>
           </li>
 
@@ -52,16 +56,23 @@ const Navbar = () => {
             {/* Desktop Nav Links */}
             <div className="flex items-center space-x-3 max-sm:hidden">
               {navItems.map((item, index) => (
-                <li key={index} className="hover:text-gray-400">
-                  <a href={"/" + item}>{item}</a>
+                <li key={index} className="list-none">
+                  <a
+                    href={"/" + item}
+                    className="px-4 py-2 rounded-full text-background hover:bg-accent hover:text-background transition-all duration-300 inline-block border-none"
+                  >
+                    {item}
+                  </a>
                 </li>
               ))}
               {user && (
-                <li
-                  className="hover:text-gray-400 cursor-pointer font-bold"
-                  onClick={handleLogout}
-                >
-                  Logout
+                <li className="list-none">
+                  <button
+                    className="px-4 py-2 rounded-full bg-secondary hover:bg-accent hover:text-background transition-all duration-300 font-semibold cursor-pointer"
+                    onClick={handleLogout}
+                  >
+                    Logout
+                  </button>
                 </li>
               )}
             </div>
@@ -78,7 +89,7 @@ const Navbar = () => {
         </ul>
         <div
           className={`
-            w-full bg-primary rounded-md flex flex-col
+            w-full bg-secondary rounded-md flex flex-col
             transition-all duration-700 ease-in-out overflow-y-auto
             ${
               isOpen
