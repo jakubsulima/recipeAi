@@ -68,7 +68,7 @@ const OptionsForm = ({
         <button
           type="submit"
           disabled={selectedOption === currentOptions}
-          className="w-full px-4 py-2 bg-accent text-background rounded-md font-semibold focus:outline-none focus:ring-2 focus:ring-accent hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full px-4 py-2 bg-accent text-text rounded-md font-semibold focus:outline-none focus:ring-2 focus:ring-accent hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {buttonText}
         </button>

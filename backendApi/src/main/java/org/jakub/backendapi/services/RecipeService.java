@@ -49,10 +49,9 @@ public class RecipeService {
     }
 
     @Transactional
-    public List<RecipeDto> getAllRecipes() {
-        return recipeRepository.findAll().stream()
-                .map(recipeMapper::toRecipeDto)
-                .toList();
+    public Page<RecipeDto> getAllRecipes(Pageable pageable) {
+        Page<Recipe> recipes = recipeRepository.findAll(pageable);
+        return recipes.map(recipeMapper::toRecipeDto);
     }
 
     @Transactional

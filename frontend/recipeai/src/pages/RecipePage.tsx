@@ -188,8 +188,17 @@ const RecipePage = () => {
 
   if (isLoading) {
     return (
-      <div className="fixed inset-0 flex justify-center items-center bg-background/95 z-50">
-        <div className="text-xl text-text">Loading recipe...</div>
+      <div className="max-w-4xl mx-auto p-6 bg-background min-h-screen">
+        <div className="flex flex-col items-center justify-center min-h-[60vh]">
+          <div className="relative w-20 h-20 mb-6">
+            <div className="absolute inset-0 border-4 border-secondary rounded-full"></div>
+            <div className="absolute inset-0 border-4 border-accent rounded-full border-t-transparent animate-spin"></div>
+          </div>
+          <p className="text-text text-xl font-semibold">Loading recipe...</p>
+          <p className="text-text/60 text-sm mt-2">
+            Preparing your delicious recipe
+          </p>
+        </div>
       </div>
     );
   }
@@ -219,40 +228,48 @@ const RecipePage = () => {
         <p className="text-text/80 mb-6">{recipeData.description}</p>
       )}
 
-      <div className="grid md:grid-cols-2 gap-8">
-        <div className="bg-secondary p-6 rounded-lg">
-          <h2 className="text-2xl font-semibold mb-4 text-text">Ingredients</h2>
-          <ul className="space-y-2">
-            {(recipeData.ingredients || []).map((ingredient, index) => (
-              <li key={index} className="flex justify-between text-text">
-                <span>{ingredient.name}</span>
-                <span className="text-accent">
-                  {ingredient.amount} {ingredient.unit}
-                </span>
-              </li>
-            ))}
-          </ul>
+      <div className="flex flex-col md:flex-row gap-8">
+        <div className="flex-1">
+          <div className="bg-secondary p-6 rounded-lg inline-block min-w-full">
+            <h2 className="text-2xl font-semibold mb-4 text-text">
+              Ingredients
+            </h2>
+            <ul className="space-y-2">
+              {(recipeData.ingredients || []).map((ingredient, index) => (
+                <li key={index} className="flex justify-between text-text">
+                  <span>{ingredient.name}</span>
+                  <span className="text-text">
+                    {ingredient.amount} {ingredient.unit}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
 
-        <div className="bg-secondary p-6 rounded-lg">
-          <h2 className="text-2xl font-semibold mb-4 text-text">
-            Instructions
-          </h2>
-          <ol className="space-y-3">
-            {(recipeData.instructions || []).map((instruction, index) => (
-              <li key={index} className="flex text-text">
-                <span className="text-accent font-bold mr-3">{index + 1}.</span>
-                <span>{instruction}</span>
-              </li>
-            ))}
-          </ol>
+        <div className="flex-1">
+          <div className="bg-secondary p-6 rounded-lg inline-block min-w-full">
+            <h2 className="text-2xl font-semibold mb-4 text-text">
+              Instructions
+            </h2>
+            <ol className="space-y-3">
+              {(recipeData.instructions || []).map((instruction, index) => (
+                <li key={index} className="flex text-text">
+                  <span className="text-accent font-bold mr-3">
+                    {index + 1}.
+                  </span>
+                  <span>{instruction}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
         </div>
       </div>
       <div className="display flex justify-between flex-row items-center mt-8 flex-wrap gap-4">
         {!recipeId && user && (
           <div>
             <button
-              className="bg-accent text-background px-4 py-2 rounded-lg font-semibold hover:bg-accent/90 transition-colors"
+              className="bg-accent text-text px-4 py-2 rounded-lg font-semibold hover:bg-accent/90 transition-colors"
               onClick={() => saveRecipe()}
             >
               Save Recipe
@@ -263,7 +280,7 @@ const RecipePage = () => {
         {recipeId && user && (
           <div>
             <button
-              className="bg-accent text-background px-4 py-2 rounded-lg font-semibold hover:bg-accent/90 transition-colors"
+              className="bg-accent text-text px-4 py-2 rounded-lg font-semibold hover:bg-accent/90 transition-colors"
               onClick={handleDelete}
             >
               Delete Recipe

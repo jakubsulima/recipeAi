@@ -58,8 +58,7 @@ const MePage = () => {
     setError("");
     try {
       await updateFn();
-      await getUserPreferences(); // Refresh preferences after update
-      // Optionally show a success message
+      await getUserPreferences();
     } catch (error) {
       setError(errorMessage);
       console.error(errorMessage, error);
@@ -164,7 +163,7 @@ const MePage = () => {
               />
               <button
                 onClick={addDislikedIngredient}
-                className="px-4 py-2 bg-accent text-background rounded-md font-semibold focus:outline-none focus:ring-2 focus:ring-accent hover:bg-accent/90 transition-colors"
+                className="px-4 py-2 bg-accent text-text rounded-md font-semibold focus:outline-none focus:ring-2 focus:ring-accent hover:bg-accent/90 transition-colors"
               >
                 Add
               </button>

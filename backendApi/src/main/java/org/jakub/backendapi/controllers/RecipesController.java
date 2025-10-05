@@ -40,8 +40,8 @@ public class RecipesController {
     }
 
     @GetMapping("/getAllRecipes")
-    public ResponseEntity<RecipeDto[]> getAllRecipes() {
-        RecipeDto[] recipes = recipeService.getAllRecipes().toArray(new RecipeDto[0]);
+    public ResponseEntity<Page<RecipeDto>> getAllRecipes(Pageable p) {
+        Page<RecipeDto> recipes = recipeService.getAllRecipes(p);
         return ResponseEntity.ok(recipes);
     }
 

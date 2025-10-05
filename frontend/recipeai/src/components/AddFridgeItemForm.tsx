@@ -120,7 +120,7 @@ const AddFridgeItemForm: React.FC<AddFridgeItemFormProps> = ({
             !amount.trim() ||
             !!dateError
           }
-          className="mt-2 bg-accent text-background px-4 py-2 rounded w-full font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent/90 transition-colors"
+          className="mt-2 bg-accent text-text px-4 py-2 rounded w-full font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent/90 transition-colors"
         >
           {displayLoading ? "Adding..." : "Add Item"}
         </button>

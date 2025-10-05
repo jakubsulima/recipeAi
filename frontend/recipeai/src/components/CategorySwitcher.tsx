@@ -20,7 +20,7 @@ const CategorySwitcher: React.FC<CategorySwitcherProps> = ({
       <div className="flex rounded-lg justify-between w-full">
         <button
           onClick={onPrevious}
-          className="flex items-center justify-center w-10 h-10 bg-accent text-background rounded-l-lg transition-colors cursor-pointer border-none hover:bg-accent/90"
+          className="flex items-center justify-center w-10 h-10 bg-accent text-text rounded-l-lg transition-colors cursor-pointer border-none hover:bg-accent/90"
           aria-label="Previous category"
         >
           &lt;
@@ -35,7 +35,7 @@ const CategorySwitcher: React.FC<CategorySwitcherProps> = ({
 
         <button
           onClick={onNext}
-          className="flex items-center justify-center w-10 h-10 bg-accent text-background rounded-r-lg transition-colors cursor-pointer border-none hover:bg-accent/90"
+          className="flex items-center justify-center w-10 h-10 bg-accent text-text rounded-r-lg transition-colors cursor-pointer border-none hover:bg-accent/90"
           aria-label="Next category"
         >
           &gt;
