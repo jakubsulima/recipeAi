@@ -27,7 +27,12 @@ const Navbar = () => {
     }
 
     if (user) {
-      return ["Fridge", ...baseItems, "My Preferences", isAdmin ? "Admin" : ""];
+      return [
+        "Fridge",
+        ...baseItems,
+        "My Preferences",
+        isAdmin ? "Admin" : null,
+      ].filter(Boolean);
     } else {
       return [...baseItems, "Login"];
     }
@@ -59,7 +64,7 @@ const Navbar = () => {
                 <li key={index} className="list-none">
                   <a
                     href={"/" + item}
-                    className="px-4 py-2 rounded-full text-background hover:bg-accent hover:text-background transition-all duration-300 inline-block border-none"
+                    className="px-4 py-2 rounded-full text-background hover:text-accent inline-block border-none"
                   >
                     {item}
                   </a>
@@ -68,7 +73,7 @@ const Navbar = () => {
               {user && (
                 <li className="list-none">
                   <button
-                    className="px-4 py-2 rounded-full bg-secondary hover:bg-accent hover:text-background transition-all duration-300 font-semibold cursor-pointer"
+                    className="px-2 py-1 rounded-full hover:text-accent font-semibold cursor-pointer"
                     onClick={handleLogout}
                   >
                     Logout
@@ -78,7 +83,7 @@ const Navbar = () => {
             </div>
 
             {/* Mobile Burger Button */}
-            <li className="sm:hidden text-xl pr-1">
+            <li className="sm:hidden text-xl pr-1 bg-primary">
               <DropDownButton
                 onClick={toggleOpen}
                 isOpen={isOpen}
@@ -89,7 +94,7 @@ const Navbar = () => {
         </ul>
         <div
           className={`
-            w-full bg-secondary rounded-md flex flex-col
+            w-full bg-primary rounded-md flex flex-col
             transition-all duration-700 ease-in-out overflow-y-auto
             ${
               isOpen
@@ -99,12 +104,14 @@ const Navbar = () => {
           `}
         >
           <DropDownMenu
-            className={`w-full h-full transition-all duration-700  ease-in-out flex flex-col pb-4 ${
+            className={`w-full h-full transition-all duration-700  ease-in-out flex flex-col pb-4 bg-primary ${
               isOpen ? "opacity-100" : "opacity-0"
             } `}
             dropdownItems={
               user
-                ? ["Homepage", ...navItems, "Logout"]
+                ? ["Homepage", ...navItems, "Logout"].filter(
+                    (item): item is string => !!item
+                  )
                 : ["Homepage", ...navItems]
             }
             handleLogout={handleLogout}

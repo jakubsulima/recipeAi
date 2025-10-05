@@ -17,8 +17,8 @@ const AdminRecipesPanel: React.FC = () => {
   const fetchRecipes = async () => {
     setLoading(true);
     try {
-      const data = await apiClient("getAllRecipes");
-      setRecipes(data || []);
+      const data = await apiClient("getAllRecipes?page=0&size=1000");
+      setRecipes(data.content || []);
       setError(null);
     } catch (err) {
       setError(

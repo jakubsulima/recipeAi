@@ -92,7 +92,7 @@ const Login = () => {
             disabled={isSubmitting}
             className={`${
               isSubmitting ? "bg-accent/50" : "bg-accent"
-            } text-background px-4 py-2 rounded-lg font-semibold hover:bg-accent/90 transition-colors`}
+            } text-text px-4 py-2 rounded-lg font-semibold hover:bg-accent/90 transition-colors`}
           >
             {isSubmitting ? "Logging in..." : "Login"}
           </button>

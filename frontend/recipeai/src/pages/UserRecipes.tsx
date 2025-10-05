@@ -17,8 +17,12 @@ const Recipes = () => {
 
   const fetchAllRecipes = async () => {
     try {
-      const response = await apiClient("getAllRecipes", false);
-      setRecipes(response);
+      const response = await apiClient(
+        `getAllRecipes?page=${currentPage}&size=${RECIPES_PER_PAGE}`,
+        false
+      );
+      setRecipes(response.content);
+      setTotalPages(response.totalPages);
     } catch (error) {
       setError("Error fetching recipes");
       console.error("Error fetching recipes:", error);
@@ -64,14 +68,25 @@ const Recipes = () => {
 
   return (
     <>
-      <section className="flex flex-col max-w-3xl mx-auto w-full bg-background min-h-screen p-4">
-        <article className="p-4">
-          <h1 className="text-2xl font-bold mb-6 text-center text-text">
-            My Recipes
-          </h1>
-          {error && <div className="text-accent text-center mb-4">{error}</div>}
+      <section className="flex flex-col max-w-4xl mx-auto w-full bg-background h-screen p-6">
+        <article className="flex-1 ">
+          <div className="mb-8 text-center">
+            <h1 className="text-4xl font-bold text-text mb-2 tracking-tight">
+              {user ? "My Recipes" : "All Recipes"}
+            </h1>
+            <p className="text-text/60 text-sm">
+              {user
+                ? "Your personal recipe collection"
+                : "Discover delicious recipes from our community"}
+            </p>
+          </div>
+          {error && (
+            <div className="text-accent text-center mb-6 bg-accent/10 p-4 rounded-2xl">
+              {error}
+            </div>
+          )}
           {recipes && recipes.length > 0 ? (
-            <div className="space-y-6">
+            <div className="space-y-4">
               {recipes.map((recipe) => (
                 <RecipeContainer
                   key={recipe.id}
@@ -84,11 +99,16 @@ const Recipes = () => {
           ) : (
             !isLoading &&
             !error && (
-              <div className="text-center text-text/70">No recipes found.</div>
+              <div className="text-center text-text/50 py-12">
+                <p className="text-lg">No recipes found.</p>
+                <p className="text-sm mt-2">
+                  Start creating your first recipe!
+                </p>
+              </div>
             )
           )}
         </article>
-        <article>
+        <article className="pt-6 pb-2">
           <PaginationControls
             currentPage={currentPage}
             totalPages={totalPages}

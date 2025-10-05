@@ -30,8 +30,8 @@ const DropDownMenu = ({
           to={item === "Logout" ? "#" : "/" + item}
           key={index}
           className={
-            `pt-4 cursor-pointer bg-secondary border-none hover:bg-secondary/80 text-center text-xl text-text transition-colors` +
-            (item === "Logout" ? " font-bold" : "")
+            `mt-3 mx-4 px-4 py-2 cursor-pointer rounded-full bg-primary hover:bg-accent hover:text-primary text-center text-lg text-background transition-all duration-300` +
+            (item === "Logout" ? " font-semibold" : "")
           }
           onClick={() => handleClick(item)}
         >
