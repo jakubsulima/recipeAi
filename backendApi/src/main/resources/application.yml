@@ -27,4 +27,4 @@ spring:
 
 # CORS configuration
 allowed:
-  origins: ${ALLOWED_ORIGINS:http://localhost:3000}
+  origins: ${ALLOWED_ORIGINS:http://localhost:5173}

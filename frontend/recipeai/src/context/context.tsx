@@ -64,12 +64,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         })
         .catch((error) => {
           if (error.status === 401) {
-            apiClient("refresh")
+            // Access token expired, try to refresh
+            apiClient("refresh", true)
+              .then(() => {
+                // Refresh successful, now fetch user data with new token
+                return apiClient("me");
+              })
               .then((userData) => {
                 setUser(userData);
                 setLoading(false);
               })
               .catch(() => {
+                // Refresh failed, clear auth state
                 localStorage.removeItem("isLoggedIn");
                 setUser(null);
                 setLoading(false);

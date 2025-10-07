@@ -1,5 +1,5 @@
 import axios from "axios";
-import { API_URL, TIMEOUT } from "./constants";
+import { API_URL, TIMEOUT } from "./constants.tsx";
 
 const formOfPrompt =
   " Answer in the following json format: name: The name of the recipe. description: A brief description of the recipe. timeToPrepare(string): just time to prepare. ingredients: An array of ingredient objects, where each object contains: name: The name of the ingredient. amount(double): The amount needed. unit(not null): The measurement unit (if applicable) only european units like litres. instructions: An array of step-by-step cooking instructions in complete sentences and withouut any special characters. ";
@@ -19,10 +19,8 @@ export const generateRecipe = async function (
     const result = await axios.post(`${API_URL}generateRecipe`, {
       fullPrompt,
     });
-    console.log("AI Response:", result);
     return result.data;
   } catch (error: any) {
-    console.error("AI Error:", error);
     const message = error.message || "Unknown AI error";
     throw new Error(`AI Generation Error: ${message}`);
   }
@@ -31,6 +29,34 @@ export const generateRecipe = async function (
 axios.defaults.headers.common["Content-Type"] = "application/json";
 axios.defaults.withCredentials = true;
 
+// Add axios interceptor to handle token refresh automatically
+axios.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    // If error is 401 and we haven't retried yet
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        // Try to refresh the token
+        await axios.post(API_URL + "refresh");
+
+        // Retry the original request with new token
+        return axios(originalRequest);
+      } catch (refreshError) {
+        // Refresh failed, redirect to login
+        localStorage.removeItem("isLoggedIn");
+        window.location.href = "/login";
+        return Promise.reject(refreshError);
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 export const apiClient = async function (
   url: string,
   uploadData: boolean = false,
@@ -38,7 +64,6 @@ export const apiClient = async function (
 ) {
   try {
     const isPlainString = typeof body === "string";
-
     const fetchOperation = uploadData
       ? axios.post(API_URL + url, body, {
           headers: isPlainString

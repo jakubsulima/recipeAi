@@ -96,7 +96,7 @@ public class RecipeService {
         if (!Objects.equals(recipe.getUser().getEmail(), login)) {
             throw new AppException("You are not the owner of this recipe", HttpStatus.FORBIDDEN);
         }
-        recipe.getInstructions().size(); // Initialize instructions
+        recipe.getInstructions().size();
         RecipeResponseDto recipeResponseDto = recipeMapper.toResponseDto("Recipe deleted successfully", recipe);
         recipeRepository.delete(recipe);
         return recipeResponseDto;
@@ -165,4 +165,10 @@ public class RecipeService {
                 })
                 .collect(Collectors.toCollection(ArrayList::new));
     }
+
+    public Page<RecipeDto> searchRecipes(String searchTerm, Pageable pageable) {
+        Page<Recipe> recipes = recipeRepository.search(searchTerm, pageable);
+        return recipes.map(recipeMapper::toRecipeDto);
+    }
+
 }

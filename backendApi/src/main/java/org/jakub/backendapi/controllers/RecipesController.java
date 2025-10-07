@@ -45,6 +45,12 @@ public class RecipesController {
         return ResponseEntity.ok(recipes);
     }
 
+    @GetMapping("/searchRecipes/{searchTerm}")
+    public ResponseEntity<Page<RecipeDto>> searchRecipes(@PathVariable String searchTerm, Pageable p) {
+        Page<RecipeDto> recipes = recipeService.searchRecipes(searchTerm, p);
+        return ResponseEntity.ok(recipes);
+    }
+
     @GetMapping("/getRecipe/{id}")
     public ResponseEntity<RecipeDto> getRecipe(@PathVariable Long id) {
         RecipeDto recipe = recipeService.getRecipeById(id);

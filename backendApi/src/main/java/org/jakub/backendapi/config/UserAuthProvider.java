@@ -38,7 +38,7 @@ public class UserAuthProvider {
     public String createToken(String email) {
         UserDto userDto = userService.findByEmail(email);
         Date now = new Date();
-        Date expirationDate = new Date(now.getTime() + 1_800_000);
+        Date expirationDate = new Date(now.getTime() + 259_200_000);
         return JWT.create()
                 .withIssuer(email)
                 .withClaim("type", "access")
@@ -70,7 +70,7 @@ public class UserAuthProvider {
 
     public String createRefreshToken(String email) {
         Date now = new Date();
-        Date expirationDate = new Date(now.getTime() + 3_600_000); // 1 hour
+        Date expirationDate = new Date(now.getTime() + 604_800_000); // 7 days
         return JWT.create()
                 .withIssuer(email)
                 .withClaim("type", "refresh")
@@ -113,7 +113,7 @@ public class UserAuthProvider {
                 .httpOnly(true)
                 .secure(false)
                 .path("/")
-                .maxAge(60 * 60) // 1 hour
+                .maxAge(3 * 24 * 60 * 60) // 3 days (matching token expiry)
                 .sameSite("Lax")
                 .build();
 
@@ -121,7 +121,7 @@ public class UserAuthProvider {
                 .httpOnly(true)
                 .secure(false)
                 .path("/")
-                .maxAge(60 * 30) // 7 days
+                .maxAge(7 * 24 * 60 * 60) // 7 days (matching token expiry)
                 .sameSite("Lax")
                 .build();
         return new ArrayList<>(Arrays.asList(accessCookie, refreshCookie));

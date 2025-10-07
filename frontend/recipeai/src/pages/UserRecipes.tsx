@@ -12,6 +12,8 @@ const Recipes = () => {
   const [totalPages, setTotalPages] = useState<number>(1);
   const { user, loading: userLoading } = useUser();
   const [error, setError] = useState<string>("");
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [isSearching, setIsSearching] = useState<boolean>(false);
 
   const RECIPES_PER_PAGE = 9;
 
@@ -31,9 +33,57 @@ const Recipes = () => {
     }
   };
 
+  const searchRecipes = async (term: string) => {
+    if (!term.trim()) {
+      setIsSearching(false);
+      setCurrentPage(0);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setError("");
+      const response = await apiClient(
+        `searchRecipes/${encodeURIComponent(
+          term
+        )}?page=${currentPage}&size=${RECIPES_PER_PAGE}`,
+        false
+      );
+      setRecipes(response.content);
+      setTotalPages(response.totalPages);
+      setIsSearching(true);
+    } catch (error) {
+      setError("Error searching recipes");
+      console.error("Error searching recipes:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSearch = () => {
+    setCurrentPage(0);
+    if (searchTerm.trim()) {
+      searchRecipes(searchTerm);
+    } else {
+      setIsSearching(false);
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    setIsSearching(false);
+    setCurrentPage(0);
+  };
+
   useEffect(() => {
     const fetchUserRecipes = async () => {
       if (userLoading) {
+        return;
+      }
+
+      // If searching, use search endpoint
+      if (isSearching && searchTerm.trim()) {
+        searchRecipes(searchTerm);
         return;
       }
 
@@ -56,7 +106,7 @@ const Recipes = () => {
       }
     };
     fetchUserRecipes();
-  }, [user, userLoading, currentPage]);
+  }, [user, userLoading, currentPage, isSearching]);
 
   if (isLoading || userLoading) {
     return (
@@ -107,6 +157,59 @@ const Recipes = () => {
             </div>
           </div>
 
+          {/* Search Bar */}
+          <div className="mb-6">
+            <div className="relative max-w-2xl mx-auto">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleSearch();
+                    }
+                  }}
+                  placeholder="Search recipes by name..."
+                  className="w-full px-4 py-3 pr-24 rounded-full border border-primary/20 bg-secondary text-text focus:outline-none focus:ring-2 focus:ring-accent placeholder:text-text/50 transition-all"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={handleClearSearch}
+                    className="absolute right-20 top-1/2 transform -translate-y-1/2 text-text/70 hover:text-accent focus:outline-none transition-colors"
+                    aria-label="Clear search"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </button>
+                )}
+                <button
+                  onClick={handleSearch}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-accent hover:bg-accent/90 text-primary px-4 py-2 rounded-full font-medium transition-colors"
+                >
+                  Search
+                </button>
+              </div>
+              {isSearching && (
+                <div className="mt-2 text-center">
+                  <span className="inline-block px-3 py-1 bg-accent/20 rounded-full text-text text-sm">
+                    Searching for: "{searchTerm}"
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
           {error && (
             <div className="text-accent text-center mb-6 bg-accent/10 p-4 rounded-2xl border border-accent/30">
               <svg
@@ -154,19 +257,40 @@ const Recipes = () => {
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
+                  {isSearching ? (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  ) : (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  )}
                 </svg>
                 <p className="text-lg md:text-xl font-medium">
-                  No recipes found.
+                  {isSearching
+                    ? `No recipes found for "${searchTerm}"`
+                    : "No recipes found."}
                 </p>
                 <p className="text-sm md:text-base mt-2">
-                  Start creating your first recipe!
+                  {isSearching
+                    ? "Try searching with different keywords"
+                    : "Start creating your first recipe!"}
                 </p>
+                {isSearching && (
+                  <button
+                    onClick={handleClearSearch}
+                    className="mt-4 px-4 py-2 bg-secondary hover:bg-accent hover:text-primary rounded-full transition-colors font-medium"
+                  >
+                    Clear Search
+                  </button>
+                )}
               </div>
             )
           )}
