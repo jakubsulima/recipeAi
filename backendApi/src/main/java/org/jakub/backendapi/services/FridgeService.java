@@ -79,6 +79,25 @@ public class FridgeService {
         fridgeIngredientMapper.toFridgeIngredientDto(fridgeIngredient);
     }
 
+    public void changeFridgeIngredientAmount(Long id, double amount, String email) {
+        if (amount < 0) {
+            throw new AppException("Amount must be positive", HttpStatus.BAD_REQUEST);
+        }
+        if (amount == 0) {
+            fridgeIngredientRepository.deleteById(id);
+            return;
+        }
+        UserDto userDto = userService.findByEmail(email);
+        FridgeIngredient fridgeIngredient = fridgeIngredientRepository.findById(id).orElseThrow(() -> new AppException("Fridge ingredient not found", HttpStatus.NOT_FOUND));
+
+        if (!fridgeIngredient.getUser().getId().equals(userDto.getId())) {
+            throw new AppException("You do not have permission to change this fridge ingredient", HttpStatus.FORBIDDEN);
+        }
+
+        fridgeIngredient.setAmount(amount);
+        fridgeIngredientRepository.save(fridgeIngredient);
+    }
+
     private void validateUnit(String unit) {
         try {
             Unit.valueOf(unit.toUpperCase());

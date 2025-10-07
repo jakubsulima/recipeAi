@@ -1,6 +1,7 @@
 package org.jakub.backendapi.controllers;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.jakub.backendapi.dto.AmountDto;
 import org.jakub.backendapi.dto.FridgeIngredientDto;
 import org.jakub.backendapi.services.FridgeService;
 import org.springframework.http.ResponseEntity;
@@ -40,6 +41,12 @@ public class FridgeController {
     public ResponseEntity<FridgeIngredientDto> deleteFridgeIngredient(@PathVariable Long ingredientId, HttpServletRequest request) {
         fridgeService.deleteFridgeIngredient(ingredientId, getLoginFromToken(request));
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/updateFridgeIngredient/{ingredientId}")
+    public ResponseEntity<FridgeIngredientDto> updateFridgeIngredient(@PathVariable Long ingredientId, @RequestBody AmountDto amountDto, HttpServletRequest request) {
+        fridgeService.changeFridgeIngredientAmount(ingredientId, amountDto.getAmount(), getLoginFromToken(request));
+        return ResponseEntity.status(200).build();
     }
 
 }
