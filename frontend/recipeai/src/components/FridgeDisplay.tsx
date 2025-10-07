@@ -9,6 +9,7 @@ interface FridgeDisplayProps {
   goToPreviousCategory: () => void;
   goToNextCategory: () => void;
   removeItem: (id: number) => void;
+  updateAmount: (id: number, newAmount: string) => Promise<void>;
   error: string;
 }
 
@@ -30,6 +31,7 @@ const FridgeDisplay: React.FC<FridgeDisplayProps> = ({
   goToPreviousCategory,
   goToNextCategory,
   removeItem,
+  updateAmount,
   error,
 }) => {
   const filteredItems = showedCategory
@@ -49,11 +51,13 @@ const FridgeDisplay: React.FC<FridgeDisplayProps> = ({
         {filteredItems.map((item: FridgeIngredient) => (
           <li key={item.id}>
             <FridgeIngredientContainer
+              id={item.id}
               name={item.name}
               expirationDate={formatShortDate(item.expirationDate)}
               amount={item.amount || ""}
               unit={item.unit}
               remove={() => removeItem(item.id)}
+              onUpdateAmount={updateAmount}
             />
           </li>
         ))}

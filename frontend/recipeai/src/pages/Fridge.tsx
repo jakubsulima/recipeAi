@@ -18,6 +18,7 @@ export const Fridge = () => {
     error: contextError,
     addFridgeItem,
     removeFridgeItem,
+    updateFridgeItem,
   } = useFridge();
   const [newItem, setNewItem] = useState<string>("");
   const [newItemDate, setNewItemDate] = useState<string>("");
@@ -140,6 +141,16 @@ export const Fridge = () => {
     }
   };
 
+  const updateAmount = async (id: number, newAmount: string) => {
+    setError("");
+    try {
+      await updateFridgeItem(id, newAmount);
+    } catch (err: any) {
+      setError(err.message || "Failed to update item amount");
+      throw err; // Re-throw to let the component know it failed
+    }
+  };
+
   const displayError = error || contextError;
   const displayLoading = isLoading || contextLoading;
 
@@ -170,6 +181,7 @@ export const Fridge = () => {
           goToPreviousCategory={goToPreviousCategory}
           goToNextCategory={goToNextCategory}
           removeItem={removeItem}
+          updateAmount={updateAmount}
           error={displayError}
         />
       </div>

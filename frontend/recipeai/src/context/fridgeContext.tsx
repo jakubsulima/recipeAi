@@ -18,6 +18,7 @@ interface FridgeContextType {
   error: string;
   addFridgeItem: (item: Omit<FridgeIngredient, "id">) => Promise<void>;
   removeFridgeItem: (id: number) => Promise<void>;
+  updateFridgeItem: (id: number, newAmount: string) => Promise<void>;
   refreshFridgeItems: () => Promise<void>;
   getFridgeItemNames: () => string[];
 }
@@ -128,6 +129,22 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const updateFridgeItem = async (id: number, newAmount: string) => {
+    try {
+      await apiClient(`updateFridgeIngredient/${id}`, true, {
+        amount: newAmount,
+      });
+      // Update the local state optimistically
+      setFridgeItems((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, amount: newAmount } : item
+        )
+      );
+    } catch (err: any) {
+      throw new Error("Failed to update fridge item");
+    }
+  };
+
   const getFridgeItemNames = () => {
     return fridgeItems.map((item) => item.name);
   };
@@ -158,6 +175,7 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
     error,
     addFridgeItem,
     removeFridgeItem,
+    updateFridgeItem,
     refreshFridgeItems,
     getFridgeItemNames,
   };
