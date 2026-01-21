@@ -290,15 +290,6 @@ docker-compose logs -f
 docker-compose down
 ```
 
-### Render.com
-
-The project includes `render.yaml` for easy deployment to Render.com:
-
-1. Push your code to GitHub
-2. Connect your repository to Render
-3. Set environment variables in Render dashboard
-4. Deploy automatically
-
 ## 🧪 Testing
 
 ### Backend Tests
