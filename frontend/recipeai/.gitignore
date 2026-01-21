@@ -23,6 +23,15 @@ dist-ssr
 *.sln
 *.sw?
 
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+*.swp
+*.swo
+*~
+
 ### dotenv ###
 .env
 

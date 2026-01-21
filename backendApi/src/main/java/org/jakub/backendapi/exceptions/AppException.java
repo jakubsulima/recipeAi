@@ -15,10 +15,9 @@ public class AppException extends RuntimeException {
     }
 
     @Override
-public String getMessage() {
-    // Return the message as is, assuming it's already formatted
-    return super.getMessage();
-}
+    public String getMessage() {
+        return super.getMessage();
+    }
 
 
 }

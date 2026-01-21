@@ -1,3 +1,22 @@
+# Environment files
 backendApi/.env.template
 .env
+.env.local
+.env.production
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*
+
+# SSL Certificates
+letsencrypt/
+certbot/
+
+# Logs
+*.log
+logs/
 
