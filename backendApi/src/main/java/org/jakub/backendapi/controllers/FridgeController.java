@@ -37,7 +37,7 @@ public class FridgeController {
         return ResponseEntity.ok(fridgeIngredientDto);
     }
 
-    @PostMapping("/deleteFridgeIngredient/{ingredientId}")
+    @DeleteMapping("/deleteFridgeIngredient/{ingredientId}")
     public ResponseEntity<FridgeIngredientDto> deleteFridgeIngredient(@PathVariable Long ingredientId, HttpServletRequest request) {
         fridgeService.deleteFridgeIngredient(ingredientId, getLoginFromToken(request));
         return ResponseEntity.noContent().build();

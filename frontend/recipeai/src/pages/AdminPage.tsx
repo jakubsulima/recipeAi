@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from "react";
 import { AuthContext } from "../context/context";
-import { apiClient } from "../lib/hooks";
+import { apiClient, deleteClient } from "../lib/hooks";
 import AdminRecipesPanel from "../components/AdminRecipesPanel";
 
 interface User {
@@ -32,21 +32,15 @@ const AdminPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchUsers();
-  }, [authContext]);
+    if (authContext?.user?.role === "ADMIN") {
+      fetchUsers();
+    }
+  }, [authContext?.user?.role]);
 
   const handleDeleteUser = async (userId: number) => {
     if (window.confirm("Are you sure you want to delete this user?")) {
       try {
-        const response = await apiClient(`admin/users/delete/${userId}`, true);
-        if (!response.ok) {
-          const errorData = await response.json.catch(() => ({
-            message: `Failed to delete user: ${response.statusText}`,
-          }));
-          throw new Error(
-            errorData.message || `Failed to delete user: ${response.statusText}`
-          );
-        }
+        await deleteClient(`admin/users/delete/${userId}`);
         fetchUsers();
       } catch (err) {
         setError(

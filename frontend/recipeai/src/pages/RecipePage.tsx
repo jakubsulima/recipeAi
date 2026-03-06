@@ -1,5 +1,5 @@
 import { useLocation, useParams, useNavigate } from "react-router-dom";
-import { apiClient, generateRecipe } from "../lib/hooks";
+import { apiClient, generateRecipe, deleteClient, cleanAiJsonString } from "../lib/hooks";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useFridge } from "../context/fridgeContext";
 import { useUser } from "../context/context";
@@ -47,16 +47,7 @@ const RecipePage = () => {
           fridgeIngredients
         );
 
-        let jsonString =
-          typeof response === "string"
-            ? response.replace(/```json|```/g, "").trim()
-            : JSON.stringify(response);
-        jsonString = jsonString.replace(/,\s*([}\]])/g, "$1");
-
-        jsonString = jsonString.replace(
-          /"timeToPrepare\(string\)"/g,
-          '"timeToPrepare"'
-        );
+        const jsonString = cleanAiJsonString(response);
         const parsedData = JSON.parse(jsonString);
 
         setRecipeData(parsedData);
@@ -111,16 +102,7 @@ const RecipePage = () => {
               const fridgeIngredients = getFridgeItemNames();
               const response = await generateRecipe(search, fridgeIngredients);
 
-              let jsonString =
-                typeof response === "string"
-                  ? response.replace(/```json|```/g, "").trim()
-                  : JSON.stringify(response);
-              jsonString = jsonString.replace(/,\s*([}\]])/g, "$1");
-              jsonString = jsonString.replace(
-                /"timeToPrepare\(string\)"/g,
-                '"timeToPrepare"'
-              );
-
+              const jsonString = cleanAiJsonString(response);
               const parsedData = JSON.parse(jsonString);
               setRecipeData(parsedData);
               currentRecipeIdentifierRef.current = search;
@@ -175,7 +157,7 @@ const RecipePage = () => {
     if (window.confirm("Are you sure you want to delete this recipe?")) {
       try {
         setIsLoading(true);
-        await apiClient(`deleteRecipe/${recipeId}`, true, { method: "DELETE" });
+        await deleteClient(`deleteRecipe/${recipeId}`);
         navigate("/myRecipes");
       } catch (err: any) {
         console.error("Error deleting recipe:", err);

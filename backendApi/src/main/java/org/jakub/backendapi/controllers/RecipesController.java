@@ -64,7 +64,7 @@ public class RecipesController {
         return ResponseEntity.ok(recipe);
     }
 
-    @PostMapping("/deleteRecipe/{id}")
+    @DeleteMapping("/deleteRecipe/{id}")
     public ResponseEntity<RecipeResponseDto> deleteRecipe(@PathVariable Long id, HttpServletRequest request) {
         RecipeResponseDto recipeResponseDto = recipeService.deleteRecipe(id, getLoginFromToken(request));
         return ResponseEntity.ok(recipeResponseDto);
@@ -89,7 +89,7 @@ public class RecipesController {
         return ResponseEntity.ok(updatedRecipe);
     }
 
-    @PostMapping("/admin/deleteRecipe/{id}")
+    @DeleteMapping("/admin/deleteRecipe/{id}")
     public ResponseEntity<RecipeResponseDto> adminDeleteRecipe(@PathVariable Long id) {
         RecipeResponseDto recipeResponseDto = recipeService.adminDeleteRecipe(id);
         return ResponseEntity.ok(recipeResponseDto);

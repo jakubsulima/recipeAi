@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from "react";
 import { AuthContext } from "../context/context";
-import { apiClient } from "../lib/hooks";
+import { apiClient, deleteClient } from "../lib/hooks";
 
 interface Recipe {
   id: number;
@@ -12,13 +12,17 @@ const AdminRecipesPanel: React.FC = () => {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState<number>(0);
+  const [totalPages, setTotalPages] = useState<number>(0);
+  const PAGE_SIZE = 20;
   const authContext = useContext(AuthContext);
 
-  const fetchRecipes = async () => {
+  const fetchRecipes = async (pageNum = page) => {
     setLoading(true);
     try {
-      const data = await apiClient("getAllRecipes?page=0&size=1000");
+      const data = await apiClient(`getAllRecipes?page=${pageNum}&size=${PAGE_SIZE}`);
       setRecipes(data.content || []);
+      setTotalPages(data.totalPages ?? 0);
       setError(null);
     } catch (err) {
       setError(
@@ -35,20 +39,15 @@ const AdminRecipesPanel: React.FC = () => {
 
   useEffect(() => {
     if (authContext?.user?.role === "ADMIN") {
-      fetchRecipes();
+      fetchRecipes(page);
     }
-  }, [authContext]);
+  }, [authContext?.user?.role, page]);
 
   const handleDeleteRecipe = async (recipeId: number) => {
     if (window.confirm("Are you sure you want to delete this recipe?")) {
       try {
-        const response = await apiClient(
-          `admin/deleteRecipe/${recipeId}`,
-          true
-        );
-        if (!response.ok) {
-        }
-        fetchRecipes();
+        await deleteClient(`admin/deleteRecipe/${recipeId}`);
+        fetchRecipes(page);
       } catch (err) {
         setError(
           err instanceof Error
@@ -112,6 +111,27 @@ const AdminRecipesPanel: React.FC = () => {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-4 mt-4">
+          <button
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0}
+            className="px-4 py-2 bg-primary text-white rounded disabled:opacity-40"
+          >
+            Previous
+          </button>
+          <span className="text-text text-sm">
+            Page {page + 1} / {totalPages}
+          </span>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            disabled={page >= totalPages - 1}
+            className="px-4 py-2 bg-primary text-white rounded disabled:opacity-40"
+          >
+            Next
+          </button>
         </div>
       )}
     </div>

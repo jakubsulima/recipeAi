@@ -33,7 +33,7 @@ public class AdminUserController {
         return ResponseEntity.ok(userService.updateUserRole(id, role));
     }
 
-    @PostMapping("/delete/{id}")
+    @DeleteMapping("/delete/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();

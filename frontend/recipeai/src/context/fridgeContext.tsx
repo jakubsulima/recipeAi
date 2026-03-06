@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import { apiClient } from "../lib/hooks";
+import { apiClient, deleteClient } from "../lib/hooks";
 import { useUser } from "./context";
 
 export interface FridgeIngredient {
@@ -122,7 +122,7 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
 
   const removeFridgeItem = async (id: number) => {
     try {
-      await apiClient(`deleteFridgeIngredient/${id}`, true, {});
+      await deleteClient(`deleteFridgeIngredient/${id}`);
       setFridgeItems((prev) => prev.filter((item) => item.id !== id));
     } catch (err: any) {
       throw new Error("Failed to remove fridge item");

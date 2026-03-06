@@ -23,26 +23,26 @@ function App() {
   const router = createBrowserRouter(
     createRoutesFromElements(
       <Route path="/" element={<Layout />}>
-        <Route index element={<HomePage />} />
-        <Route path="/Recipes" element={<Recipes />} />
-        <Route path="/Fridge" element={<Fridge />} />
-        <Route path="/Login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/My Preferences" element={<MePage />} />
-        <Route path="/Recipe" element={<RecipePage />} />
-        <Route path="/Recipe/:id" element={<RecipePage />} />
-        <Route path="/myRecipes" element={<UserRecipes />} />
-        <Route path="/admin" element={<AdminPage />} />
-        <Route path="/Homepage" element={<Navigate to="/" replace />} />
-        <Route path="*" element={<div>Not Found</div>} />
+      <Route index element={<HomePage />} />
+      <Route path="/Recipes" element={<Recipes />} />
+      <Route path="/Fridge" element={<Fridge />} />
+      <Route path="/Login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/My Preferences" element={<MePage />} />
+      <Route path="/Recipe" element={<RecipePage />} />
+      <Route path="/Recipe/:id" element={<RecipePage />} />
+      <Route path="/myRecipes" element={<UserRecipes />} />
+      <Route path="/admin" element={<AdminPage />} />
+      <Route path="/Homepage" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<div>Not Found</div>} />
       </Route>
     )
   );
   return (
     <AuthProvider>
-      <FridgeProvider>
-        <RouterProvider router={router} />
-      </FridgeProvider>
+    <FridgeProvider>
+    <RouterProvider router={router} />
+    </FridgeProvider>
     </AuthProvider>
   );
 }

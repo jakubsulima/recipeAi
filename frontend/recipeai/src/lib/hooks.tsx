@@ -26,6 +26,16 @@ export const generateRecipe = async function (
   }
 };
 
+export const cleanAiJsonString = (response: any): string => {
+  let jsonString =
+    typeof response === "string"
+      ? response.replace(/```json|```/g, "").trim()
+      : JSON.stringify(response);
+  jsonString = jsonString.replace(/,\s*([}\]])/g, "$1");
+  jsonString = jsonString.replace(/"timeToPrepare\(string\)"/g, '"timeToPrepare"');
+  return jsonString;
+};
+
 axios.defaults.headers.common["Content-Type"] = "application/json";
 axios.defaults.withCredentials = true;
 
@@ -140,6 +150,31 @@ export const apiClient = async function (
       );
     }
     throw finalError;
+  }
+};
+
+export const deleteClient = async function (url: string) {
+  try {
+    const res = await axios.delete(API_URL + url);
+    return res.data;
+  } catch (error: any) {
+    console.error(
+      "Delete Error:",
+      error.response
+        ? { status: error.response.status, data: error.response.data }
+        : error.message
+    );
+    if (axios.isAxiosError(error) && error.response) {
+      const status = error.response.status;
+      const message =
+        typeof error.response.data?.message === "string"
+          ? error.response.data.message
+          : `Server error with status ${status}`;
+      const finalError = new Error(`AJAX Error (${status}): ${message}`);
+      (finalError as any).status = status;
+      throw finalError;
+    }
+    throw new Error(error.message || "Unknown delete error");
   }
 };
 
