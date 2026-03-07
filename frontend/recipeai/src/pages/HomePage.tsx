@@ -5,6 +5,7 @@ import ButtonsForm from "../components/ButtonsForm";
 
 const HomePage = () => {
   const [search, setSearch] = useState("");
+  const [isNavigating, setIsNavigating] = useState(false);
   const navigate = useNavigate();
   const { fridgeItems } = useFridge();
   const controlsCuisine = ["Italian", "Mexican", "Indian", "Chinese"];
@@ -31,6 +32,7 @@ const HomePage = () => {
     if (selectedTime) {
       finalSearch += ` in ${selectedTime} time`;
     }
+    setIsNavigating(true);
     navigate("Recipe", { state: { search: finalSearch } });
   };
 
@@ -102,9 +104,10 @@ const HomePage = () => {
             ></ButtonsForm>
             <button
               onClick={handleSearch}
-              className="w-full bg-accent text-text font-bold py-2 px-4 rounded-full hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent mt-6 transition-colors"
+              disabled={isNavigating}
+              className="w-full bg-accent text-text font-bold py-2 px-4 rounded-full hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent mt-6 transition-colors disabled:opacity-60 disabled:cursor-wait"
             >
-              Generate Recipe
+              {isNavigating ? "Loading..." : "Generate Recipe"}
             </button>
           </section>
         </article>

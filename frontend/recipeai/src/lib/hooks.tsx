@@ -5,7 +5,8 @@ const formOfPrompt =
   " Answer in the following json format: name: The name of the recipe. description: A brief description of the recipe. timeToPrepare(string): just time to prepare. ingredients: An array of ingredient objects, where each object contains: name: The name of the ingredient. amount(double): The amount needed. unit(not null): The measurement unit (if applicable) only european units like litres. instructions: An array of step-by-step cooking instructions in complete sentences and withouut any special characters. ";
 export const generateRecipe = async function (
   prompt: string,
-  productsFridge: string[]
+  productsFridge: string[],
+  signal?: AbortSignal
 ) {
   try {
     const fullPrompt =
@@ -18,9 +19,12 @@ export const generateRecipe = async function (
 
     const result = await axios.post(`${API_URL}generateRecipe`, {
       fullPrompt,
-    });
+    }, { signal });
     return result.data;
   } catch (error: any) {
+    if (axios.isCancel(error)) {
+      throw new DOMException("Recipe generation cancelled", "AbortError");
+    }
     const message = error.message || "Unknown AI error";
     throw new Error(`AI Generation Error: ${message}`);
   }

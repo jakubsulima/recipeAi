@@ -32,8 +32,10 @@ const RecipePage = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [recipeData, setRecipeData] = useState<RecipeData | null>(null);
   const [error, setError] = useState<string>("");
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   const currentRecipeIdentifierRef = useRef<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const loadNewRecipeCallback = useCallback(
     async (currentSearchTerm: string) => {
@@ -41,10 +43,14 @@ const RecipePage = () => {
       try {
         setIsLoading(true);
         setError("");
+        abortControllerRef.current?.abort();
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
         const fridgeIngredients = getFridgeItemNames();
         const response = await generateRecipe(
           currentSearchTerm,
-          fridgeIngredients
+          fridgeIngredients,
+          controller.signal
         );
 
         const jsonString = cleanAiJsonString(response);
@@ -52,11 +58,12 @@ const RecipePage = () => {
 
         setRecipeData(parsedData);
         currentRecipeIdentifierRef.current = currentSearchTerm;
+        setIsLoading(false);
       } catch (err: any) {
+        if (err.name === "AbortError") return; // new request owns loading state
         console.error("Error generating recipe:", err);
         setError("Failed to load recipe. Please try again.");
         currentRecipeIdentifierRef.current = null;
-      } finally {
         setIsLoading(false);
       }
     },
@@ -100,17 +107,21 @@ const RecipePage = () => {
               setIsLoading(true);
               setError("");
               const fridgeIngredients = getFridgeItemNames();
-              const response = await generateRecipe(search, fridgeIngredients);
+              abortControllerRef.current?.abort();
+              const controller = new AbortController();
+              abortControllerRef.current = controller;
+              const response = await generateRecipe(search, fridgeIngredients, controller.signal);
 
               const jsonString = cleanAiJsonString(response);
               const parsedData = JSON.parse(jsonString);
               setRecipeData(parsedData);
               currentRecipeIdentifierRef.current = search;
+              setIsLoading(false);
             } catch (err: any) {
+              if (err.name === "AbortError") return; // new request owns loading state
               console.error("Error generating recipe:", err);
               setError("Failed to load recipe. Please try again.");
               currentRecipeIdentifierRef.current = null;
-            } finally {
               setIsLoading(false);
             }
           } else {
@@ -132,19 +143,29 @@ const RecipePage = () => {
   }, [search, fridgeLoading, existingRecipe, recipeId]);
 
   const saveRecipe = async () => {
+    if (!recipeData?.name || !recipeData?.ingredients?.length || !recipeData?.instructions?.length) {
+      setError("Recipe data is incomplete and cannot be saved.");
+      return;
+    }
     try {
-      setIsLoading(true);
+      setSaveStatus("saving");
+      setError("");
       await apiClient("addRecipe", true, {
-        name: recipeData?.name,
-        description: recipeData?.description,
-        timeToPrepare: recipeData?.timeToPrepare,
-        ingredients: recipeData?.ingredients,
-        instructions: recipeData?.instructions,
+        name: recipeData.name,
+        description: recipeData.description,
+        timeToPrepare: recipeData.timeToPrepare,
+        ingredients: recipeData.ingredients,
+        instructions: recipeData.instructions,
       });
+      setSaveStatus("saved");
     } catch (error: any) {
+      setSaveStatus("error");
       if (error.status === 401) {
         setError("You must be logged in to save a recipe.");
-        return;
+      } else if (error.status === 409) {
+        setError("This recipe is already saved in your collection.");
+      } else {
+        setError(error.message || "Failed to save recipe. Please try again.");
       }
     } finally {
       setIsLoading(false);
@@ -249,12 +270,23 @@ const RecipePage = () => {
       </div>
       <div className="display flex justify-between flex-row items-center mt-8 flex-wrap gap-4">
         {!recipeId && user && (
-          <div>
+          <div className="flex flex-col items-start gap-1">
             <button
-              className="bg-accent text-text px-4 py-2 rounded-lg font-semibold hover:bg-accent/90 transition-colors"
+              className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+                saveStatus === "saved"
+                  ? "bg-green-600 text-white cursor-default"
+                  : saveStatus === "saving"
+                  ? "bg-accent/60 text-text cursor-wait"
+                  : "bg-accent text-text hover:bg-accent/90"
+              }`}
               onClick={() => saveRecipe()}
+              disabled={saveStatus === "saving" || saveStatus === "saved"}
             >
-              Save Recipe
+              {saveStatus === "saving"
+                ? "Saving..."
+                : saveStatus === "saved"
+                ? "Saved ✓"
+                : "Save Recipe"}
             </button>
           </div>
         )}
