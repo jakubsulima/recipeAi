@@ -113,7 +113,7 @@ public class RecipesController {
             System.err.println("Could not retrieve user preferences: " + e.getMessage());
         }
         try (Client client = Client.builder().apiKey(geminiApiKey).build()) {
-            response = client.models.generateContent("gemini-3.1-flash-lite",
+            response = client.models.generateContent("gemini-3.1-flash-lite-preview",
                     recipePrompt,
                     null);
         } catch (Exception e) {

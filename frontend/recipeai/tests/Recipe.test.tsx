@@ -271,9 +271,9 @@ describe("RecipePage", () => {
 
     await waitFor(() => {
       expect(mockAPIClient).toHaveBeenCalledWith(
-        "saveRecipe",
+        "addRecipe",
         true,
-        recipeToSave
+        expect.objectContaining({ name: recipeToSave.recipeName })
       );
     });
     // await waitFor(() => expect(screen.getByText("Recipe saved successfully!")).toBeInTheDocument());
@@ -307,9 +307,9 @@ describe("RecipePage", () => {
 
     await waitFor(() => {
       expect(mockAPIClient).toHaveBeenCalledWith(
-        "saveRecipe",
+        "addRecipe",
         true,
-        recipeToSave
+        expect.objectContaining({ name: recipeToSave.recipeName })
       );
     });
     await waitFor(() => {

@@ -1,15 +1,13 @@
 # Environment files
-backendApi/.env.template
 .env
 .env.local
 .env.production
+backendApi/.env.template
 
 # macOS
 .DS_Store
 .AppleDouble
 .LSOverride
-
-# Thumbnails
 ._*
 
 # SSL Certificates
@@ -20,3 +18,31 @@ certbot/
 *.log
 logs/
 
+# Backend build/generated artifacts
+backendApi/bin/
+backendApi/.gradle/
+backendApi/**/build/
+backendApi/out/
+
+# Frontend build artifacts
+frontend/recipeai/node_modules/
+frontend/recipeai/dist/
+frontend/recipeai/coverage/
+frontend/recipeai/html/
+
+# Dev-only Docker/Nginx/scripts (not needed in repo)
+nginx/nginx.dev.conf
+backendApi/Dockerfile.dev
+backendApi/dev-entrypoint.sh
+frontend/recipeai/Dockerfile.dev
+docker-compose.dev.yml
+
+# IDE
+.vscode/
+.idea/
+*.iml
+postgres/Dockerfile
+postgres/Dockerfile
+*.sh
+postgres/init-admin.sh
+postgres/init-users.sh

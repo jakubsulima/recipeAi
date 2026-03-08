@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 set -e
 
 # Exit if POSTGRES_USER or POSTGRES_PASSWORD are not set

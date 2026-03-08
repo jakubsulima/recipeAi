@@ -43,6 +43,10 @@ public class UserService {
         User user = userRepository.findByEmail(credentialsDto.getEmail())
                 .orElseThrow(() -> new AppException("Unknown user", HttpStatus.NOT_FOUND));
 
+        if (user.getPassword() == null) {
+            throw new AppException("This account uses social login. Please sign in with " + user.getAuthMethod().name(), HttpStatus.BAD_REQUEST);
+        }
+
         if (passwordEncoder.matches(CharBuffer.wrap(credentialsDto.getPassword()), user.getPassword())) {
             return userMapper.toUserDto(user);
         }

@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { generateRecipe } from "../src/lib/hooks";
 import dotenv from "dotenv";
+import path from "path";
 
-// Load environment variables
-dotenv.config({ path: "/Users/jakub/Desktop/recipeai/frontend/recipeai/.env" });
+// Load environment variables from the project root
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 describe("AJAX function", () => {
   beforeEach(() => {

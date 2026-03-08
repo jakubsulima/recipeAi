@@ -25,6 +25,11 @@ spring:
             location: "us-central1"
             model-name: "gemini-pro"
 
+# OAuth configuration
+oauth:
+  google:
+    client-id: ${GOOGLE_OAUTH_CLIENT_ID:your-google-client-id}
+
 # CORS configuration
 allowed:
   origins: ${ALLOWED_ORIGINS:http://localhost:5173}

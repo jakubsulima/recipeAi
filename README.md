@@ -8,7 +8,6 @@ A full-stack web application that helps users discover and manage recipes using 
 - **AI Recipe Generation**: Generate custom recipes using Google's Gemini AI based on available ingredients and preferences
 - **Virtual Fridge Management**: Track your ingredients with expiration dates, quantities, and categories
 - **Smart Recipe Search**: Find recipes by name, ingredients, cuisine type, meal type, and preparation time
-- **User Authentication**: Secure JWT-based authentication with role-based access control (User/Admin)
 - **Dietary Preferences**: Set dietary restrictions (Vegan, Vegetarian, Gluten-Free, etc.) and ingredient dislikes
 - **Recipe Management**: Create, view, edit, and delete your own recipes
 - **Admin Panel**: Administrative dashboard for user and recipe management
@@ -328,11 +327,5 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Spring Boot community
 - React community
 - All open-source contributors
-
-## 📞 Support
-
-For support, email your-email@example.com or open an issue in the repository.
-
----
 
 **Built with ❤️ using Spring Boot, React, and AI**

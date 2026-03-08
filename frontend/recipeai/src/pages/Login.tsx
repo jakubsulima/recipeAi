@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { apiClient } from "../lib/hooks";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
@@ -21,6 +21,72 @@ const Login = () => {
   const [error, setError] = useState("");
   const { setUser } = useUser();
   const navigate = useNavigate();
+  const googleBtnRef = useRef<HTMLDivElement>(null);
+
+  const handleAuthSuccess = useCallback(
+    (userData: { email: string; id: number; role: string }) => {
+      localStorage.setItem("isLoggedIn", "true");
+      setUser(userData as any);
+      navigate("/");
+    },
+    [setUser, navigate]
+  );
+
+  // Google OAuth callback
+  const handleGoogleCallback = useCallback(
+    async (response: { credential: string }) => {
+      setIsSubmitting(true);
+      setError("");
+      try {
+        const userData = await apiClient("oauth/google", true, {
+          idToken: response.credential,
+        });
+        handleAuthSuccess(userData);
+      } catch (err: any) {
+        setError(err.message || "Google sign-in failed");
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [handleAuthSuccess]
+  );
+
+  // Initialize Google Sign-In button
+  useEffect(() => {
+    const initGoogle = () => {
+      if (window.google?.accounts?.id && googleBtnRef.current) {
+        window.google.accounts.id.initialize({
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || "",
+          callback: handleGoogleCallback,
+        });
+        window.google.accounts.id.renderButton(googleBtnRef.current, {
+          type: "standard",
+          theme: "outline",
+          size: "large",
+          text: "signin_with",
+          shape: "rectangular",
+          logo_alignment: "left",
+          width: 380,
+        });
+      }
+    };
+
+    if (window.google?.accounts?.id) {
+      initGoogle();
+    } else {
+      const interval = setInterval(() => {
+        if (window.google?.accounts?.id) {
+          clearInterval(interval);
+          initGoogle();
+        }
+      }, 100);
+      const timeout = setTimeout(() => clearInterval(interval), 5000);
+      return () => {
+        clearInterval(interval);
+        clearTimeout(timeout);
+      };
+    }
+  }, [handleGoogleCallback]);
 
   const {
     register,
@@ -39,73 +105,111 @@ const Login = () => {
     setError("");
     try {
       const userData = await apiClient("login", true, data);
-      localStorage.setItem("isLoggedIn", "true");
-      setUser(userData);
-      navigate("/");
+      handleAuthSuccess(userData);
     } catch (error: any) {
-      setError(error.message || "login failed");
-      console.error("login error:", error);
+      setError(error.message || "Login failed");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="w-full h-screen flex items-center justify-center bg-background">
-      <div className="flex flex-col items-center justify-center p-5 bg-secondary rounded-3xl shadow-md w-full max-w-md">
-        {error && <div className="text-accent mb-4 text-center">{error}</div>}
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col gap-4 w-full"
-        >
-          <div>
-            <label htmlFor="email" className="w-full text-text block mb-1">
-              Email
-            </label>
-            <input
-              id="email"
-              {...register("email")}
-              className="rounded-2xl p-2 w-full shadow-md bg-background text-text border border-primary/20 focus:outline-none focus:ring-2 focus:ring-accent"
-            />
-            {errors.email && (
-              <p className="text-accent text-sm mt-1">{errors.email.message}</p>
-            )}
+    <div className="w-full min-h-screen flex items-center justify-center bg-background px-4">
+      <div className="flex flex-col items-center w-full max-w-md animate-fadeIn">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-text">Welcome back</h1>
+          <p className="text-text/50 mt-2">
+            Sign in to your Recipe.ai account
+          </p>
+        </div>
+
+        {/* Card */}
+        <div className="w-full bg-secondary rounded-2xl shadow-lg p-8">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 mb-6 text-sm text-center">
+              {error}
+            </div>
+          )}
+
+          {/* Google Sign-In (rendered by Google SDK) */}
+          <div
+            ref={googleBtnRef}
+            className="w-full flex justify-center [&_iframe]:!rounded-lg mb-6"
+          />
+
+          {/* Divider */}
+          <div className="flex items-center gap-4 mb-6">
+            <div className="flex-1 h-px bg-primary/10" />
+            <span className="text-text/40 text-sm font-medium">or</span>
+            <div className="flex-1 h-px bg-primary/10" />
           </div>
-          <div>
-            <label htmlFor="password" className="text-text block mb-1">
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              {...register("password")}
-              className="rounded-2xl p-2 w-full shadow-md bg-background text-text border border-primary/20 focus:outline-none focus:ring-2 focus:ring-accent"
-            />
-            {errors.password && (
-              <p className="text-accent text-sm mt-1">
-                {errors.password.message}
-              </p>
-            )}
-          </div>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className={`${
-              isSubmitting ? "bg-accent/50" : "bg-accent"
-            } text-text px-4 py-2 rounded-lg font-semibold hover:bg-accent/90 transition-colors`}
+
+          {/* Email/Password Form */}
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="flex flex-col gap-4"
           >
-            {isSubmitting ? "Logging in..." : "Login"}
-          </button>
-          <div className="text-center mt-2 flex-col gap-2 justify-center">
-            <p className="text-text pb-2">Don't have an account?</p>
+            <div>
+              <label
+                htmlFor="email"
+                className="text-text text-sm font-medium block mb-1.5"
+              >
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                {...register("email")}
+                className="rounded-lg p-2.5 w-full bg-background text-text border border-primary/15 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
+                placeholder="you@example.com"
+              />
+              {errors.email && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.email.message}
+                </p>
+              )}
+            </div>
+            <div>
+              <label
+                htmlFor="password"
+                className="text-text text-sm font-medium block mb-1.5"
+              >
+                Password
+              </label>
+              <input
+                type="password"
+                id="password"
+                {...register("password")}
+                className="rounded-lg p-2.5 w-full bg-background text-text border border-primary/15 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
+                placeholder="••••••••"
+              />
+              {errors.password && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.password.message}
+                </p>
+              )}
+            </div>
             <button
-              onClick={() => navigate("/register")}
-              className="text-background hover:cursor-pointer bg-primary px-4 py-2 rounded-lg font-semibold hover:bg-primary/90 transition-colors"
+              type="submit"
+              disabled={isSubmitting}
+              className="bg-accent text-primary font-semibold py-2.5 rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-50 mt-2 cursor-pointer"
             >
-              Register
+              {isSubmitting ? "Signing in..." : "Sign in"}
             </button>
-          </div>
-        </form>
+          </form>
+        </div>
+
+        {/* Footer Link */}
+        <p className="text-text/50 text-sm mt-6">
+          Don't have an account?{" "}
+          <button
+            onClick={() => navigate("/register")}
+            className="text-accent font-semibold hover:underline cursor-pointer"
+          >
+            Create one
+          </button>
+        </p>
       </div>
     </div>
   );

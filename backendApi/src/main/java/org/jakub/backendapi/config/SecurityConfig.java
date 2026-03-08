@@ -36,7 +36,7 @@ public class SecurityConfig {
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/login", "/register", "/refresh", "/generateRecipe").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/login", "/register", "/refresh", "/generateRecipe", "/oauth/google").permitAll()
                         .requestMatchers(HttpMethod.GET, "/getAllRecipes", "/getRecipe/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/addRecipe").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/admin/**").hasRole("ADMIN")

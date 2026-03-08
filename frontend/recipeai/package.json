@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "open -a 'Google Chrome' http://localhost:5173 && vite",
+    "dev:docker": "vite",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",

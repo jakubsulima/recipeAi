@@ -7,9 +7,11 @@ import org.jakub.backendapi.config.JwtUtils;
 import org.jakub.backendapi.config.UserAuthProvider;
 import org.jakub.backendapi.dto.CredentialsDto;
 import org.jakub.backendapi.dto.ErrorDto;
+import org.jakub.backendapi.dto.OAuthLoginDto;
 import org.jakub.backendapi.dto.SignUpDto;
 import org.jakub.backendapi.dto.UserDto;
 import org.jakub.backendapi.exceptions.AppException;
+import org.jakub.backendapi.services.OAuthService;
 import org.jakub.backendapi.services.UserService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -26,10 +28,12 @@ public class AuthController {
 
     private final UserService userService;
     private final UserAuthProvider userAuthProvider;
+    private final OAuthService oAuthService;
 
-    public AuthController(UserService userService, UserAuthProvider userAuthProvider) {
+    public AuthController(UserService userService, UserAuthProvider userAuthProvider, OAuthService oAuthService) {
         this.userService = userService;
         this.userAuthProvider = userAuthProvider;
+        this.oAuthService = oAuthService;
     }
 
     // Login endpoint: generates an access token and refresh token
@@ -59,6 +63,13 @@ public class AuthController {
 
         response.addHeader(HttpHeaders.SET_COOKIE, tokens.get(0).toString());
         response.addHeader(HttpHeaders.SET_COOKIE, tokens.get(1).toString());
+    }
+
+    @PostMapping("/oauth/google")
+    public ResponseEntity<UserDto> oauthGoogle(@Valid @RequestBody OAuthLoginDto oAuthLoginDto, HttpServletResponse response) {
+        UserDto user = oAuthService.authenticateGoogle(oAuthLoginDto.getIdToken());
+        CreateToken(response, user.getEmail());
+        return ResponseEntity.ok(user);
     }
 
     // Refresh token endpoint: Accepts refresh token from Authorization header and returns new tokens

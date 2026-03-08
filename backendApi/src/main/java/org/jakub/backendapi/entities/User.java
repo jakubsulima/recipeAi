@@ -2,6 +2,7 @@ package org.jakub.backendapi.entities;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
+import org.jakub.backendapi.entities.Enums.AuthMethod;
 import org.jakub.backendapi.entities.Enums.Role;
 
 import java.util.List;
@@ -19,12 +20,15 @@ public class User {
     @Email(message = "Email should be valid")
     private String email;
 
-    @Column(nullable = false)
     private String password;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    @Column(name = "auth_method", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private AuthMethod authMethod = AuthMethod.CREDENTIALS;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Recipe> recipes;
@@ -94,6 +98,14 @@ public class User {
 
     public void setUserPreferences(UserPreferences userPreferences) {
         this.userPreferences = userPreferences;
+    }
+
+    public AuthMethod getAuthMethod() {
+        return authMethod;
+    }
+
+    public void setAuthMethod(AuthMethod authMethod) {
+        this.authMethod = authMethod;
     }
 
     public List<FridgeIngredient> getFridgeIngredients() {
