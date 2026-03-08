@@ -26,6 +26,8 @@ public class RecipesController {
     private final UserPreferencesService userPreferencesService;
     @Value("${gemini.api.key}")
     private String geminiApiKey;
+    @Value("${gemini.api.model:gemini-2.0-flash-lite}")
+    private String geminiModel;
 
     public RecipesController(RecipeService recipeService, UserService userService, UserPreferencesService userPreferencesService) {
         this.recipeService = recipeService;
@@ -113,7 +115,7 @@ public class RecipesController {
             System.err.println("Could not retrieve user preferences: " + e.getMessage());
         }
         try (Client client = Client.builder().apiKey(geminiApiKey).build()) {
-            response = client.models.generateContent("gemini-3.1-flash-lite-preview",
+            response = client.models.generateContent(geminiModel,
                     recipePrompt,
                     null);
         } catch (Exception e) {

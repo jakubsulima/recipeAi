@@ -1,8 +1,14 @@
-# Environment files
+# Environment / secrets
 .env
-.env.local
-.env.production
-backendApi/.env.template
+.env.*
+!.env.template
+!.env.example
+backendApi/.env
+backendApi/.env.*
+!backendApi/.env.template
+frontend/recipeai/.env
+frontend/recipeai/.env.*
+!frontend/recipeai/.env.example
 
 # macOS
 .DS_Store
@@ -10,9 +16,18 @@ backendApi/.env.template
 .LSOverride
 ._*
 
-# SSL Certificates
+# Certificates and private keys
 letsencrypt/
 certbot/
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Logs
+*.log
+logs/
 
 # Logs
 *.log
