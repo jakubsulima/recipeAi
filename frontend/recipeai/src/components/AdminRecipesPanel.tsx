@@ -59,6 +59,10 @@ const AdminRecipesPanel: React.FC = () => {
     }
   };
 
+  if (authContext?.loading) {
+    return null;
+  }
+
   if (!authContext || authContext.user?.role !== "ADMIN") {
     return null;
   }

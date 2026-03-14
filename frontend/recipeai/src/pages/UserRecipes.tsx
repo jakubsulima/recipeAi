@@ -19,6 +19,8 @@ const Recipes = () => {
 
   const fetchAllRecipes = async () => {
     try {
+      setIsLoading(true);
+      setError("");
       const response = await apiClient(
         `getAllRecipes?page=${currentPage}&size=${RECIPES_PER_PAGE}`,
         false
@@ -62,11 +64,7 @@ const Recipes = () => {
 
   const handleSearch = () => {
     setCurrentPage(0);
-    if (searchTerm.trim()) {
-      searchRecipes(searchTerm);
-    } else {
-      setIsSearching(false);
-    }
+    setIsSearching(!!searchTerm.trim());
   };
 
   const handleClearSearch = () => {
@@ -89,6 +87,8 @@ const Recipes = () => {
 
       if (user && user.id) {
         try {
+          setIsLoading(true);
+          setError("");
           const response = await apiClient(
             `getUserRecipes/${user.id}?page=${currentPage}&size=${RECIPES_PER_PAGE}`,
             false
@@ -160,7 +160,7 @@ const Recipes = () => {
           {/* Search Bar */}
           <div className="mb-6">
             <div className="relative max-w-2xl mx-auto">
-              <div className="relative">
+              <div className="flex items-center rounded-full border border-primary/20 bg-secondary focus-within:ring-2 focus-within:ring-accent transition-all">
                 <input
                   type="text"
                   value={searchTerm}
@@ -171,12 +171,12 @@ const Recipes = () => {
                     }
                   }}
                   placeholder="Search recipes by name..."
-                  className="w-full px-4 py-3 pr-24 rounded-full border border-primary/20 bg-secondary text-text focus:outline-none focus:ring-2 focus:ring-accent placeholder:text-text/50 transition-all"
+                  className="flex-1 min-w-0 px-4 py-3 bg-transparent text-text focus:outline-none placeholder:text-text/50"
                 />
                 {searchTerm && (
                   <button
                     onClick={handleClearSearch}
-                    className="absolute right-20 top-1/2 transform -translate-y-1/2 text-text/70 hover:text-accent focus:outline-none transition-colors"
+                    className="shrink-0 px-2 text-text/70 hover:text-accent focus:outline-none transition-colors"
                     aria-label="Clear search"
                   >
                     <svg
@@ -193,9 +193,10 @@ const Recipes = () => {
                     </svg>
                   </button>
                 )}
+                <div className="w-px h-6 bg-primary/20 mx-1 shrink-0" />
                 <button
                   onClick={handleSearch}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-accent hover:bg-accent/90 text-primary px-4 py-2 rounded-full font-medium transition-colors"
+                  className="shrink-0 bg-accent hover:bg-accent/90 text-primary px-4 py-2 m-1 rounded-full font-medium transition-colors"
                 >
                   Search
                 </button>

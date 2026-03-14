@@ -19,9 +19,16 @@ const schema = yup.object({
 const Login = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const { setUser } = useUser();
+  const { user, loading: authLoading, setUser } = useUser();
   const navigate = useNavigate();
   const googleBtnRef = useRef<HTMLDivElement>(null);
+
+  // Redirect already-logged-in users
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate("/", { replace: true });
+    }
+  }, [user, authLoading, navigate]);
 
   const handleAuthSuccess = useCallback(
     (userData: { email: string; id: number; role: string }) => {
@@ -59,14 +66,15 @@ const Login = () => {
           client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || "",
           callback: handleGoogleCallback,
         });
+        const mobile = window.innerWidth < 768;
         window.google.accounts.id.renderButton(googleBtnRef.current, {
           type: "standard",
           theme: "outline",
-          size: "large",
+          size:  "large",
           text: "signin_with",
           shape: "rectangular",
           logo_alignment: "left",
-          width: 380,
+          width: mobile ? 300 : 380,
         });
       }
     };

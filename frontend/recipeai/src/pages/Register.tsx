@@ -35,8 +35,15 @@ const Register = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  const { setUser } = useUser();
+  const { user, loading: authLoading, setUser } = useUser();
   const googleBtnRef = useRef<HTMLDivElement>(null);
+
+  // Redirect already-logged-in users
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate("/", { replace: true });
+    }
+  }, [user, authLoading, navigate]);
 
   const handleAuthSuccess = useCallback(
     (userData: { email: string; id: number; role: string }) => {

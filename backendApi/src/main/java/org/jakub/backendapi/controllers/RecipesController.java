@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import static org.jakub.backendapi.config.JwtUtils.getLoginFromToken;
@@ -26,7 +27,7 @@ public class RecipesController {
     private final UserPreferencesService userPreferencesService;
     @Value("${gemini.api.key}")
     private String geminiApiKey;
-    @Value("${gemini.api.model:gemini-2.0-flash-lite}")
+    @Value("${gemini.api.model:gemini-3-flash-preview}")
     private String geminiModel;
 
     public RecipesController(RecipeService recipeService, UserService userService, UserPreferencesService userPreferencesService) {
@@ -97,9 +98,20 @@ public class RecipesController {
         return ResponseEntity.ok(recipeResponseDto);
     }
 
+    public record GenerateRecipeRequest(String fullPrompt, String prompt) {
+    }
+
     @PostMapping("/generateRecipe")
-    public ResponseEntity<String> createRecipe(@RequestBody String recipePrompt, HttpServletRequest request) {
+    public ResponseEntity<String> createRecipe(@RequestBody GenerateRecipeRequest recipeRequest, HttpServletRequest request) {
         GenerateContentResponse response;
+        String recipePrompt = recipeRequest != null && StringUtils.hasText(recipeRequest.fullPrompt())
+                ? recipeRequest.fullPrompt()
+            : (recipeRequest != null ? recipeRequest.prompt() : null);
+
+        if (!StringUtils.hasText(recipePrompt)) {
+            return ResponseEntity.badRequest().body("Missing prompt. Provide 'fullPrompt' in request body.");
+        }
+
         try {
             String userEmail = getLoginFromToken(request);
             if (userEmail != null && !userEmail.isEmpty()) {
@@ -114,6 +126,11 @@ public class RecipesController {
         } catch (Exception e) {
             System.err.println("Could not retrieve user preferences: " + e.getMessage());
         }
+
+        if (!StringUtils.hasText(geminiApiKey)) {
+            return ResponseEntity.status(500).body("Gemini API key is not configured on the server.");
+        }
+
         try (Client client = Client.builder().apiKey(geminiApiKey).build()) {
             response = client.models.generateContent(geminiModel,
                     recipePrompt,

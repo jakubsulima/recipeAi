@@ -9,6 +9,7 @@ const MePage = () => {
   const { user, loading: userLoading, getUserPreferences } = useUser();
 
   const [error, setError] = useState<string>("");
+  const [successMessage, setSuccessMessage] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [dietOptions, setDietOptions] = useState<string[]>([]);
   const [displayDietOptions, setDisplayDietOptions] = useState<string[]>([]); // State for display-friendly options
@@ -52,13 +53,16 @@ const MePage = () => {
 
   const handleUpdatePreferences = async (
     updateFn: () => Promise<any>,
-    successMessage: string,
+    successMsg: string,
     errorMessage: string
   ) => {
     setError("");
+    setSuccessMessage("");
     try {
       await updateFn();
       await getUserPreferences();
+      setSuccessMessage(successMsg);
+      setTimeout(() => setSuccessMessage(""), 3000);
     } catch (error) {
       setError(errorMessage);
       console.error(errorMessage, error);
@@ -129,6 +133,15 @@ const MePage = () => {
             role="alert"
           >
             {error}
+          </div>
+        )}
+
+        {successMessage && (
+          <div
+            className="mb-6 p-4 bg-green-500/20 border border-green-500 text-green-600 rounded-lg"
+            role="status"
+          >
+            {successMessage}
           </div>
         )}
 

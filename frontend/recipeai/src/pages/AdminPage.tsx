@@ -65,6 +65,12 @@ const AdminPage: React.FC = () => {
         Error: {error}
       </div>
     );
+  if (authContext?.loading)
+    return (
+      <div className="container mx-auto p-4 bg-background min-h-screen text-text">
+        Loading...
+      </div>
+    );
   if (!authContext || authContext.user?.role !== "ADMIN") {
     return (
       <div className="container mx-auto p-4 bg-background min-h-screen text-accent">

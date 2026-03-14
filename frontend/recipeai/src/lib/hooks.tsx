@@ -17,15 +17,23 @@ export const generateRecipe = async function (
           productsFridge.join(", ")
         : "");
 
-    const result = await axios.post(`${API_URL}generateRecipe`, {
-      fullPrompt,
-    }, { signal });
+    const result = await axios.post(
+      `${API_URL}generateRecipe`,
+      {
+        fullPrompt,
+      },
+      { signal }
+    );
     return result.data;
   } catch (error: any) {
     if (axios.isCancel(error)) {
       throw new DOMException("Recipe generation cancelled", "AbortError");
     }
-    const message = error.message || "Unknown AI error";
+    const message = axios.isAxiosError(error)
+      ? typeof error.response?.data === "string" && error.response.data.trim() !== ""
+        ? error.response.data
+        : error.message
+      : error?.message || "Unknown AI error";
     throw new Error(`AI Generation Error: ${message}`);
   }
 };

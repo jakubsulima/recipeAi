@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { DropDownButton } from "./DropDownButton";
 import DropDownMenu from "./DropDownMenu";
 import { useUser } from "../context/context";
@@ -53,32 +54,43 @@ const Navbar = () => {
               isOpen ? "hidden" : ""
             }`}
           >
-            <a href="/">Recipe.ai</a>
+            <Link to="/">Recipe.ai</Link>
           </li>
 
           {/* --- Right Side: Controls (Desktop) / Burger (Mobile) --- */}
           <div className="flex items-center space-x-3">
             {/* Desktop Nav Links */}
             <div className="flex items-center space-x-3 max-sm:hidden">
-              {navItems.map((item, index) => (
-                <li key={index} className="list-none">
-                  <a
-                    href={"/" + item}
-                    className="px-4 py-2 rounded-full text-background hover:text-accent inline-block border-none"
-                  >
-                    {item}
-                  </a>
-                </li>
-              ))}
-              {user && (
-                <li className="list-none">
-                  <button
-                    className="px-2 py-1 rounded-full hover:text-accent font-semibold cursor-pointer"
-                    onClick={handleLogout}
-                  >
-                    Logout
-                  </button>
-                </li>
+              {loading ? (
+                // Skeleton pills during auth loading — prevents Login→items flash
+                <>
+                  {["w-16", "w-20", "w-24"].map((w, i) => (
+                    <div key={i} className={`${w} h-8 rounded-full bg-background/20 animate-pulse`} />
+                  ))}
+                </>
+              ) : (
+                <>
+                  {navItems.map((item, index) => (
+                    <li key={index} className="list-none">
+                      <Link
+                        to={"/" + item}
+                        className="px-4 py-2 rounded-full text-background hover:text-accent inline-block border-none"
+                      >
+                        {item}
+                      </Link>
+                    </li>
+                  ))}
+                  {user && (
+                    <li className="list-none">
+                      <button
+                        className="px-2 py-1 rounded-full hover:text-accent font-semibold cursor-pointer"
+                        onClick={handleLogout}
+                      >
+                        Logout
+                      </button>
+                    </li>
+                  )}
+                </>
               )}
             </div>
 
@@ -108,7 +120,9 @@ const Navbar = () => {
               isOpen ? "opacity-100" : "opacity-0"
             } `}
             dropdownItems={
-              user
+              loading
+                ? ["Homepage"]
+                : user
                 ? ["Homepage", ...navItems, "Logout"].filter(
                     (item): item is string => !!item
                   )
