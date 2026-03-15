@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useContext } from "react";
 import { AuthContext } from "../context/context";
 import { apiClient, deleteClient } from "../lib/hooks";
+import FoodLoadingScreen from "./FoodLoadingScreen";
 
 interface Recipe {
   id: number;
@@ -67,7 +68,15 @@ const AdminRecipesPanel: React.FC = () => {
     return null;
   }
 
-  if (loading) return <div className="p-4">Loading recipes...</div>;
+  if (loading)
+    return (
+      <FoodLoadingScreen
+        title="Loading recipes..."
+        subtitle="Refreshing recipe management"
+        fullScreen={false}
+        compact={true}
+      />
+    );
   if (error && recipes.length === 0)
     return (
       <div className="p-4 text-red-500">Error fetching recipes: {error}</div>

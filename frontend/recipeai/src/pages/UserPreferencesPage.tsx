@@ -3,6 +3,7 @@ import { useUser } from "../context/context";
 import { useNavigate } from "react-router-dom";
 import OptionsForm from "../components/OptionsForm";
 import { apiClient } from "../lib/hooks";
+import FoodLoadingScreen from "../components/FoodLoadingScreen";
 
 const MePage = () => {
   const navigate = useNavigate();
@@ -111,9 +112,10 @@ const MePage = () => {
 
   if (userLoading || loading) {
     return (
-      <div className="p-4 text-center bg-background min-h-screen text-text">
-        Loading...
-      </div>
+      <FoodLoadingScreen
+        title="Loading preferences..."
+        subtitle="Getting your taste profile ready"
+      />
     );
   }
 

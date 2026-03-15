@@ -1,6 +1,7 @@
 package org.jakub.backendapi.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonSetter;
 
 import java.time.LocalDate;
 import java.util.Objects;
@@ -11,13 +12,13 @@ public class FridgeIngredientDto {
     @JsonFormat(pattern = "dd-MM-yyyy")
     private LocalDate expirationDate;
     private String category;
-    private double amount;
+    private Double amount;
     private String unit;
 
     public FridgeIngredientDto() {
     }
 
-    public FridgeIngredientDto(Long id, String name, LocalDate expirationDate, String category, double amount, String unit) {
+    public FridgeIngredientDto(Long id, String name, LocalDate expirationDate, String category, Double amount, String unit) {
         this.id = id;
         this.name = name;
         this.expirationDate = expirationDate;
@@ -58,12 +59,37 @@ public class FridgeIngredientDto {
         this.category = category;
     }
 
-    public double getAmount() {
+    public Double getAmount() {
         return amount;
     }
 
-    public void setAmount(double amount) {
-        this.amount = amount;
+    @JsonSetter("amount")
+    public void setAmount(Object amount) {
+        if (amount == null) {
+            this.amount = null;
+            return;
+        }
+
+        if (amount instanceof Number number) {
+            this.amount = number.doubleValue();
+            return;
+        }
+
+        if (amount instanceof String value) {
+            String trimmedValue = value.trim();
+            if (trimmedValue.isEmpty()) {
+                this.amount = null;
+                return;
+            }
+            try {
+                this.amount = Double.parseDouble(trimmedValue);
+                return;
+            } catch (NumberFormatException ignored) {
+                throw new IllegalArgumentException("Amount must be a valid number");
+            }
+        }
+
+        throw new IllegalArgumentException("Amount must be a valid number");
     }
 
     public String getUnit() {
@@ -71,7 +97,12 @@ public class FridgeIngredientDto {
     }
 
     public void setUnit(String unit) {
-        this.unit = unit;
+        if (unit == null) {
+            this.unit = null;
+            return;
+        }
+        String trimmedUnit = unit.trim();
+        this.unit = trimmedUnit.isEmpty() ? null : trimmedUnit;
     }
 
     @Override
@@ -79,7 +110,7 @@ public class FridgeIngredientDto {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         FridgeIngredientDto that = (FridgeIngredientDto) o;
-        return Double.compare(that.amount, amount) == 0 && Objects.equals(id, that.id) && Objects.equals(name, that.name) && Objects.equals(expirationDate, that.expirationDate) && Objects.equals(category, that.category) && Objects.equals(unit, that.unit);
+        return Objects.equals(id, that.id) && Objects.equals(name, that.name) && Objects.equals(expirationDate, that.expirationDate) && Objects.equals(category, that.category) && Objects.equals(amount, that.amount) && Objects.equals(unit, that.unit);
     }
 
     @Override

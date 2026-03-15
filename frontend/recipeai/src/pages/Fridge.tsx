@@ -22,9 +22,9 @@ export const Fridge = () => {
   } = useFridge();
   const [newItem, setNewItem] = useState<string>("");
   const [newItemDate, setNewItemDate] = useState<string>("");
-  const [unit, setUnit] = useState<unitType>("kg");
+  const [unit, setUnit] = useState<unitType>("");
   const [category, setCategory] = useState<categoryType>("FRIDGE");
-  const [amount, setAmount] = useState<string>("1");
+  const [amount, setAmount] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [dateError, setDateError] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -111,7 +111,8 @@ export const Fridge = () => {
 
       setNewItem("");
       setNewItemDate("");
-      setAmount("1");
+      setAmount("");
+      setUnit("");
       setDateError(""); // Clear date error on success
     } catch (err: any) {
       const errorMsg =

@@ -24,10 +24,10 @@ public class FridgeIngredient {
     @Enumerated(EnumType.STRING)
     private CategoryFridgeIngredient category;
 
-    @Column(nullable = false)
-    private double amount;
+    @Column()
+    private Double amount;
 
-    @Column(nullable = false)
+    @Column()
     @Enumerated(EnumType.STRING)
     private Unit unit;
 
@@ -38,7 +38,7 @@ public class FridgeIngredient {
     public FridgeIngredient() {
     }
 
-    public FridgeIngredient(Long id, String name, LocalDate expirationDate, CategoryFridgeIngredient category, double amount, Unit unit, User user) {
+    public FridgeIngredient(Long id, String name, LocalDate expirationDate, CategoryFridgeIngredient category, Double amount, Unit unit, User user) {
         this.id = id;
         this.name = name;
         this.expirationDate = expirationDate;
@@ -80,11 +80,11 @@ public class FridgeIngredient {
         this.category = category;
     }
 
-    public double getAmount() {
+    public Double getAmount() {
         return amount;
     }
 
-    public void setAmount(double amount) {
+    public void setAmount(Double amount) {
         this.amount = amount;
     }
 
@@ -109,7 +109,7 @@ public class FridgeIngredient {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         FridgeIngredient that = (FridgeIngredient) o;
-        return Double.compare(that.amount, amount) == 0 && Objects.equals(id, that.id) && Objects.equals(name, that.name) && Objects.equals(expirationDate, that.expirationDate) && category == that.category && unit == that.unit && Objects.equals(user, that.user);
+        return Objects.equals(id, that.id) && Objects.equals(name, that.name) && Objects.equals(expirationDate, that.expirationDate) && category == that.category && Objects.equals(amount, that.amount) && unit == that.unit && Objects.equals(user, that.user);
     }
 
     @Override

@@ -105,9 +105,28 @@ const HomePage = () => {
             <button
               onClick={handleSearch}
               disabled={isNavigating}
-              className="w-full bg-accent text-text font-bold py-2 px-4 rounded-full hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent mt-6 transition-colors disabled:opacity-60 disabled:cursor-wait"
+              className="w-full bg-accent text-text font-bold py-2 px-4 rounded-full hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent mt-6 transition-colors disabled:opacity-60 disabled:cursor-wait flex items-center justify-center gap-2"
             >
-              {isNavigating ? "Loading..." : "Generate Recipe"}
+              {isNavigating ? (
+                <>
+                  <span className="food-loader-inline" aria-hidden="true">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      className="h-3.5 w-3.5 text-primary"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <circle cx="12" cy="12" r="6" />
+                      <path d="M3 12h3m12 0h3M12 3v3m0 12v3" />
+                    </svg>
+                  </span>
+                  <span>Generating...</span>
+                </>
+              ) : (
+                "Generate Recipe"
+              )}
             </button>
           </section>
         </article>

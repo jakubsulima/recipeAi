@@ -4,6 +4,7 @@ import { apiClient } from "../lib/hooks";
 import { useUser } from "../context/context";
 import RecipeContainer from "../components/RecipeContainer";
 import PaginationControls from "../components/PaginationControls";
+import FoodLoadingScreen from "../components/FoodLoadingScreen";
 
 const Recipes = () => {
   const [recipes, setRecipes] = useState<RecipeData[]>([]);
@@ -110,16 +111,10 @@ const Recipes = () => {
 
   if (isLoading || userLoading) {
     return (
-      <section className="flex flex-col max-w-4xl mx-auto w-full bg-background h-screen p-6">
-        <div className="flex-1 flex flex-col items-center justify-center">
-          <div className="relative w-16 h-16 mb-4">
-            <div className="absolute inset-0 border-4 border-secondary rounded-full"></div>
-            <div className="absolute inset-0 border-4 border-accent rounded-full border-t-transparent animate-spin"></div>
-          </div>
-          <p className="text-text text-lg font-medium">Loading recipes...</p>
-          <p className="text-text/60 text-sm mt-2">Please wait a moment</p>
-        </div>
-      </section>
+      <FoodLoadingScreen
+        title="Loading recipes..."
+        subtitle="Warming up the cookbook"
+      />
     );
   }
 

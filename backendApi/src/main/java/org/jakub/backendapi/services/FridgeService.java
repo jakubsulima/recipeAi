@@ -48,8 +48,6 @@ public class FridgeService {
         System.out.println("Adding fridge ingredient: " + fridgeIngredientDto);
         if (fridgeIngredientDto.getUnit() != null) {
             validateUnit(fridgeIngredientDto.getUnit());
-        } else {
-            throw new AppException("Unit is required", HttpStatus.BAD_REQUEST);
         }
 
         if (fridgeIngredientDto.getCategory() != null) {
@@ -58,7 +56,7 @@ public class FridgeService {
             throw new AppException("Category is required", HttpStatus.BAD_REQUEST);
         }
 
-        if (fridgeIngredientDto.getAmount() <= 0) {
+        if (fridgeIngredientDto.getAmount() != null && fridgeIngredientDto.getAmount() <= 0) {
             throw new AppException("Amount must be positive", HttpStatus.BAD_REQUEST);
         }
         User user = userRepository.findByEmail(email).orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));

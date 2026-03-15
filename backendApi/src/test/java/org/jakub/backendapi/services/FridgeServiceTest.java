@@ -288,20 +288,30 @@ class FridgeServiceTest {
     }
 
     @Test
-    void addFridgeIngredient_shouldThrowAppException_whenUnitMissing() {
+    void addFridgeIngredient_shouldAddIngredient_whenUnitMissing() {
         // Given
         String email = "test@example.com";
         FridgeIngredientDto fridgeIngredientDto = new FridgeIngredientDto();
         fridgeIngredientDto.setName("Milk");
         fridgeIngredientDto.setUnit(null);
         fridgeIngredientDto.setAmount(1.0);
-        fridgeIngredientDto.setCategory("DAIRY");
+        fridgeIngredientDto.setCategory("FRIDGE");
 
-        // When & Then
-        AppException exception = assertThrows(AppException.class, () -> fridgeService.addFridgeIngredient(fridgeIngredientDto, email));
+        User user = new User();
+        user.setId(1L);
+        user.setEmail(email);
 
-        assertEquals("Unit is required", exception.getMessage());
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getCode());
+        FridgeIngredient mappedIngredient = new FridgeIngredient();
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+        when(fridgeIngredientMapper.toFridgeIngredientWithUser(fridgeIngredientDto, user)).thenReturn(mappedIngredient);
+        when(fridgeIngredientRepository.save(mappedIngredient)).thenReturn(mappedIngredient);
+
+        // When
+        FridgeIngredient result = fridgeService.addFridgeIngredient(fridgeIngredientDto, email);
+
+        // Then
+        assertNotNull(result);
+        verify(fridgeIngredientRepository).save(mappedIngredient);
     }
 
     @Test

@@ -3,6 +3,7 @@ import { apiClient, generateRecipe, deleteClient, cleanAiJsonString } from "../l
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useFridge } from "../context/fridgeContext";
 import { useUser } from "../context/context";
+import FoodLoadingScreen from "../components/FoodLoadingScreen";
 
 export interface RecipeIngredient {
   name: string;
@@ -190,19 +191,18 @@ const RecipePage = () => {
   };
 
   if (isLoading) {
+    const isGeneratingRecipe = Boolean(search) && !recipeId && !existingRecipe;
+
     return (
-      <div className="max-w-4xl mx-auto p-6 bg-background min-h-screen">
-        <div className="flex flex-col items-center justify-center min-h-[60vh]">
-          <div className="relative w-20 h-20 mb-6">
-            <div className="absolute inset-0 border-4 border-secondary rounded-full"></div>
-            <div className="absolute inset-0 border-4 border-accent rounded-full border-t-transparent animate-spin"></div>
-          </div>
-          <p className="text-text text-xl font-semibold">Loading recipe...</p>
-          <p className="text-text/60 text-sm mt-2">
-            Preparing your delicious recipe
-          </p>
-        </div>
-      </div>
+      <FoodLoadingScreen
+        title={isGeneratingRecipe ? "Generating your recipe..." : "Loading recipe..."}
+        subtitle={
+          isGeneratingRecipe
+            ? "Mixing ingredients, matching flavors, and adding a spicy twist"
+            : "Preparing your delicious recipe"
+        }
+        variant={isGeneratingRecipe ? "generating" : "default"}
+      />
     );
   }
 

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useContext } from "react";
 import { AuthContext } from "../context/context";
 import { apiClient, deleteClient } from "../lib/hooks";
 import AdminRecipesPanel from "../components/AdminRecipesPanel";
+import FoodLoadingScreen from "../components/FoodLoadingScreen";
 
 interface User {
   id: number;
@@ -54,11 +55,7 @@ const AdminPage: React.FC = () => {
   };
 
   if (loading)
-    return (
-      <div className="container mx-auto p-4 bg-background min-h-screen text-text">
-        Loading users...
-      </div>
-    );
+    return <FoodLoadingScreen title="Loading users..." subtitle="Preparing admin dashboard" />;
   if (error)
     return (
       <div className="container mx-auto p-4 bg-background min-h-screen text-accent">
@@ -66,11 +63,7 @@ const AdminPage: React.FC = () => {
       </div>
     );
   if (authContext?.loading)
-    return (
-      <div className="container mx-auto p-4 bg-background min-h-screen text-text">
-        Loading...
-      </div>
-    );
+    return <FoodLoadingScreen title="Loading..." subtitle="Checking admin access" />;
   if (!authContext || authContext.user?.role !== "ADMIN") {
     return (
       <div className="container mx-auto p-4 bg-background min-h-screen text-accent">

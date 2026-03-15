@@ -1,5 +1,5 @@
 import React from "react";
-import { hasAmountError, isValidNumber } from "../lib/hooks";
+import { hasAmountError } from "../lib/hooks";
 import OptionsForm from "./OptionsForm";
 import {
   unitType,
@@ -40,87 +40,113 @@ const AddFridgeItemForm: React.FC<AddFridgeItemFormProps> = ({
   error,
   dateError,
   displayLoading,
-  categoryDisplayOptions, // Use the new prop
+  categoryDisplayOptions,
 }) => {
   return (
-    <div className="w-full p-6 bg-secondary rounded-lg shadow-md h-fit">
-      {error && <div className="text-accent mb-4">{error}</div>}
-      <h1 className="text-2xl font-bold mb-4 text-text">Add to Fridge</h1>
-      <div className="mb-4">
-        <input
-          type="text"
-          value={newItem}
-          onChange={(e) => setNewItem(e.target.value)}
-          placeholder="Add new item *"
-          className={`border rounded p-2 w-full mb-2 bg-background text-text focus:outline-none focus:ring-2 focus:ring-accent ${
-            error && !newItem.trim() ? "border-accent" : "border-primary/20"
-          }`}
-          style={{ WebkitTapHighlightColor: "transparent" }}
-          disabled={displayLoading}
-          required
-        />
+    <div className="w-full p-5 sm:p-6 bg-secondary rounded-lg shadow-sm border border-primary/5 h-fit">
+      {error && <div className="text-accent mb-4 text-sm font-medium">{error}</div>}
+      <h2 className="text-xl sm:text-2xl font-bold mb-6 text-text">Add to Fridge</h2>
+      
+      <div className="flex flex-col gap-4">
+        {/* Item Name */}
+        <div className="flex flex-col gap-1">
+          <label className="block text-sm font-medium text-text">
+            Item name <span className="text-accent">*</span>
+          </label>
+          <input
+            type="text"
+            value={newItem}
+            onChange={(e) => setNewItem(e.target.value)}
+            placeholder="e.g., Tomatoes"
+            className={`appearance-none border rounded-md p-2.5 w-full bg-background text-text focus:outline-none focus:ring-2 focus:ring-accent transition-shadow shadow-sm ${
+              error && !newItem.trim() ? "border-accent" : "border-primary/20"
+            }`}
+            style={{ WebkitTapHighlightColor: "transparent" }}
+            disabled={displayLoading}
+            required
+          />
+        </div>
 
-        <label className="block mb-1 text-sm text-text/70">
-          Expiration date <span className="text-text/50">(optional)</span>
-        </label>
-        <input
-          type="date"
-          value={newItemDate}
-          onChange={handleDateChange}
-          className={`border rounded p-2 w-full mb-2 bg-background text-text focus:outline-none focus:ring-2 focus:ring-accent ${
-            dateError ? "border-accent" : "border-primary/20"
-          }`}
-          style={{ WebkitTapHighlightColor: "transparent" }}
-          disabled={displayLoading}
-        />
-        {dateError && <p className="text-accent text-sm mb-2">{dateError}</p>}
+        {/* Expiration Date */}
+        <div className="flex flex-col gap-1">
+          <label className="block text-sm font-medium text-text mt-1">
+            Expiration date <span className="text-text/50 font-normal">(optional)</span>
+          </label>
+          <input
+            type="date"
+            value={newItemDate}
+            onChange={handleDateChange}
+            className={`appearance-none border rounded-md p-2.5 w-full bg-background text-text focus:outline-none focus:ring-2 focus:ring-accent transition-shadow shadow-sm ${
+              dateError ? "border-accent" : "border-primary/20"
+            }`}
+            style={{ WebkitTapHighlightColor: "transparent" }}
+            disabled={displayLoading}
+          />
+          {dateError && <p className="text-accent text-xs mt-1">{dateError}</p>}
+        </div>
 
-        <OptionsForm
-          label="Category"
-          name="Category"
-          options={CATEGORY_VALUES}
-          displayOptions={categoryDisplayOptions} // Pass display options to the form
-          currentOptions={category}
-          onChange={(value) => setCategory(value as categoryType)}
-          classname="mb-2"
-        />
-        <label className="block mb-1 text-sm text-text/70">
-          Amount <span className="text-text/50">(optional)</span>
-        </label>
-        <input
-          type="text"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          placeholder="Amount (e.g., 1.5)"
-          className={`border rounded p-2 w-full mb-2 bg-background text-text focus:outline-none focus:ring-2 focus:ring-accent ${
-            hasAmountError(amount) ? "border-accent" : "border-primary/20"
-          }`}
-          style={{ WebkitTapHighlightColor: "transparent" }}
-          disabled={displayLoading}
-          required
-        />
-        {hasAmountError(amount) && (
-          <p className="text-accent text-sm mb-2">
-            Please enter a valid positive number
-          </p>
+        {/* Category */}
+        <div className="mt-1">
+          <OptionsForm
+            label="Category"
+            name="Category"
+            options={CATEGORY_VALUES}
+            displayOptions={categoryDisplayOptions}
+            currentOptions={category}
+            onChange={(value) => setCategory(value as categoryType)}
+          />
+        </div>
+
+        {/* Unit */}
+        <div className="mt-1">
+          <OptionsForm
+            label="Unit (optional)"
+            name="Unit"
+            options={["g", "kg", "ml", "l", "pcs"]}
+            currentOptions={unit}
+            onChange={(value) => {
+              setUnit(value as unitType);
+              if (!value) {
+                setAmount("");
+              }
+            }}
+          />
+        </div>
+
+        {/* Amount is only shown after selecting a unit */}
+        {unit && (
+          <div className="flex flex-col gap-1 mt-1">
+            <label className="block text-sm font-medium text-text">
+              Amount <span className="text-text/50 font-normal">(optional)</span>
+            </label>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="e.g., 1.5"
+              className={`appearance-none border rounded-md p-2.5 w-full bg-background text-text focus:outline-none focus:ring-2 focus:ring-accent transition-shadow shadow-sm ${
+                hasAmountError(amount) ? "border-accent" : "border-primary/20"
+              }`}
+              style={{ WebkitTapHighlightColor: "transparent" }}
+              disabled={displayLoading}
+            />
+            {hasAmountError(amount) && (
+              <p className="text-accent text-xs mt-1">
+                Please enter a valid positive number
+              </p>
+            )}
+          </div>
         )}
-        <OptionsForm
-          label="Unit"
-          name="Unit"
-          options={["g", "kg", "ml", "l", "pcs", ""]}
-          currentOptions={unit}
-          onChange={(value) => setUnit(value as unitType)}
-          classname="mb-2"
-        />
+
         <button
           onClick={addItem}
           disabled={
             displayLoading ||
             hasAmountError(amount) ||
-            !amount.trim() ||
             !!dateError
           }
-          className="mt-2 bg-accent text-text px-4 py-2 rounded w-full font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent/90 transition-colors"
+          className="mt-4 bg-accent text-text px-4 py-3 rounded-md font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent/90 transition-colors shadow-sm"
         >
           {displayLoading ? "Adding..." : "Add Item"}
         </button>
