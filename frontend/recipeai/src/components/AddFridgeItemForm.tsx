@@ -44,7 +44,11 @@ const AddFridgeItemForm: React.FC<AddFridgeItemFormProps> = ({
 }) => {
   return (
     <div className="w-full p-5 sm:p-6 bg-secondary rounded-lg shadow-sm border border-primary/5 h-fit">
-      {error && <div className="text-accent mb-4 text-sm font-medium">{error}</div>}
+      {error && (
+        <div className="bg-error/10 border-t-4 border-error text-error p-3 mb-6 rounded-r-md text-sm font-medium shadow-sm flex items-center gap-2">
+          <span>{error}</span>
+        </div>
+      )}
       <h2 className="text-xl sm:text-2xl font-bold mb-6 text-text">Add to Fridge</h2>
       
       <div className="flex flex-col gap-4">
@@ -59,7 +63,7 @@ const AddFridgeItemForm: React.FC<AddFridgeItemFormProps> = ({
             onChange={(e) => setNewItem(e.target.value)}
             placeholder="e.g., Tomatoes"
             className={`appearance-none border rounded-md p-2.5 w-full bg-background text-text focus:outline-none focus:ring-2 focus:ring-accent transition-shadow shadow-sm ${
-              error && !newItem.trim() ? "border-accent" : "border-primary/20"
+              error && !newItem.trim() ? "border-error" : "border-primary/20"
             }`}
             style={{ WebkitTapHighlightColor: "transparent" }}
             disabled={displayLoading}
@@ -77,12 +81,12 @@ const AddFridgeItemForm: React.FC<AddFridgeItemFormProps> = ({
             value={newItemDate}
             onChange={handleDateChange}
             className={`appearance-none border rounded-md p-2.5 w-full bg-background text-text focus:outline-none focus:ring-2 focus:ring-accent transition-shadow shadow-sm ${
-              dateError ? "border-accent" : "border-primary/20"
+              dateError ? "border-error focus:ring-error" : "border-primary/20"
             }`}
             style={{ WebkitTapHighlightColor: "transparent" }}
             disabled={displayLoading}
           />
-          {dateError && <p className="text-accent text-xs mt-1">{dateError}</p>}
+          {dateError && <p className="text-error text-xs mt-1 font-medium">{dateError}</p>}
         </div>
 
         {/* Category */}
