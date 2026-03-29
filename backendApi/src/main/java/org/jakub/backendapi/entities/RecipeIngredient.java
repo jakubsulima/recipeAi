@@ -3,8 +3,6 @@ package org.jakub.backendapi.entities;
 
 import jakarta.persistence.*;
 
-import java.util.Objects;
-
 @Entity
 @Table(name = "recipe_ingredient")
 public class RecipeIngredient {
@@ -80,23 +78,25 @@ public class RecipeIngredient {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         RecipeIngredient that = (RecipeIngredient) o;
-        return Double.compare(that.amount, amount) == 0 && Objects.equals(id, that.id) && Objects.equals(recipe, that.recipe) && Objects.equals(ingredient, that.ingredient) && Objects.equals(unit, that.unit);
+        return id != null && id.equals(that.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, recipe, ingredient, amount, unit);
+        return getClass().hashCode();
     }
 
     @Override
     public String toString() {
         return "RecipeIngredient{" +
                 "id=" + id +
-                ", recipe=" + recipe +
-                ", ingredient=" + ingredient +
                 ", amount=" + amount +
                 ", unit='" + unit + '\'' +
                 '}';

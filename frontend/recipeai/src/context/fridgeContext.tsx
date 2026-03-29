@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useCallback, useContext, useState, useEffect, useMemo } from "react";
 import { apiClient, deleteClient } from "../lib/hooks";
 import { useUser } from "./context";
 
@@ -43,6 +43,7 @@ export type unitType = keyof typeof UNITS;
 
 export const UNIT_OPTIONS: unitType[] = Object.keys(UNITS) as unitType[];
 export const UNIT_VALUES = Object.values(UNITS);
+const BATCH_ADD_CONCURRENCY = 4;
 
 const FridgeContext = createContext<FridgeContextType>(null!);
 
@@ -62,12 +63,12 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
     useState(() => localStorage.getItem("expirationNotificationShown") === "true");
   const { user, loading: userLoading } = useUser();
 
-  const handleSetExpirationNotificationShown = (value: boolean) => {
+  const handleSetExpirationNotificationShown = useCallback((value: boolean) => {
     setExpirationNotificationShown(value);
     localStorage.setItem("expirationNotificationShown", value ? "true" : "false");
-  };
+  }, []);
 
-  const refreshFridgeItems = async () => {
+  const refreshFridgeItems = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -100,9 +101,9 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [expirationNotificationShown, handleSetExpirationNotificationShown]);
 
-  const addFridgeItem = async (item: AddFridgeIngredientInput) => {
+  const addFridgeItem = useCallback(async (item: AddFridgeIngredientInput) => {
     try {
       await apiClient("addFridgeIngredient", true, {
         name: item.name,
@@ -115,37 +116,44 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (err: any) {
       throw new Error("Failed to add fridge item");
     }
-  };
+  }, [refreshFridgeItems]);
 
-  const addFridgeItemsBatch = async (items: AddFridgeIngredientInput[]) => {
+  const addFridgeItemsBatch = useCallback(async (items: AddFridgeIngredientInput[]) => {
+    if (items.length === 0) {
+      return;
+    }
+
     try {
-      await Promise.all(
-        items.map((item) =>
+      for (let i = 0; i < items.length; i += BATCH_ADD_CONCURRENCY) {
+        const chunk = items.slice(i, i + BATCH_ADD_CONCURRENCY);
+        await Promise.all(
+          chunk.map((item) =>
           apiClient("addFridgeIngredient", true, {
             name: item.name,
             expirationDate: item.expirationDate,
             amount: item.amount,
             unit: UNITS[item.unit],
           })
-        )
-      );
+          )
+        );
+      }
 
       await refreshFridgeItems();
     } catch (err: any) {
       throw new Error("Failed to add scanned items");
     }
-  };
+  }, [refreshFridgeItems]);
 
-  const removeFridgeItem = async (id: number) => {
+  const removeFridgeItem = useCallback(async (id: number) => {
     try {
       await deleteClient(`deleteFridgeIngredient/${id}`);
       setFridgeItems((prev) => prev.filter((item) => item.id !== id));
     } catch (err: any) {
       throw new Error("Failed to remove fridge item");
     }
-  };
+  }, []);
 
-  const updateFridgeItem = async (id: number, newAmount: string) => {
+  const updateFridgeItem = useCallback(async (id: number, newAmount: string) => {
     try {
       await apiClient(`updateFridgeIngredient/${id}`, true, {
         amount: newAmount,
@@ -158,11 +166,11 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (err: any) {
       throw new Error("Failed to update fridge item");
     }
-  };
+  }, []);
 
-  const getFridgeItemNames = () => {
+  const getFridgeItemNames = useCallback(() => {
     return fridgeItems.map((item) => item.name);
-  };
+  }, [fridgeItems]);
 
   useEffect(() => {
     if (userLoading) {
@@ -177,20 +185,33 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     refreshFridgeItems();
-  }, [user, userLoading]);
+  }, [user, userLoading, refreshFridgeItems]);
 
-  const value: FridgeContextType = {
-    fridgeItems,
-    setFridgeItems,
-    loading,
-    error,
-    addFridgeItem,
-    addFridgeItemsBatch,
-    removeFridgeItem,
-    updateFridgeItem,
-    refreshFridgeItems,
-    getFridgeItemNames,
-  };
+  const value: FridgeContextType = useMemo(
+    () => ({
+      fridgeItems,
+      setFridgeItems,
+      loading,
+      error,
+      addFridgeItem,
+      addFridgeItemsBatch,
+      removeFridgeItem,
+      updateFridgeItem,
+      refreshFridgeItems,
+      getFridgeItemNames,
+    }),
+    [
+      fridgeItems,
+      loading,
+      error,
+      addFridgeItem,
+      addFridgeItemsBatch,
+      removeFridgeItem,
+      updateFridgeItem,
+      refreshFridgeItems,
+      getFridgeItemNames,
+    ]
+  );
 
   return (
     <FridgeContext.Provider value={value}>{children}</FridgeContext.Provider>

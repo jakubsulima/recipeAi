@@ -1,4 +1,4 @@
-import { useCallback, useContext, useState, createContext, useEffect } from "react";
+import { useCallback, useContext, useState, createContext, useEffect, useMemo } from "react";
 import { apiClient } from "../lib/hooks";
 
 interface UserPreferences {
@@ -73,7 +73,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [clearAuthState]);
 
-  const getUserPreferences = async () => {
+  const getUserPreferences = useCallback(async () => {
     if (!user) return;
     try {
       const response: UserPreferences = await apiClient(
@@ -93,7 +93,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (error) {
       console.error("Failed to fetch user preferences:", error);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     let isMounted = true;
@@ -124,18 +124,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, [clearAuthState, refreshSession]);
 
+  const authContextValue = useMemo(
+    () => ({
+      user,
+      setUser,
+      loading,
+      isAdmin,
+      getUserPreferences,
+      refreshSession,
+      logout,
+    }),
+    [user, loading, isAdmin, getUserPreferences, refreshSession, logout]
+  );
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        setUser,
-        loading,
-        isAdmin,
-        getUserPreferences,
-        refreshSession,
-        logout,
-      }}
-    >
+    <AuthContext.Provider value={authContextValue}>
       {children}
     </AuthContext.Provider>
   );

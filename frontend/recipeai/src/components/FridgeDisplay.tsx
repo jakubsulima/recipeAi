@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { FridgeIngredient } from "../context/fridgeContext";
 import FridgeIngredientContainer from "./FridgeIngredientContainer";
 
@@ -25,23 +25,27 @@ const FridgeDisplay: React.FC<FridgeDisplayProps> = ({
   removeItem,
   updateAmount,
 }) => {
-  const sortedItems = [...fridgeItems].sort((a, b) => {
-    if (!a.expirationDate && !b.expirationDate) {
-      return a.name.localeCompare(b.name);
-    }
-    if (!a.expirationDate) {
-      return 1;
-    }
-    if (!b.expirationDate) {
-      return -1;
-    }
+  const sortedItems = useMemo(
+    () =>
+      [...fridgeItems].sort((a, b) => {
+        if (!a.expirationDate && !b.expirationDate) {
+          return a.name.localeCompare(b.name);
+        }
+        if (!a.expirationDate) {
+          return 1;
+        }
+        if (!b.expirationDate) {
+          return -1;
+        }
 
-    const [aDay, aMonth, aYear] = a.expirationDate.split("-");
-    const [bDay, bMonth, bYear] = b.expirationDate.split("-");
-    const aDate = new Date(`${aYear}-${aMonth}-${aDay}`).getTime();
-    const bDate = new Date(`${bYear}-${bMonth}-${bDay}`).getTime();
-    return aDate - bDate;
-  });
+        const [aDay, aMonth, aYear] = a.expirationDate.split("-");
+        const [bDay, bMonth, bYear] = b.expirationDate.split("-");
+        const aDate = new Date(`${aYear}-${aMonth}-${aDay}`).getTime();
+        const bDate = new Date(`${bYear}-${bMonth}-${bDay}`).getTime();
+        return aDate - bDate;
+      }),
+    [fridgeItems]
+  );
 
   return (
     <div className="mobile-card-enter mobile-card-delay-1 ambient-gradient-card md:col-span-2 w-full p-5 sm:p-6 bg-secondary rounded-xl shadow-sm border border-primary/5 min-h-[500px] flex flex-col">
@@ -81,4 +85,4 @@ const FridgeDisplay: React.FC<FridgeDisplayProps> = ({
   );
 };
 
-export default FridgeDisplay;
+export default React.memo(FridgeDisplay);

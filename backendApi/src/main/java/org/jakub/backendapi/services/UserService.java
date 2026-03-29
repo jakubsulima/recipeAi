@@ -11,6 +11,8 @@ import org.jakub.backendapi.entities.UserPreferences;
 import org.jakub.backendapi.exceptions.AppException;
 import org.jakub.backendapi.mappers.UserMapper;
 import org.jakub.backendapi.repositories.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -81,6 +83,10 @@ public class UserService {
 
     public List<UserDto> getAllUsers() {
         return userRepository.findAll().stream().map(userMapper::toUserDto).collect(Collectors.toList());
+    }
+
+    public Page<UserDto> getAllUsers(Pageable pageable) {
+        return userRepository.findAll(pageable).map(userMapper::toUserDto);
     }
 
     public UserDto updateUserRole(Long id, Role role) {

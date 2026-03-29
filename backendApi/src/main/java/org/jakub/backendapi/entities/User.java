@@ -6,7 +6,6 @@ import org.jakub.backendapi.entities.Enums.AuthMethod;
 import org.jakub.backendapi.entities.Enums.Role;
 
 import java.util.List;
-import java.util.Objects;
 
 
 @Entity
@@ -118,15 +117,19 @@ public class User {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         User user = (User) o;
-        return Objects.equals(id, user.id) && Objects.equals(email, user.email) && Objects.equals(password, user.password) && role == user.role && Objects.equals(recipes, user.recipes) && Objects.equals(userPreferences, user.userPreferences) && Objects.equals(fridgeIngredients, user.fridgeIngredients);
+        return id != null && id.equals(user.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, email, password, role, recipes, userPreferences, fridgeIngredients);
+        return getClass().hashCode();
     }
 
     @Override
@@ -134,11 +137,8 @@ public class User {
         return "User{" +
                 "id=" + id +
                 ", email='" + email + '\'' +
-                ", password='" + password + '\'' +
                 ", role=" + role +
-                ", recipes=" + recipes +
-                ", userPreferences=" + userPreferences +
-                ", fridgeIngredients=" + fridgeIngredients +
+                ", authMethod=" + authMethod +
                 '}';
     }
 }

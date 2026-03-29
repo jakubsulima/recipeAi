@@ -4,6 +4,7 @@ import { apiClient, deleteClient } from "../lib/hooks";
 import AdminRecipesPanel from "../components/AdminRecipesPanel";
 import FoodLoadingScreen from "../components/FoodLoadingScreen";
 import ErrorAlert from "../components/ErrorAlert";
+import PaginationControls from "../components/PaginationControls";
 
 interface User {
   id: number;
@@ -12,16 +13,20 @@ interface User {
 }
 
 const AdminPage: React.FC = () => {
+  const PAGE_SIZE = 20;
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const authContext = useContext(AuthContext);
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (pageNum: number = currentPage) => {
     setLoading(true);
     try {
-      const data = await apiClient("admin/users");
-      setUsers(data);
+      const data = await apiClient(`admin/users?page=${pageNum}&size=${PAGE_SIZE}`);
+      setUsers(Array.isArray(data?.content) ? data.content : []);
+      setTotalPages(typeof data?.totalPages === "number" ? data.totalPages : 1);
       setError(null);
     } catch (err) {
       setError(
@@ -35,15 +40,19 @@ const AdminPage: React.FC = () => {
 
   useEffect(() => {
     if (authContext?.user?.role === "ADMIN") {
-      fetchUsers();
+      fetchUsers(currentPage);
     }
-  }, [authContext?.user?.role]);
+  }, [authContext?.user?.role, currentPage]);
 
   const handleDeleteUser = async (userId: number) => {
     if (window.confirm("Are you sure you want to delete this user?")) {
       try {
         await deleteClient(`admin/users/delete/${userId}`);
-        fetchUsers();
+        if (users.length === 1 && currentPage > 0) {
+          setCurrentPage((prev) => prev - 1);
+        } else {
+          fetchUsers(currentPage);
+        }
       } catch (err) {
         setError(
           err instanceof Error
@@ -113,6 +122,11 @@ const AdminPage: React.FC = () => {
             </table>
           </div>
         )}
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       </div>
 
       {/* Recipe Management Panel */}

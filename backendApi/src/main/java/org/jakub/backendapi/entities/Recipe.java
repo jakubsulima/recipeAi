@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 @Entity
 @Table(name = "recipe")
@@ -115,15 +114,19 @@ public class Recipe {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         Recipe recipe = (Recipe) o;
-        return Objects.equals(id, recipe.id) && Objects.equals(name, recipe.name) && Objects.equals(recipeIngredients, recipe.recipeIngredients) && Objects.equals(user, recipe.user) && Objects.equals(description, recipe.description) && Objects.equals(instructions, recipe.instructions);
+        return id != null && id.equals(recipe.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, recipeIngredients, user, description, instructions);
+        return getClass().hashCode();
     }
 
     @Override
@@ -131,10 +134,8 @@ public class Recipe {
         return "Recipe{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
-                ", recipeIngredients=" + recipeIngredients +
-                ", user=" + user +
                 ", description='" + description + '\'' +
-                ", instructions=" + instructions +
+                ", timeToPrepare='" + timeToPrepare + '\'' +
                 '}';
     }
 }

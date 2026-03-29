@@ -18,10 +18,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -151,10 +156,43 @@ public class RecipeService {
     }
 
     private List<RecipeIngredient> getRecipeIngredients(RecipeDto recipeDto, Recipe recipe) {
+        Map<String, String> normalizedToOriginalName = new LinkedHashMap<>();
+
+        recipeDto.getIngredients().forEach(dto -> {
+            String originalName = requireIngredientName(dto.getName());
+            String normalizedName = normalizeIngredientName(originalName);
+            normalizedToOriginalName.putIfAbsent(normalizedName, originalName);
+        });
+
+        Map<String, Ingredient> ingredientsByNormalizedName = ingredientRepository
+                .findAllByLowerNameIn(normalizedToOriginalName.keySet())
+                .stream()
+                .collect(Collectors.toMap(
+                        ingredient -> normalizeIngredientName(ingredient.getName()),
+                        Function.identity(),
+                        (first, second) -> first,
+                        LinkedHashMap::new
+                ));
+
+        List<Ingredient> missingIngredients = normalizedToOriginalName.entrySet().stream()
+                .filter(entry -> !ingredientsByNormalizedName.containsKey(entry.getKey()))
+                .map(entry -> new Ingredient(null, entry.getValue(), new ArrayList<>()))
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        if (!missingIngredients.isEmpty()) {
+            ingredientRepository.saveAll(missingIngredients).forEach(ingredient ->
+                    ingredientsByNormalizedName.put(normalizeIngredientName(ingredient.getName()), ingredient)
+            );
+        }
+
         return recipeDto.getIngredients().stream()
                 .map(dto -> {
-                    Ingredient ingredient = ingredientRepository.findByNameIgnoreCase(dto.getName())
-                            .orElseGet(() -> ingredientRepository.save(new Ingredient(null, dto.getName(), new ArrayList<>())));
+                    String normalizedName = normalizeIngredientName(requireIngredientName(dto.getName()));
+                    Ingredient ingredient = ingredientsByNormalizedName.get(normalizedName);
+
+                    if (ingredient == null) {
+                        throw new AppException("Could not resolve ingredient: " + dto.getName(), HttpStatus.INTERNAL_SERVER_ERROR);
+                    }
 
                     RecipeIngredient recipeIngredient = new RecipeIngredient();
                     recipeIngredient.setRecipe(recipe);
@@ -167,8 +205,24 @@ public class RecipeService {
     }
 
     public Page<RecipeDto> searchRecipes(String searchTerm, Pageable pageable) {
-        Page<Recipe> recipes = recipeRepository.search(searchTerm, pageable);
+        String normalizedSearchTerm = searchTerm == null ? "" : searchTerm.trim();
+        if (!StringUtils.hasText(normalizedSearchTerm)) {
+            return Page.empty(pageable);
+        }
+
+        Page<Recipe> recipes = recipeRepository.search(normalizedSearchTerm, pageable);
         return recipes.map(recipeMapper::toRecipeDto);
+    }
+
+    private String requireIngredientName(String ingredientName) {
+        if (!StringUtils.hasText(ingredientName)) {
+            throw new AppException("Ingredient name cannot be empty", HttpStatus.BAD_REQUEST);
+        }
+        return ingredientName.trim();
+    }
+
+    private String normalizeIngredientName(String ingredientName) {
+        return ingredientName.trim().toLowerCase(Locale.ROOT);
     }
 
 }
