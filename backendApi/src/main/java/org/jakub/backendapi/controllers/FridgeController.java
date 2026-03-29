@@ -3,25 +3,41 @@ package org.jakub.backendapi.controllers;
 import jakarta.servlet.http.HttpServletRequest;
 import org.jakub.backendapi.dto.AmountDto;
 import org.jakub.backendapi.dto.FridgeIngredientDto;
+import org.jakub.backendapi.dto.UserDto;
 import org.jakub.backendapi.services.FridgeService;
 import org.jakub.backendapi.services.GeminiService;
+import org.jakub.backendapi.services.RateLimitService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.jakub.backendapi.config.JwtUtils.getLoginFromToken;
 
 @RestController
 public class FridgeController {
+    private static final int RECEIPT_SCAN_LIMIT_PER_MINUTE = 10;
+
     private final FridgeService fridgeService;
     private final GeminiService geminiService;
+    private final RateLimitService rateLimitService;
 
-    public FridgeController(FridgeService fridgeService, GeminiService geminiService) {
+    @Value("${security.trusted-proxy-ips:}")
+    private String trustedProxyIps;
+
+    public FridgeController(FridgeService fridgeService, GeminiService geminiService, RateLimitService rateLimitService) {
         this.fridgeService = fridgeService;
         this.geminiService = geminiService;
+        this.rateLimitService = rateLimitService;
     }
 
     @GetMapping("/getFridgeIngredients")
@@ -49,9 +65,54 @@ public class FridgeController {
     }
 
     @PostMapping(value = "/scanFridgeReceipt", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<List<FridgeIngredientDto>> scanFridgeReceipt(@RequestPart("file") MultipartFile file) {
+    public ResponseEntity<List<FridgeIngredientDto>> scanFridgeReceipt(@RequestPart("file") MultipartFile file, HttpServletRequest request) {
+        String clientKey = resolveClientKey(request);
+        rateLimitService.assertAllowed(
+                "scanFridgeReceipt:" + clientKey,
+                RECEIPT_SCAN_LIMIT_PER_MINUTE,
+                60_000L,
+                "Too many receipt scans. Please wait and try again."
+        );
+
         List<FridgeIngredientDto> detectedItems = geminiService.extractFridgeIngredientsFromReceipt(file);
         return ResponseEntity.ok(detectedItems);
+    }
+
+    private String resolveClientKey(HttpServletRequest request) {
+        String userEmail = getAuthenticatedUserEmail();
+        if (StringUtils.hasText(userEmail)) {
+            return userEmail;
+        }
+
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+        if (StringUtils.hasText(forwardedFor) && isFromTrustedProxy(request.getRemoteAddr())) {
+            return forwardedFor.split(",")[0].trim();
+        }
+
+        return request.getRemoteAddr();
+    }
+
+    private String getAuthenticatedUserEmail() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return null;
+        }
+
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof UserDto userDto) {
+            return userDto.getEmail();
+        }
+
+        return null;
+    }
+
+    private boolean isFromTrustedProxy(String remoteAddr) {
+        Set<String> trusted = Arrays.stream(trustedProxyIps.split(","))
+                .map(String::trim)
+                .filter(value -> !value.isEmpty())
+                .collect(Collectors.toSet());
+
+        return trusted.contains(remoteAddr);
     }
 
 }

@@ -72,7 +72,7 @@ public class AuthController {
         return ResponseEntity.ok(user);
     }
 
-    // Refresh token endpoint: Accepts refresh token from Authorization header and returns new tokens
+    // Refresh token endpoint: accepts refresh token from HttpOnly cookie and returns new tokens
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(@CookieValue(value = "refresh_token", required = false) String refreshToken,
                                           HttpServletResponse response) {

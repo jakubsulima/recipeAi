@@ -15,14 +15,22 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 @Component
 public class UserAuthProvider {
 
-    @Value("${security.jwt.token.secret-key:secret-key}")
+    @Value("${security.jwt.token.secret-key}")
     private String secretKey;
+
+    @Value("${security.jwt.cookie.secure:true}")
+    private boolean secureCookie;
+
+    @Value("${security.jwt.cookie.same-site:Lax}")
+    private String sameSite;
 
     private final UserService userService;
 
@@ -32,7 +40,10 @@ public class UserAuthProvider {
 
     @PostConstruct
     protected void init() {
-        secretKey = Base64.getEncoder().encodeToString(secretKey.getBytes());
+        if (!StringUtils.hasText(secretKey) || secretKey.length() < 32) {
+            throw new IllegalStateException("security.jwt.token.secret-key must be set and at least 32 characters long");
+        }
+        secretKey = Base64.getEncoder().encodeToString(secretKey.getBytes(StandardCharsets.UTF_8));
     }
 
     public String createToken(String email) {
@@ -109,20 +120,22 @@ public class UserAuthProvider {
     }
 
     public ArrayList<ResponseCookie> setHttpOnlyCookie(String accessToken, String refreshToken) {
+        String normalizedSameSite = StringUtils.hasText(sameSite) ? sameSite : "Lax";
+
         ResponseCookie accessCookie = ResponseCookie.from("access_token", accessToken)
                 .httpOnly(true)
-                .secure(false)
+            .secure(secureCookie)
                 .path("/")
                 .maxAge(3 * 24 * 60 * 60) // 3 days (matching token expiry)
-                .sameSite("Lax")
+            .sameSite(normalizedSameSite)
                 .build();
 
         ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
                 .httpOnly(true)
-                .secure(false)
+            .secure(secureCookie)
                 .path("/")
                 .maxAge(7 * 24 * 60 * 60) // 7 days (matching token expiry)
-                .sameSite("Lax")
+            .sameSite(normalizedSameSite)
                 .build();
         return new ArrayList<>(Arrays.asList(accessCookie, refreshCookie));
     }
