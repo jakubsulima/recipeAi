@@ -258,52 +258,89 @@ const RecipePage = () => {
 
   if (!recipeData) {
     return (
-      <div className="flex justify-center items-center h-screen bg-background">
-        <div className="text-xl text-text">No recipe data available</div>
+      <div className="flex h-screen items-center justify-center bg-background px-4">
+        <div className="rounded-2xl border border-primary/15 bg-secondary px-6 py-8 text-center shadow-sm">
+          <div className="text-xl font-semibold text-text">No recipe data available</div>
+          <p className="mt-1 text-sm text-text/60">
+            Try generating a new recipe from the homepage.
+          </p>
+        </div>
       </div>
     );
   }
 
+  const ingredientCount = recipeData.ingredients?.length ?? 0;
+  const instructionCount = recipeData.instructions?.length ?? 0;
+
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-background min-h-screen">
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
       {error && (
-        <div className="flex justify-center mb-4">
-          <div className="text-xl text-accent">{error}</div>
+        <div className="mb-5 flex items-start gap-2 rounded-xl border border-accent/45 bg-accent/10 px-4 py-3 text-sm text-text">
+          <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-background">
+            !
+          </span>
+          <span>{error}</span>
         </div>
       )}
-      <h1 className="text-3xl font-bold mb-2 text-text">{recipeData.name}</h1>
-      {recipeData.timeToPrepare && (
-        <h2 className="text-2xl font-bold mb-2 text-accent">
-          {recipeData.timeToPrepare}
-        </h2>
-      )}
-      {recipeData.description && (
-        <p className="text-text/80 mb-6">{recipeData.description}</p>
-      )}
+
+      <section className="relative overflow-hidden rounded-3xl border border-accent/35 bg-secondary p-6 sm:p-8">
+        <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-accent/20 blur-3xl" />
+        <div className="absolute -bottom-12 left-10 h-28 w-28 rounded-full bg-primary/10 blur-2xl" />
+
+        <div className="relative">
+          <p className="mb-2 inline-flex rounded-full border border-primary/15 bg-background px-3 py-1 text-xs font-semibold uppercase tracking-wide text-text/60">
+            AI Kitchen Recipe
+          </p>
+          <h1 className="text-3xl font-bold leading-tight text-text sm:text-4xl">
+            {recipeData.name}
+          </h1>
+
+          {recipeData.description && (
+            <p className="mt-3 max-w-3xl text-base text-text/75 sm:text-lg">
+              {recipeData.description}
+            </p>
+          )}
+
+          <div className="mt-5 flex flex-wrap gap-2">
+            {recipeData.timeToPrepare && (
+              <span className="rounded-full bg-accent px-3 py-1.5 text-sm font-semibold text-text">
+                {recipeData.timeToPrepare}
+              </span>
+            )}
+            <span className="rounded-full border border-primary/15 bg-background px-3 py-1.5 text-sm text-text/75">
+              {ingredientCount} ingredients
+            </span>
+            <span className="rounded-full border border-primary/15 bg-background px-3 py-1.5 text-sm text-text/75">
+              {instructionCount} steps
+            </span>
+          </div>
+        </div>
+      </section>
 
       {recipeData.nutrition && (
-        <div className="mb-6 rounded-lg border border-primary/10 bg-secondary p-4">
-          <h3 className="mb-3 text-lg font-semibold text-text">Nutrition (estimated)</h3>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div className="rounded-md bg-background px-3 py-2 text-sm text-text">
+        <div className="mt-6 rounded-2xl border border-accent/30 bg-secondary p-5">
+          <h3 className="mb-4 text-lg font-semibold text-text">Nutrition (estimated)</h3>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div className="rounded-xl border border-accent/20 bg-background px-3 py-2.5 text-sm text-text">
               <span className="block text-text/60">Calories</span>
               <span className="font-semibold">
                 {formatMacro(recipeData.nutrition.calories, " kcal")}
               </span>
             </div>
-            <div className="rounded-md bg-background px-3 py-2 text-sm text-text">
+            <div className="rounded-xl border border-accent/20 bg-background px-3 py-2.5 text-sm text-text">
               <span className="block text-text/60">Protein</span>
               <span className="font-semibold">
                 {formatMacro(recipeData.nutrition.protein, " g")}
               </span>
             </div>
-            <div className="rounded-md bg-background px-3 py-2 text-sm text-text">
+            <div className="rounded-xl border border-accent/20 bg-background px-3 py-2.5 text-sm text-text">
               <span className="block text-text/60">Carbs</span>
               <span className="font-semibold">
                 {formatMacro(recipeData.nutrition.carbs, " g")}
               </span>
             </div>
-            <div className="rounded-md bg-background px-3 py-2 text-sm text-text">
+            <div className="rounded-xl border border-accent/20 bg-background px-3 py-2.5 text-sm text-text">
               <span className="block text-text/60">Fats</span>
               <span className="font-semibold">
                 {formatMacro(recipeData.nutrition.fats, " g")}
@@ -313,17 +350,20 @@ const RecipePage = () => {
         </div>
       )}
 
-      <div className="flex flex-col md:flex-row gap-8">
-        <div className="flex-1">
-          <div className="bg-secondary p-6 rounded-lg inline-block min-w-full">
-            <h2 className="text-2xl font-semibold mb-4 text-text">
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <div>
+          <div className="h-full rounded-2xl border border-primary/10 bg-secondary p-6">
+            <h2 className="mb-4 text-2xl font-semibold text-text">
               Ingredients
             </h2>
-            <ul className="space-y-2">
+            <ul className="space-y-2.5">
               {(recipeData.ingredients || []).map((ingredient, index) => (
-                <li key={index} className="flex justify-between text-text">
-                  <span>{ingredient.name}</span>
-                  <span className="text-text">
+                <li
+                  key={index}
+                  className="flex items-center justify-between rounded-lg border border-primary/10 bg-background px-3 py-2 text-text"
+                >
+                  <span className="font-medium">{ingredient.name}</span>
+                  <span className="text-sm text-text/75">
                     {ingredient.amount} {ingredient.unit}
                   </span>
                 </li>
@@ -332,42 +372,52 @@ const RecipePage = () => {
           </div>
         </div>
 
-        <div className="flex-1">
-          <div className="bg-secondary p-6 rounded-lg inline-block min-w-full">
-            <h2 className="text-2xl font-semibold mb-4 text-text">
+        <div>
+          <div className="h-full rounded-2xl border border-primary/10 bg-secondary p-6">
+            <h2 className="mb-4 text-2xl font-semibold text-text">
               Instructions
             </h2>
             <ol className="space-y-3">
               {(recipeData.instructions || []).map((instruction, index) => (
-                <li key={index} className="flex text-text">
-                  <span className="text-accent font-bold mr-3">
-                    {index + 1}.
+                <li key={index} className="flex gap-3 rounded-lg border border-primary/10 bg-background px-3 py-3 text-text">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent font-bold text-primary">
+                    {index + 1}
                   </span>
-                  <span>{instruction}</span>
+                  <span className="pt-0.5 text-text/85">{instruction}</span>
                 </li>
               ))}
             </ol>
           </div>
         </div>
       </div>
-      <div className="display flex justify-between flex-row items-center mt-8 flex-wrap gap-4">
-        <div>
+
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/10 bg-secondary p-4">
+        <div className="flex flex-wrap gap-3">
           <button
-            className="bg-primary text-background rounded-lg px-4 py-2 font-semibold hover:bg-primary/90 transition-colors"
+            className="rounded-lg bg-primary px-4 py-2.5 font-semibold text-background transition-colors hover:bg-primary/90"
             onClick={handleGenerateShoppingList}
           >
             Generate Shopping List
           </button>
+
+          {!recipeId && (
+            <button
+              className="rounded-lg border border-primary/20 bg-background px-4 py-2.5 font-semibold text-text transition-colors hover:bg-background/80"
+              onClick={() => loadNewRecipeCallback(search)}
+            >
+              I want new recipe
+            </button>
+          )}
         </div>
 
-        {!recipeId && user && (
-          <div className="flex flex-col items-start gap-1">
+        <div className="flex flex-wrap gap-3">
+          {!recipeId && user && (
             <button
-              className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+              className={`rounded-lg px-4 py-2.5 font-semibold transition-colors ${
                 saveStatus === "saved"
-                  ? "bg-green-600 text-white cursor-default"
+                  ? "cursor-default bg-green-600 text-white"
                   : saveStatus === "saving"
-                  ? "bg-accent/60 text-text cursor-wait"
+                  ? "cursor-wait bg-accent/60 text-text"
                   : "bg-accent text-text hover:bg-accent/90"
               }`}
               onClick={() => saveRecipe()}
@@ -379,30 +429,18 @@ const RecipePage = () => {
                 ? "Saved ✓"
                 : "Save Recipe"}
             </button>
-          </div>
-        )}
+          )}
 
-        {recipeId && user && (
-          <div>
+          {recipeId && user && (
             <button
-              className="bg-accent text-text px-4 py-2 rounded-lg font-semibold hover:bg-accent/90 transition-colors"
+              className="rounded-lg bg-accent px-4 py-2.5 font-semibold text-text transition-colors hover:bg-accent/90"
               onClick={handleDelete}
             >
               Delete Recipe
             </button>
-          </div>
-        )}
-
-        {!recipeId && (
-          <div>
-            <button
-              className="bg-primary text-background rounded-lg px-4 py-2 font-semibold hover:bg-primary/90 transition-colors"
-              onClick={() => loadNewRecipeCallback(search)}
-            >
-              I want new recipe
-            </button>
-          </div>
-        )}
+          )}
+        </div>
+      </div>
       </div>
     </div>
   );

@@ -7,16 +7,15 @@ import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { user, setUser, loading, isAdmin } = useUser();
+  const { user, loading, isAdmin, logout } = useUser();
   const navigate = useNavigate();
 
   const toggleOpen = () => {
     setIsOpen(!isOpen);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("isLoggedIn");
-    setUser(null);
+  const handleLogout = async () => {
+    await logout();
     navigate("/");
   };
 

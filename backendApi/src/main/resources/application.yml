@@ -1,5 +1,12 @@
 #server:
 #  address: 0.0.0.0
+server:
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
+
 spring:
   datasource:
     url: jdbc:h2:mem:testdb
@@ -16,6 +23,10 @@ spring:
         format_sql: true
   flyway:
     enabled: false
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
   cloud:
     gcp:
       project-id: "your-gcp-project-id"
@@ -33,3 +44,12 @@ oauth:
 # CORS configuration
 allowed:
   origins: ${ALLOWED_ORIGINS:http://localhost:5173}
+
+security:
+  trusted-proxy-ips: ${TRUSTED_PROXY_IPS:}
+  jwt:
+    token:
+      secret-key: ${JWT_SECRET_KEY}
+    cookie:
+      secure: ${JWT_COOKIE_SECURE:false}
+      same-site: ${JWT_COOKIE_SAME_SITE:Lax}

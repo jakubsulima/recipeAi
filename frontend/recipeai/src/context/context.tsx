@@ -1,4 +1,4 @@
-import { useContext, useState, createContext, useEffect } from "react";
+import { useCallback, useContext, useState, createContext, useEffect } from "react";
 import { apiClient } from "../lib/hooks";
 
 interface UserPreferences {
@@ -19,6 +19,8 @@ interface AuthContextType {
   loading: boolean;
   isAdmin: boolean;
   getUserPreferences: () => Promise<void>;
+  refreshSession: () => Promise<boolean>;
+  logout: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType>(null!);
@@ -30,6 +32,46 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const isAdmin = user?.role === "ADMIN" || false;
+
+  const clearAuthState = useCallback(() => {
+    localStorage.removeItem("isLoggedIn");
+    setUser(null);
+  }, []);
+
+  const refreshSession = useCallback(async (): Promise<boolean> => {
+    try {
+      const userData = await apiClient("me");
+      setUser(userData);
+      localStorage.setItem("isLoggedIn", "true");
+      return true;
+    } catch (error: any) {
+      if (error?.status === 401) {
+        try {
+          await apiClient("refresh", true);
+          const userData = await apiClient("me");
+          setUser(userData);
+          localStorage.setItem("isLoggedIn", "true");
+          return true;
+        } catch {
+          clearAuthState();
+          return false;
+        }
+      }
+
+      clearAuthState();
+      return false;
+    }
+  }, [clearAuthState]);
+
+  const logout = useCallback(async () => {
+    try {
+      await apiClient("logout", true);
+    } catch {
+      // Ignore logout endpoint failures and clear client auth state anyway.
+    } finally {
+      clearAuthState();
+    }
+  }, [clearAuthState]);
 
   const getUserPreferences = async () => {
     if (!user) return;
@@ -54,42 +96,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   useEffect(() => {
-    const isLoggedIn = localStorage.getItem("isLoggedIn");
+    let isMounted = true;
 
-    if (isLoggedIn === "true") {
-      apiClient("me")
-        .then((userData) => {
-          setUser(userData);
+    const initializeSession = async () => {
+      const shouldAttemptSession = localStorage.getItem("isLoggedIn") === "true";
+      if (!shouldAttemptSession) {
+        if (isMounted) {
           setLoading(false);
-        })
-        .catch((error) => {
-          if (error.status === 401) {
-            // Access token expired, try to refresh
-            apiClient("refresh", true)
-              .then(() => {
-                // Refresh successful, now fetch user data with new token
-                return apiClient("me");
-              })
-              .then((userData) => {
-                setUser(userData);
-                setLoading(false);
-              })
-              .catch(() => {
-                // Refresh failed, clear auth state
-                localStorage.removeItem("isLoggedIn");
-                setUser(null);
-                setLoading(false);
-              });
-          } else {
-            localStorage.removeItem("isLoggedIn");
-            setUser(null);
-            setLoading(false);
-          }
-        });
-    } else {
-      setLoading(false);
-    }
-  }, []);
+        }
+        return;
+      }
+
+      await refreshSession();
+      if (isMounted) {
+        setLoading(false);
+      }
+    };
+
+    initializeSession();
+
+    const onSessionExpired = () => clearAuthState();
+    window.addEventListener("auth:session-expired", onSessionExpired);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener("auth:session-expired", onSessionExpired);
+    };
+  }, [clearAuthState, refreshSession]);
 
   return (
     <AuthContext.Provider
@@ -99,6 +132,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         loading,
         isAdmin,
         getUserPreferences,
+        refreshSession,
+        logout,
       }}
     >
       {children}

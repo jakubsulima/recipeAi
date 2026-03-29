@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useUser } from "../context/context";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 
 interface LoginProps {
   email: string;
@@ -19,7 +19,7 @@ const schema = yup.object({
 const Login = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const { user, loading: authLoading, setUser } = useUser();
+  const { user, loading: authLoading, setUser, refreshSession } = useUser();
   const navigate = useNavigate();
   const googleBtnRef = useRef<HTMLDivElement>(null);
 
@@ -34,9 +34,12 @@ const Login = () => {
     (userData: { email: string; id: number; role: string }) => {
       localStorage.setItem("isLoggedIn", "true");
       setUser(userData as any);
-      navigate("/");
+      refreshSession().catch(() => {
+        // Route guards will handle unauthenticated fallback if session sync fails.
+      });
+      navigate("/", { replace: true });
     },
-    [setUser, navigate]
+    [setUser, refreshSession, navigate]
   );
 
   // Google OAuth callback

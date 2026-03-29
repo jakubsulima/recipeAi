@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { hasAmountError } from "../lib/hooks";
 import OptionsForm from "./OptionsForm";
 import { unitType } from "../context/fridgeContext";
@@ -32,106 +32,133 @@ const AddFridgeItemForm: React.FC<AddFridgeItemFormProps> = ({
   dateError,
   displayLoading,
 }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  useEffect(() => {
+    if (newItem || newItemDate || amount || unit || error || dateError) {
+      setIsExpanded(true);
+    }
+  }, [newItem, newItemDate, amount, unit, error, dateError]);
+
   return (
-    <div className="w-full p-5 sm:p-6 bg-secondary rounded-lg shadow-sm border border-primary/5 h-fit">
-      {error && (
-        <div className="bg-error/10 border-t-4 border-error text-error p-3 mb-6 rounded-r-md text-sm font-medium shadow-sm flex items-center gap-2">
-          <span>{error}</span>
+    <div className="w-full rounded-2xl border border-primary/10 bg-secondary p-5 shadow-sm sm:p-6">
+      <button
+        type="button"
+        onClick={() => setIsExpanded((prev) => !prev)}
+        className="flex w-full items-center justify-between rounded-xl border border-primary/10 bg-background px-4 py-3 text-left transition-colors hover:border-accent/45"
+        aria-expanded={isExpanded}
+      >
+        <div>
+          <h2 className="text-xl font-bold text-text sm:text-2xl">Add to Fridge</h2>
+          <p className="text-sm text-text/60">
+            Click to {isExpanded ? "hide" : "expand"} the quick add form
+          </p>
         </div>
-      )}
-      <h2 className="text-xl sm:text-2xl font-bold mb-6 text-text">Add to Fridge</h2>
-      
-      <div className="flex flex-col gap-4">
-        {/* Item Name */}
-        <div className="flex flex-col gap-1">
-          <label className="block text-sm font-medium text-text">
-            Item name <span className="text-accent">*</span>
-          </label>
-          <input
-            type="text"
-            value={newItem}
-            onChange={(e) => setNewItem(e.target.value)}
-            placeholder="e.g., Tomatoes"
-            className={`appearance-none border rounded-md p-2.5 w-full bg-background text-text focus:outline-none focus:ring-2 focus:ring-accent transition-shadow shadow-sm ${
-              error && !newItem.trim() ? "border-error" : "border-primary/20"
-            }`}
-            style={{ WebkitTapHighlightColor: "transparent" }}
-            disabled={displayLoading}
-            required
-          />
-        </div>
+        <span className="rounded-full bg-accent/25 px-2.5 py-1 text-xs font-semibold text-text">
+          {isExpanded ? "Hide" : "Open"}
+        </span>
+      </button>
 
-        {/* Expiration Date */}
-        <div className="flex flex-col gap-1">
-          <label className="block text-sm font-medium text-text mt-1">
-            Expiration date <span className="text-text/50 font-normal">(optional)</span>
-          </label>
-          <input
-            type="date"
-            value={newItemDate}
-            onChange={handleDateChange}
-            className={`appearance-none border rounded-md p-2.5 w-full bg-background text-text focus:outline-none focus:ring-2 focus:ring-accent transition-shadow shadow-sm ${
-              dateError ? "border-error focus:ring-error" : "border-primary/20"
-            }`}
-            style={{ WebkitTapHighlightColor: "transparent" }}
-            disabled={displayLoading}
-          />
-          {dateError && <p className="text-error text-xs mt-1 font-medium">{dateError}</p>}
-        </div>
+      <div
+        className={`grid overflow-hidden transition-all duration-300 ease-out ${
+          isExpanded ? "mt-4 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+        }`}
+      >
+        <div className="min-h-0">
+          {error && (
+            <div className="mb-5 flex items-start gap-2 rounded-xl border border-accent/45 bg-accent/10 px-3 py-3 text-sm text-text shadow-sm">
+              <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-bold text-primary">
+                !
+              </span>
+              <span>{error}</span>
+            </div>
+          )}
 
-        {/* Unit */}
-        <div className="mt-1">
-          <OptionsForm
-            label="Unit (optional)"
-            name="Unit"
-            options={["g", "kg", "ml", "l", "pcs"]}
-            currentOptions={unit}
-            onChange={(value) => {
-              setUnit(value as unitType);
-              if (!value) {
-                setAmount("");
-              }
-            }}
-          />
-        </div>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1">
+              <label className="block text-sm font-medium text-text">
+                Item name <span className="text-accent">*</span>
+              </label>
+              <input
+                type="text"
+                value={newItem}
+                onChange={(e) => setNewItem(e.target.value)}
+                placeholder="e.g., Tomatoes"
+                className={`w-full appearance-none rounded-lg border bg-background p-2.5 text-text shadow-sm transition-shadow focus:outline-none focus:ring-2 focus:ring-accent ${
+                  error && !newItem.trim() ? "border-accent" : "border-primary/20"
+                }`}
+                style={{ WebkitTapHighlightColor: "transparent" }}
+                disabled={displayLoading}
+                required
+              />
+            </div>
 
-        {/* Amount is only shown after selecting a unit */}
-        {unit && (
-          <div className="flex flex-col gap-1 mt-1 amount-slide-in">
-            <label className="block text-sm font-medium text-text">
-              Amount <span className="text-text/50 font-normal">(optional)</span>
-            </label>
-            <input
-              type="text"
-              inputMode="decimal"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="e.g., 1.5"
-              className={`appearance-none border rounded-md p-2.5 w-full bg-background text-text focus:outline-none focus:ring-2 focus:ring-accent transition-shadow shadow-sm ${
-                hasAmountError(amount) ? "border-accent" : "border-primary/20"
-              }`}
-              style={{ WebkitTapHighlightColor: "transparent" }}
-              disabled={displayLoading}
-            />
-            {hasAmountError(amount) && (
-              <p className="text-accent text-xs mt-1">
-                Please enter a valid positive number
-              </p>
+            <div className="flex flex-col gap-1">
+              <label className="mt-1 block text-sm font-medium text-text">
+                Expiration date <span className="font-normal text-text/50">(optional)</span>
+              </label>
+              <input
+                type="date"
+                value={newItemDate}
+                onChange={handleDateChange}
+                className={`w-full appearance-none rounded-lg border bg-background p-2.5 text-text shadow-sm transition-shadow focus:outline-none focus:ring-2 focus:ring-accent ${
+                  dateError ? "border-accent" : "border-primary/20"
+                }`}
+                style={{ WebkitTapHighlightColor: "transparent" }}
+                disabled={displayLoading}
+              />
+              {dateError && <p className="mt-1 text-xs font-medium text-text/75">{dateError}</p>}
+            </div>
+
+            <div className="mt-1">
+              <OptionsForm
+                label="Unit (optional)"
+                name="Unit"
+                options={["g", "kg", "ml", "l", "pcs"]}
+                currentOptions={unit}
+                onChange={(value) => {
+                  setUnit(value as unitType);
+                  if (!value) {
+                    setAmount("");
+                  }
+                }}
+              />
+            </div>
+
+            {unit && (
+              <div className="amount-slide-in mt-1 flex flex-col gap-1">
+                <label className="block text-sm font-medium text-text">
+                  Amount <span className="font-normal text-text/50">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="e.g., 1.5"
+                  className={`w-full appearance-none rounded-lg border bg-background p-2.5 text-text shadow-sm transition-shadow focus:outline-none focus:ring-2 focus:ring-accent ${
+                    hasAmountError(amount) ? "border-accent" : "border-primary/20"
+                  }`}
+                  style={{ WebkitTapHighlightColor: "transparent" }}
+                  disabled={displayLoading}
+                />
+                {hasAmountError(amount) && (
+                  <p className="mt-1 text-xs text-text/75">
+                    Please enter a valid positive number
+                  </p>
+                )}
+              </div>
             )}
-          </div>
-        )}
 
-        <button
-          onClick={addItem}
-          disabled={
-            displayLoading ||
-            hasAmountError(amount) ||
-            !!dateError
-          }
-          className="mt-4 bg-accent text-text px-4 py-3 rounded-md font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent/90 transition-colors shadow-sm"
-        >
-          {displayLoading ? "Adding..." : "Add Item"}
-        </button>
+            <button
+              onClick={addItem}
+              disabled={displayLoading || hasAmountError(amount) || !!dateError}
+              className="mt-4 cursor-pointer rounded-lg bg-accent px-4 py-3 font-semibold text-text shadow-[0_10px_24px_rgba(255,212,60,0.28)] transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {displayLoading ? "Adding..." : "Add Item"}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

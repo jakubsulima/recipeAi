@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   AddFridgeIngredientInput,
@@ -37,6 +37,7 @@ export const Fridge = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false);
   const [isReceiptScannerOpen, setIsReceiptScannerOpen] = useState(false);
+  const isBarcodeAddInFlight = useRef(false);
 
   const expiringSoonNames = useMemo(() => {
     const today = new Date();
@@ -148,6 +149,11 @@ export const Fridge = () => {
   };
 
   const handleBarcodeDetected = async (barcode: string) => {
+    if (isBarcodeAddInFlight.current) {
+      return;
+    }
+
+    isBarcodeAddInFlight.current = true;
     setError("");
     setIsLoading(true);
     try {
@@ -157,11 +163,17 @@ export const Fridge = () => {
         return;
       }
 
-      setNewItem(productName);
-    } catch {
-      setError("Could not fetch product details for this barcode.");
+      await addFridgeItem({
+        name: productName,
+        expirationDate: null,
+        unit: "",
+        amount: "",
+      });
+    } catch (err: any) {
+      setError(err?.message || "Could not fetch product details for this barcode.");
     } finally {
       setIsLoading(false);
+      isBarcodeAddInFlight.current = false;
     }
   };
 
@@ -206,22 +218,22 @@ export const Fridge = () => {
     <>
       <div className="container mx-auto grid min-h-screen grid-cols-1 items-start gap-8 bg-background p-6 md:grid-cols-3">
         <div className="w-full space-y-3">
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-2 rounded-xl border border-accent/30 bg-accent/10 p-2 sm:grid-cols-3">
             <button
               onClick={() => setIsBarcodeScannerOpen(true)}
-              className="rounded-md border border-primary/20 bg-secondary px-3 py-2 text-sm font-semibold text-text hover:bg-secondary/80"
+              className="rounded-md border border-accent/35 bg-background px-3 py-2 text-sm font-semibold text-text transition-colors hover:bg-accent/20"
             >
               Scan Barcode
             </button>
             <button
               onClick={() => setIsReceiptScannerOpen(true)}
-              className="rounded-md border border-primary/20 bg-secondary px-3 py-2 text-sm font-semibold text-text hover:bg-secondary/80"
+              className="rounded-md border border-accent/35 bg-background px-3 py-2 text-sm font-semibold text-text transition-colors hover:bg-accent/20"
             >
               Scan Receipt
             </button>
             <button
               onClick={generateZeroWasteRecipe}
-              className="rounded-md bg-primary px-3 py-2 text-sm font-semibold text-background hover:bg-primary/90"
+              className="rounded-md bg-accent px-3 py-2 text-sm font-semibold text-text shadow-[0_8px_18px_rgba(255,212,60,0.3)] transition-colors hover:bg-accent/90"
             >
               Use Expiring Soon
             </button>

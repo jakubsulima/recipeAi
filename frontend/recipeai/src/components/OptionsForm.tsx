@@ -48,7 +48,7 @@ const OptionsForm = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className={`flex flex-col gap-1 ${classname || ""}`}>
+    <form onSubmit={handleSubmit} className={`flex flex-col gap-2 ${classname || ""}`}>
       {label && (
         <label className="block text-sm font-medium text-text">
           {label}
@@ -59,7 +59,7 @@ const OptionsForm = ({
           name={name}
           value={selectedOption}
           onChange={(e) => handleSelectChange(e.target.value)}
-          className="w-full appearance-none px-3 py-2.5 pr-10 border border-primary/20 rounded-md bg-background text-text focus:outline-none focus:ring-2 focus:ring-accent transition-shadow shadow-sm"
+          className="w-full appearance-none rounded-lg border border-primary/20 bg-background px-3 py-2.5 pr-10 text-text shadow-sm transition-shadow focus:outline-none focus:ring-2 focus:ring-accent"
         >
           <option value="">{currentOptions ? "None" : "Select..."}</option>
           {options.map((option, index) => (
@@ -79,7 +79,7 @@ const OptionsForm = ({
         <button
           type="submit"
           disabled={selectedOption === currentOptions}
-          className="w-full mt-2 px-4 py-3 bg-accent text-text rounded-md font-semibold focus:outline-none focus:ring-2 focus:ring-accent hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+          className="mt-2 w-full rounded-lg bg-accent px-4 py-2.5 font-semibold text-text shadow-sm transition-colors hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-50"
         >
           {buttonText}
         </button>

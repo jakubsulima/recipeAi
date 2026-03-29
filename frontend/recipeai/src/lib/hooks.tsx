@@ -59,7 +59,10 @@ export const lookupProductByBarcode = async (
   const response = await axios.get(
     `https://world.openfoodfacts.org/api/v0/product/${encodeURIComponent(
       normalized
-    )}.json`
+    )}.json`,
+    {
+      withCredentials: false,
+    }
   );
 
   const product = response.data?.product;
@@ -75,26 +78,46 @@ export const lookupProductByBarcode = async (
 axios.defaults.headers.common["Content-Type"] = "application/json";
 axios.defaults.withCredentials = true;
 
+let refreshTokenRequest: Promise<void> | null = null;
+
+const refreshAccessToken = async () => {
+  if (!refreshTokenRequest) {
+    refreshTokenRequest = axios
+      .post(`${API_URL}refresh`, null, { withCredentials: true })
+      .then(() => undefined)
+      .finally(() => {
+        refreshTokenRequest = null;
+      });
+  }
+
+  return refreshTokenRequest;
+};
+
 // Add axios interceptor to handle token refresh automatically
 axios.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const requestUrl = String(originalRequest?.url ?? "");
+    const isRefreshRequest = requestUrl.includes("/refresh");
 
     // If error is 401 and we haven't retried yet
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (
+      error.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      !isRefreshRequest
+    ) {
       originalRequest._retry = true;
 
       try {
-        // Try to refresh the token
-        await axios.post(API_URL + "refresh");
+        await refreshAccessToken();
 
         // Retry the original request with new token
         return axios(originalRequest);
-      } catch (refreshError) {
-        // Refresh failed, redirect to login
+      } catch (refreshError: any) {
         localStorage.removeItem("isLoggedIn");
-        window.location.href = "/login";
+        window.dispatchEvent(new Event("auth:session-expired"));
         return Promise.reject(refreshError);
       }
     }

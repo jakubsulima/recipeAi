@@ -1,42 +1,52 @@
 # Project Guidelines
 
-## Architecture & Stack
-- **Monorepo**: Spring Boot backend (`backendApi/`) and React frontend (`frontend/recipeai/`).
-- For full stack details, setup instructions, and database schemas, see `README.md`.
-- Keep changes scoped to the requested layer unless explicitly asked to touch both frontend and backend.
-- If API contract changes, update both sides only for directly impacted paths.
+## Architecture
+- Monorepo with Spring Boot backend in `backendApi/` and React frontend in `frontend/recipeai/`.
+- Keep changes scoped to the requested layer unless explicitly asked to touch both layers.
+- If API contracts change, update only directly impacted frontend/backend paths together.
+- For full setup, architecture, and API endpoints, see `README.md`.
 
 ## Build and Test
-See `README.md` for standard commands.
-- **Frontend Override**: Use `yarn` instead of `npm` for all frontend commands (e.g. `yarn install`, `yarn dev`, `yarn test`, `yarn build`), adhering to user preferences.
-- **Backend Preferences**: Start with the smallest relevant tests (`./gradlew test`) first. Expand validation if needed, but do not fix unrelated failing tests.
+- Frontend uses `yarn` (not npm): `yarn install`, `yarn dev`, `yarn test`, `yarn build`.
+- Backend uses Gradle wrapper: `./gradlew test` for the smallest useful validation first.
+- Expand validation only as needed for the task; do not fix unrelated failing tests.
+- Quick local validation defaults:
+	- Frontend: `yarn build`
+	- Backend: `./gradlew test`
+- For environment setup and Docker flows, see `README.md`.
 
 ## Conventions
 
 ### Default Working Style
-- Prefer **small, surgical edits** over refactors.
+- Prefer small, surgical edits over broad refactors.
 - Fix root cause; avoid workaround-only patches.
 - Do not modify unrelated files.
 - Keep naming and patterns consistent with nearby code.
 - Ask before introducing new dependencies.
 
-### Frontend (`frontend/recipeai/`)
+### Frontend
 - TypeScript-first; avoid `any` unless unavoidable.
-- Reuse existing components/hooks/constants before adding new ones.
-- Keep component props and state explicit and readable.
-- Follow current Tailwind and component structure.
+- Reuse existing components, hooks, and constants before adding new ones.
+- Keep props and state explicit and readable.
+- Follow existing Tailwind patterns and shared theme usage.
+- For color tokens and usage, see `frontend/recipeai/COLOR_SCHEME_GUIDE.md`.
 
-### Backend (`backendApi/`)
-- Follow existing package structure (`controllers`, `services`, `repositories`, `dto`).
-- Keep controller thin and service logic centralized.
-- Reuse existing mappers/DTO patterns.
+### Backend
+- Follow existing package boundaries: controllers, services, repositories, dto, mappers, entities, config.
+- Keep controllers thin; centralize business logic in services.
+- Reuse existing MapStruct mapper and DTO patterns.
 - Keep Flyway migrations additive and safe.
 
-### When to Ask Questions
-Ask before implementing if:
-- Requirement is ambiguous or UI/UX behavior is not explicitly defined.
-- Database schema change may affect existing data.
-- Security/auth behavior could change.
-- New dependency/library is required.
+## Project-Specific Pitfalls
+- JWT secret must be configured and at least 32 characters for backend startup.
+- Be profile-aware: dev defaults differ from prod (database and Flyway behavior).
+- Local backend compile issues on newer JDKs can be Lombok/JDK mismatch rather than app logic errors.
 
-*When asking, always include a recommended default option.*
+## When to Ask Questions
+Ask before implementing if:
+- Requirements are ambiguous or UI behavior is not explicitly defined.
+- A database schema change could affect existing data.
+- Security or auth behavior may change.
+- A new dependency or library is required.
+
+When asking, include a recommended default option.

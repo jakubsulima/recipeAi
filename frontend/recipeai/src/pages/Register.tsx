@@ -35,7 +35,7 @@ const Register = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  const { user, loading: authLoading, setUser } = useUser();
+  const { user, loading: authLoading, setUser, refreshSession } = useUser();
   const googleBtnRef = useRef<HTMLDivElement>(null);
 
   // Redirect already-logged-in users
@@ -49,9 +49,12 @@ const Register = () => {
     (userData: { email: string; id: number; role: string }) => {
       localStorage.setItem("isLoggedIn", "true");
       setUser(userData as any);
-      navigate("/");
+      refreshSession().catch(() => {
+        // Route guards will handle unauthenticated fallback if session sync fails.
+      });
+      navigate("/", { replace: true });
     },
-    [setUser, navigate]
+    [setUser, refreshSession, navigate]
   );
 
   // Google OAuth callback

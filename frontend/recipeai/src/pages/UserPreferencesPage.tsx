@@ -124,89 +124,111 @@ const MePage = () => {
     return null;
   }
 
+  const dislikedIngredients = user.preferences?.dislikedIngredients || [];
+  const activeDiet = user.preferences?.diet || "Not set";
+  const currentDiet = user.preferences?.diet || "";
+
   return (
     <div className="min-h-screen w-full bg-background">
       <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-        <h1 className="text-3xl font-bold text-text mb-8">My Preferences</h1>
+        <div className="mb-8 overflow-hidden rounded-3xl border border-accent/35 bg-secondary p-6 sm:p-8">
+          <h1 className="text-3xl font-bold text-text sm:text-4xl">My Preferences</h1>
+          <p className="mt-2 max-w-2xl text-text/70">
+            One place to tune your diet and ingredient dislikes.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <span className="rounded-full bg-accent px-3 py-1.5 text-sm font-semibold text-text">
+              Diet: {activeDiet}
+            </span>
+            <span className="rounded-full border border-accent/35 bg-background px-3 py-1.5 text-sm text-text/75">
+              {dislikedIngredients.length} disliked ingredient{dislikedIngredients.length === 1 ? "" : "s"}
+            </span>
+          </div>
+        </div>
 
         {error && (
           <div
-            className="mb-6 p-4 bg-accent/20 border border-accent text-accent rounded-lg"
+            className="mb-6 flex items-start gap-2 rounded-xl border border-accent/45 bg-accent/10 p-4 text-text"
             role="alert"
           >
-            {error}
+            <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-background">
+              !
+            </span>
+            <span>{error}</span>
           </div>
         )}
 
         {successMessage && (
           <div
-            className="mb-6 p-4 bg-green-500/20 border border-green-500 text-green-600 rounded-lg"
+            className="mb-6 flex items-start gap-2 rounded-xl border border-accent/45 bg-accent/15 p-4 text-text"
             role="status"
           >
-            {successMessage}
+            <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-bold text-primary">
+              ✓
+            </span>
+            <span>{successMessage}</span>
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="bg-secondary p-6 rounded-lg shadow-sm">
-            <h2 className="text-xl font-semibold text-text mb-4">
-              Dietary Plan
-            </h2>
+        <div className="rounded-2xl border border-primary/10 bg-secondary p-5 shadow-sm sm:p-6">
+          <div className="mb-6 rounded-xl border border-primary/10 bg-background p-4">
+            <h2 className="mb-1 text-xl font-semibold text-text">Dietary Plan</h2>
+            <p className="mb-3 text-sm text-text/60">Pick one option. It updates immediately.</p>
             <OptionsForm
               name="diet"
               options={dietOptions}
-              displayOptions={displayDietOptions} // Pass the display options here
-              currentOptions={user.preferences?.diet || ""}
-              onSaveOptions={handleChangeDiet}
-              showSubmitButton={true}
-              buttonText="Update Diet"
+              displayOptions={displayDietOptions}
+              currentOptions={currentDiet}
+              onChange={(value) => {
+                if (value && value !== currentDiet) {
+                  handleChangeDiet(value);
+                }
+              }}
+              showSubmitButton={false}
             />
           </div>
 
-          <div className="bg-secondary p-6 rounded-lg shadow-sm">
-            <h2 className="text-xl font-semibold text-text mb-4">
-              Disliked Ingredients
-            </h2>
-            <div className="flex gap-2 mb-4">
+          <div className="rounded-xl border border-primary/10 bg-background p-4">
+            <h2 className="mb-1 text-xl font-semibold text-text">Disliked Ingredients</h2>
+            <p className="mb-3 text-sm text-text/60">Keep this list short and specific for better recipe matches.</p>
+
+            <div className="mb-4 flex gap-2">
               <input
                 type="text"
                 value={newIngredient}
                 onChange={(e) => setNewIngredient(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && addDislikedIngredient()}
                 placeholder="e.g., Olives"
-                className="flex-1 px-3 py-2 border border-primary/20 bg-background text-text rounded-md focus:outline-none focus:ring-2 focus:ring-accent placeholder:text-text/50"
+                className="flex-1 rounded-lg border border-primary/20 bg-background px-3 py-2.5 text-text placeholder:text-text/50 focus:outline-none focus:ring-2 focus:ring-accent"
               />
               <button
                 onClick={addDislikedIngredient}
-                className="px-4 py-2 bg-accent text-text rounded-md font-semibold focus:outline-none focus:ring-2 focus:ring-accent hover:bg-accent/90 transition-colors"
+                className="rounded-lg bg-accent px-4 py-2.5 font-semibold text-text transition-colors hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent"
               >
                 Add
               </button>
             </div>
+
             <div className="space-y-2">
-              {user.preferences?.dislikedIngredients?.length > 0 ? (
-                user.preferences.dislikedIngredients.map(
-                  (ingredient, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between bg-background px-3 py-2 rounded-md"
+              {dislikedIngredients.length > 0 ? (
+                dislikedIngredients.map((ingredient, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between rounded-lg border border-primary/10 bg-secondary px-3 py-2.5"
+                  >
+                    <span className="capitalize font-medium text-text">{ingredient}</span>
+                    <button
+                      onClick={() => removeDislikedIngredient(ingredient)}
+                      className="rounded-md px-2 py-0.5 text-lg font-bold text-text/45 transition-colors hover:bg-accent/15 hover:text-accent"
+                      title={`Remove ${ingredient}`}
                     >
-                      <span className="capitalize text-text">{ingredient}</span>
-                      <button
-                        onClick={() => removeDislikedIngredient(ingredient)}
-                        className="text-text/50 hover:text-accent text-xl font-bold transition-colors"
-                        title={`Remove ${ingredient}`}
-                      >
-                        &times;
-                      </button>
-                    </div>
-                  )
-                )
+                      &times;
+                    </button>
+                  </div>
+                ))
               ) : (
-                <p className="text-text/70 text-center py-4">
-                  {preferencesLoaded
-                    ? "No disliked ingredients added."
-                    : "Loading..."}
+                <p className="rounded-lg border border-dashed border-primary/20 py-4 text-center text-text/70">
+                  {preferencesLoaded ? "No disliked ingredients added." : "Loading..."}
                 </p>
               )}
             </div>

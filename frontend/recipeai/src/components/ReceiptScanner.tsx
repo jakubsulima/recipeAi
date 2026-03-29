@@ -164,114 +164,143 @@ const ReceiptScanner = ({ isOpen, onClose, onConfirm }: ReceiptScannerProps) => 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl border border-primary/20 bg-secondary p-4 sm:p-6 shadow-lg">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-bold text-text">Scan Receipt</h3>
-          <button
-            onClick={onClose}
-            className="rounded-md px-2 py-1 text-text/70 hover:bg-background"
-          >
-            Close
-          </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm">
+      <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-primary/20 bg-secondary shadow-2xl">
+        <div className="border-b border-primary/10 bg-primary px-4 py-3 text-background sm:px-6">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-bold">Scan Receipt</h3>
+              <p className="text-sm text-background/75">
+                Upload a photo and review detected ingredients before adding.
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="rounded-md border border-background/20 px-2.5 py-1.5 text-sm font-medium text-background/80 transition-colors hover:bg-background/10 hover:text-background"
+            >
+              Close
+            </button>
+          </div>
         </div>
 
-        <div className="rounded-lg border border-primary/15 bg-background p-4">
-          <label className="mb-2 block text-sm font-medium text-text">
-            Upload receipt image
-          </label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            className="w-full rounded-md border border-primary/20 bg-background px-3 py-2 text-text"
-          />
-          <button
-            onClick={scanReceipt}
-            disabled={isUploading}
-            className="mt-3 rounded-md bg-accent px-4 py-2 font-semibold text-text hover:bg-accent/90 disabled:opacity-60"
-          >
-            {isUploading ? "Scanning..." : "Scan Receipt"}
-          </button>
-        </div>
-
-        {error && <p className="mt-3 text-sm text-accent">{error}</p>}
-
-        {items.length > 0 && (
-          <div className="mt-5 overflow-hidden rounded-lg border border-primary/15">
-            <table className="w-full border-collapse text-sm">
-              <thead className="bg-background text-left text-text/80">
-                <tr>
-                  <th className="p-2">Add</th>
-                  <th className="p-2">Name</th>
-                  <th className="p-2">Amount</th>
-                  <th className="p-2">Unit</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item) => (
-                  <tr key={item.id} className="border-t border-primary/10">
-                    <td className="p-2 align-middle">
-                      <input
-                        type="checkbox"
-                        checked={item.selected}
-                        onChange={(e) =>
-                          updateItem(item.id, { selected: e.target.checked })
-                        }
-                      />
-                    </td>
-                    <td className="p-2">
-                      <input
-                        value={item.name}
-                        onChange={(e) =>
-                          updateItem(item.id, { name: e.target.value })
-                        }
-                        className="w-full rounded border border-primary/20 bg-background px-2 py-1 text-text"
-                      />
-                    </td>
-                    <td className="p-2">
-                      <input
-                        value={item.amount}
-                        onChange={(e) =>
-                          updateItem(item.id, { amount: e.target.value })
-                        }
-                        placeholder="optional"
-                        className="w-full rounded border border-primary/20 bg-background px-2 py-1 text-text"
-                      />
-                    </td>
-                    <td className="p-2">
-                      <select
-                        value={item.unit}
-                        onChange={(e) =>
-                          updateItem(item.id, {
-                            unit: e.target.value as unitType,
-                          })
-                        }
-                        className="w-full rounded border border-primary/20 bg-background px-2 py-1 text-text"
-                      >
-                        <option value="">none</option>
-                        <option value="g">g</option>
-                        <option value="kg">kg</option>
-                        <option value="ml">ml</option>
-                        <option value="l">l</option>
-                        <option value="pcs">pcs</option>
-                      </select>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            <div className="border-t border-primary/10 bg-background p-3">
+        <div className="space-y-4 p-4 sm:p-6">
+          <div className="rounded-xl border border-primary/15 bg-background p-4">
+            <label className="mb-2 block text-sm font-medium text-text">
+              Upload receipt image
+            </label>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                className="w-full rounded-lg border border-primary/20 bg-background px-3 py-2.5 text-sm text-text file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-sm file:font-medium file:text-background hover:file:bg-primary/90"
+              />
               <button
-                onClick={addSelectedItems}
-                className="rounded-md bg-primary px-4 py-2 font-semibold text-background hover:bg-primary/90"
+                onClick={scanReceipt}
+                disabled={isUploading}
+                className="rounded-lg bg-accent px-4 py-2.5 font-semibold text-text transition-colors hover:bg-accent/90 disabled:cursor-wait disabled:opacity-60"
               >
-                Add Selected To Inventory
+                {isUploading ? "Scanning..." : "Scan Receipt"}
               </button>
             </div>
+            {file && (
+              <p className="mt-2 text-xs text-text/60">
+                Selected file: {file.name}
+              </p>
+            )}
           </div>
-        )}
+
+          {error && (
+            <p className="rounded-lg border border-accent/50 bg-accent/10 px-3 py-2 text-sm text-text">
+              {error}
+            </p>
+          )}
+
+          {items.length > 0 && (
+            <div className="overflow-hidden rounded-xl border border-primary/15 bg-background">
+              <div className="border-b border-primary/10 px-4 py-3">
+                <h4 className="text-sm font-semibold text-text">
+                  Detected ingredients ({items.length})
+                </h4>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-sm">
+                  <thead className="bg-secondary text-left text-text/80">
+                    <tr>
+                      <th className="p-3">Add</th>
+                      <th className="p-3">Name</th>
+                      <th className="p-3">Amount</th>
+                      <th className="p-3">Unit</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((item) => (
+                      <tr key={item.id} className="border-t border-primary/10">
+                        <td className="p-3 align-middle">
+                          <input
+                            type="checkbox"
+                            checked={item.selected}
+                            onChange={(e) =>
+                              updateItem(item.id, { selected: e.target.checked })
+                            }
+                            className="h-4 w-4 rounded border-primary/30 text-accent focus:ring-accent"
+                          />
+                        </td>
+                        <td className="p-3">
+                          <input
+                            value={item.name}
+                            onChange={(e) =>
+                              updateItem(item.id, { name: e.target.value })
+                            }
+                            className="w-full rounded-md border border-primary/20 bg-background px-2.5 py-1.5 text-text focus:outline-none focus:ring-2 focus:ring-accent"
+                          />
+                        </td>
+                        <td className="p-3">
+                          <input
+                            value={item.amount}
+                            onChange={(e) =>
+                              updateItem(item.id, { amount: e.target.value })
+                            }
+                            placeholder="optional"
+                            className="w-full rounded-md border border-primary/20 bg-background px-2.5 py-1.5 text-text placeholder:text-text/40 focus:outline-none focus:ring-2 focus:ring-accent"
+                          />
+                        </td>
+                        <td className="p-3">
+                          <select
+                            value={item.unit}
+                            onChange={(e) =>
+                              updateItem(item.id, {
+                                unit: e.target.value as unitType,
+                              })
+                            }
+                            className="w-full rounded-md border border-primary/20 bg-background px-2.5 py-1.5 text-text focus:outline-none focus:ring-2 focus:ring-accent"
+                          >
+                            <option value="">none</option>
+                            <option value="g">g</option>
+                            <option value="kg">kg</option>
+                            <option value="ml">ml</option>
+                            <option value="l">l</option>
+                            <option value="pcs">pcs</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="flex justify-end border-t border-primary/10 bg-secondary px-4 py-3">
+                <button
+                  onClick={addSelectedItems}
+                  className="rounded-lg bg-primary px-4 py-2.5 font-semibold text-background transition-colors hover:bg-primary/90"
+                >
+                  Add Selected To Inventory
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

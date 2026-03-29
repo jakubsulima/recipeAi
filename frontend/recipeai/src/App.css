@@ -169,3 +169,21 @@
   background: color-mix(in srgb, var(--color-primary) 10%, transparent);
   animation: loaderPulse 1.2s ease-in-out infinite;
 }
+
+@keyframes scannerSweep {
+  0% {
+    top: 8%;
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    top: 92%;
+    opacity: 0.7;
+  }
+}
+
+.scanner-sweep {
+  animation: scannerSweep 2.25s ease-in-out infinite alternate;
+}
