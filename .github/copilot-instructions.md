@@ -4,16 +4,16 @@
 - Monorepo with Spring Boot backend in `backendApi/` and React frontend in `frontend/recipeai/`.
 - Keep changes scoped to the requested layer unless explicitly asked to touch both layers.
 - If API contracts change, update only directly impacted frontend/backend paths together.
-- For full setup, architecture, and API endpoints, see `README.md`.
+- For full setup, architecture details, Docker flows, and API endpoints, see `README.md`.
 
 ## Build and Test
 - Frontend uses `yarn` (not npm): `yarn install`, `yarn dev`, `yarn test`, `yarn build`.
-- Backend uses Gradle wrapper: `./gradlew test` for the smallest useful validation first.
-- Expand validation only as needed for the task; do not fix unrelated failing tests.
+- Backend uses Gradle wrapper commands from `backendApi/`: `./gradlew test`, `./gradlew bootRun`, `./gradlew build`.
+- Prefer the smallest useful validation first; do not fix unrelated failing tests.
 - Quick local validation defaults:
 	- Frontend: `yarn build`
 	- Backend: `./gradlew test`
-- For environment setup and Docker flows, see `README.md`.
+- For environment setup and Docker orchestration, see `README.md`.
 
 ## Conventions
 
@@ -26,10 +26,10 @@
 
 ### Frontend
 - TypeScript-first; avoid `any` unless unavoidable.
-- Reuse existing components, hooks, and constants before adding new ones.
+- Reuse existing components, context providers, hooks, and constants before adding new ones.
 - Keep props and state explicit and readable.
-- Follow existing Tailwind patterns and shared theme usage.
-- For color tokens and usage, see `frontend/recipeai/COLOR_SCHEME_GUIDE.md`.
+- Follow existing Tailwind v4 patterns and shared theme usage.
+- Use existing theme tokens from `frontend/recipeai/src/App.css` and related UI guidance in `frontend/recipeai/COLOR_SCHEME_GUIDE.md`.
 
 ### Backend
 - Follow existing package boundaries: controllers, services, repositories, dto, mappers, entities, config.
@@ -39,7 +39,8 @@
 
 ## Project-Specific Pitfalls
 - JWT secret must be configured and at least 32 characters for backend startup.
-- Be profile-aware: dev defaults differ from prod (database and Flyway behavior).
+- Be profile-aware: dev defaults differ from prod (dev uses H2 with Flyway disabled; prod uses PostgreSQL with Flyway enabled and `ddl-auto: validate`).
+- Recipe generation depends on external AI configuration; ensure required API key env vars are present.
 - Local backend compile issues on newer JDKs can be Lombok/JDK mismatch rather than app logic errors.
 
 ## When to Ask Questions

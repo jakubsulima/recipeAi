@@ -135,7 +135,7 @@ public class RecipesController {
                 if (user != null) {
                     UserPreferencesDto preferences = userPreferencesService.getPreferences(userEmail);
                     if (preferences != null) {
-                        recipePrompt += "\n\nUser Preferences: " + preferences;
+                        recipePrompt = appendPreferencesToPrompt(recipePrompt, preferences);
                     }
                 }
             }
@@ -144,6 +144,30 @@ public class RecipesController {
         }
 
         return ResponseEntity.ok(geminiService.generateRecipe(recipePrompt));
+    }
+
+    private String appendPreferencesToPrompt(String recipePrompt, UserPreferencesDto preferences) {
+        String diet = StringUtils.hasText(preferences.getDiet()) ? preferences.getDiet() : "none";
+        String dislikedIngredients = formatDislikedIngredients(preferences.getDislikedIngredients());
+
+        return recipePrompt
+                + "\n\nUser Preferences:\n"
+                + "- Diet: " + diet + "\n"
+                + "- Disliked ingredients: " + dislikedIngredients + "\n"
+                + "- Follow these preferences strictly when creating the recipe.";
+    }
+
+    private String formatDislikedIngredients(String[] dislikedIngredients) {
+        if (dislikedIngredients == null || dislikedIngredients.length == 0) {
+            return "none";
+        }
+
+        String formatted = Arrays.stream(dislikedIngredients)
+                .filter(StringUtils::hasText)
+                .map(String::trim)
+                .collect(Collectors.joining(", "));
+
+        return StringUtils.hasText(formatted) ? formatted : "none";
     }
 
     private String resolveClientKey(HttpServletRequest request) {

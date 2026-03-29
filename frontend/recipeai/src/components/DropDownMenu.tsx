@@ -25,19 +25,25 @@ const DropDownMenu = ({
 
   return (
     <div className={className}>
-      {dropdownItems.map((item, index) => (
-        <DropDownItem
-          to={item === "Logout" ? "#" : "/" + item}
-          key={index}
-          className={
-            `mt-3 mx-4 px-4 py-2 cursor-pointer rounded-full bg-primary hover:bg-accent hover:text-primary text-center text-lg text-background transition-all duration-300` +
-            (item === "Logout" ? " font-semibold" : "")
-          }
-          onClick={() => handleClick(item)}
-        >
-          {item}
-        </DropDownItem>
-      ))}
+      <div className="flex flex-col py-2">
+        {dropdownItems.map((item, index) => {
+          const isLogout = item === "Logout";
+          return (
+            <DropDownItem
+              to={isLogout ? "#" : "/" + item}
+              key={index}
+              className={`block w-full py-4 px-6 text-center text-[1.1rem] transition-all duration-200 focus:outline-none focus:bg-white/5 active:scale-[0.98] ${
+                isLogout
+                  ? "mt-4 font-bold text-[#fefefe] hover:text-accent hover:bg-white/5"
+                  : "font-medium text-[#fefefe] hover:text-accent hover:bg-white/5"
+              }`}
+              onClick={() => handleClick(item)}
+            >
+              {item}
+            </DropDownItem>
+          );
+        })}
+      </div>
     </div>
   );
 };

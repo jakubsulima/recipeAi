@@ -6,6 +6,7 @@ import { useUser } from "../context/context";
 import FoodLoadingScreen from "../components/FoodLoadingScreen";
 import { addShoppingItems } from "../lib/shoppingList";
 import ErrorAlert from "../components/ErrorAlert";
+import { getMissingIngredients } from "../lib/ingredientMatching";
 
 export interface RecipeIngredient {
   name: string;
@@ -47,7 +48,7 @@ const RecipePage = () => {
   const location = useLocation();
   const params = useParams();
   const recipeId = params.id;
-  const { getFridgeItemNames, loading: fridgeLoading } = useFridge();
+  const { fridgeItems, getFridgeItemNames, loading: fridgeLoading } = useFridge();
   const { user } = useUser();
 
   const { search, existingRecipe } = location.state || {};
@@ -200,13 +201,7 @@ const RecipePage = () => {
       return;
     }
 
-    const fridgeNameSet = new Set(
-      getFridgeItemNames().map((item) => item.trim().toLowerCase())
-    );
-
-    const missingIngredients = recipeData.ingredients.filter(
-      (ingredient) => !fridgeNameSet.has(ingredient.name.trim().toLowerCase())
-    );
+    const missingIngredients = getMissingIngredients(recipeData.ingredients, fridgeItems);
 
     if (missingIngredients.length === 0) {
       setError("Great! You already have all ingredients for this recipe.");

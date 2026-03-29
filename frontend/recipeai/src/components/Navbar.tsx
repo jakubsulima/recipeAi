@@ -28,12 +28,12 @@ const Navbar = () => {
 
     if (user) {
       return [
+        ...baseItems,
         "Fridge",
         "ShoppingList",
-        ...baseItems,
         "My Preferences",
         isAdmin ? "Admin" : null,
-      ].filter(Boolean);
+      ].filter(Boolean) as string[];
     } else {
       return [...baseItems, "Login"];
     }
@@ -45,15 +45,8 @@ const Navbar = () => {
     <div className="flex bg-primary p-4 fixed top-0 left-0 w-full z-50 shadow-md">
       <nav className="container mx-auto">
         <ul className="flex w-full text-background justify-between items-center">
-          {/* Spacer that appears when menu is open to push the X to the right */}
-          {isOpen && <div className="sm:hidden"></div>}
-
           {/* --- Left Side: Logo --- */}
-          <li
-            className={`hover:text-accent transition-colors font-bold text-lg ${
-              isOpen ? "hidden" : ""
-            }`}
-          >
+          <li className="list-none text-lg font-bold transition-colors hover:text-accent">
             <Link to="/">Recipe.ai</Link>
           </li>
 
@@ -95,30 +88,26 @@ const Navbar = () => {
             </div>
 
             {/* Mobile Burger Button */}
-            <li className="sm:hidden text-xl pr-1 bg-primary">
-              <DropDownButton
-                onClick={toggleOpen}
-                isOpen={isOpen}
-                className=""
-              />
+            <li className="sm:hidden flex items-center pr-1">
+              <DropDownButton onClick={toggleOpen} isOpen={isOpen} />
             </li>
           </div>
         </ul>
         <div
           className={`
-            w-full bg-primary rounded-md flex flex-col
-            transition-all duration-700 ease-in-out overflow-y-auto
+            absolute left-0 top-full -mt-[1px] flex w-full flex-col bg-[#111111]
+            shadow-2xl transition-all duration-400 ease-in-out sm:hidden overflow-hidden
             ${
               isOpen
-                ? "opacity-100 max-h-[50vh] translate-y-0"
-                : "opacity-0 max-h-0 -translate-y-4 pointer-events-none overflow-hidden"
+                ? "max-h-[500px] opacity-100"
+                : "max-h-0 opacity-0 pointer-events-none"
             }
           `}
         >
           <DropDownMenu
-            className={`w-full h-full transition-all duration-700  ease-in-out flex flex-col pb-4 bg-primary ${
-              isOpen ? "opacity-100" : "opacity-0"
-            } `}
+            className={`w-full flex flex-col pb-4 transition-opacity duration-300 ${
+              isOpen ? "opacity-100 delay-100" : "opacity-0"
+            }`}
             dropdownItems={
               loading
                 ? ["Homepage"]
