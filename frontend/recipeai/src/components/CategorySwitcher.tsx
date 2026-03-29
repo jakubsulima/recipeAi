@@ -16,18 +16,20 @@ const CategorySwitcher: React.FC<CategorySwitcherProps> = ({
   }
 
   return (
-    <div className="flex mb-4">
-      <div className="flex rounded-lg justify-between w-full">
+    <div className="flex mb-5">
+      <div className="flex items-center justify-between w-full bg-background rounded-xl p-1.5 border border-primary/10 shadow-sm">
         <button
           onClick={onPrevious}
-          className="flex items-center justify-center w-10 h-10 bg-accent text-text rounded-l-lg transition-colors cursor-pointer border-none hover:bg-accent/90"
+          className="flex items-center justify-center w-10 h-10 bg-transparent text-text/70 rounded-lg transition-all cursor-pointer border hover:bg-secondary hover:text-text hover:border-primary/20 hover:shadow-sm"
           aria-label="Previous category"
         >
-          &lt;
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
         </button>
 
-        <div className="px-6 py-2 bg-secondary w-64 text-center">
-          <h2 className="text-xl font-semibold whitespace-nowrap text-text">
+        <div className="px-4 py-2 flex-1 text-center">
+          <h2 className="text-lg sm:text-xl font-bold whitespace-nowrap text-text tracking-wide">
             {currentCategory.replace(/_/g, " ").charAt(0).toUpperCase() +
               currentCategory.replace(/_/g, " ").slice(1).toLowerCase()}
           </h2>
@@ -35,10 +37,12 @@ const CategorySwitcher: React.FC<CategorySwitcherProps> = ({
 
         <button
           onClick={onNext}
-          className="flex items-center justify-center w-10 h-10 bg-accent text-text rounded-r-lg transition-colors cursor-pointer border-none hover:bg-accent/90"
+          className="flex items-center justify-center w-10 h-10 bg-transparent text-text/70 rounded-lg transition-all cursor-pointer border hover:bg-secondary hover:text-text hover:border-primary/20 hover:shadow-sm"
           aria-label="Next category"
         >
-          &gt;
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
         </button>
       </div>
     </div>

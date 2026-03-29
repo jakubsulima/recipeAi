@@ -39,14 +39,19 @@ const FridgeDisplay: React.FC<FridgeDisplayProps> = ({
     : [];
 
   return (
-    <div className="md:col-span-2 w-full p-6 bg-secondary rounded-lg shadow-md">
-      <h1 className="text-2xl font-bold mb-4 text-text">My Fridge</h1>
+    <div className="md:col-span-2 w-full p-5 sm:p-6 bg-secondary rounded-xl shadow-sm border border-primary/5 min-h-[500px] flex flex-col">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <h1 className="text-2xl font-bold text-text">My Fridge</h1>
+        <span className="text-xs sm:text-sm px-3 py-1 rounded-full bg-background border border-primary/10 text-text/70">
+          {filteredItems.length} item{filteredItems.length === 1 ? "" : "s"}
+        </span>
+      </div>
       <CategorySwitcher
         currentCategory={showedCategory}
         onPrevious={goToPreviousCategory}
         onNext={goToNextCategory}
       />
-      <ul className="grid md:grid-cols-3 gap-4">
+      <ul className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 mt-5">
         {filteredItems.map((item: FridgeIngredient) => (
           <li key={item.id}>
             <FridgeIngredientContainer
@@ -62,10 +67,14 @@ const FridgeDisplay: React.FC<FridgeDisplayProps> = ({
         ))}
       </ul>
       {filteredItems.length === 0 && showedCategory && (
-        <div className="text-center text-gray-500 py-8">
-          No items in{" "}
-          {showedCategory.toLowerCase().charAt(0).toUpperCase() +
-            showedCategory.slice(1).toLowerCase().replace(/_/g, " ")}
+        <div className="flex-1 flex flex-col items-center justify-center text-center border border-dashed border-primary/20 rounded-xl py-12 mt-2 mb-2 bg-background/60">
+          <svg className="w-12 h-12 text-primary/20 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+          <p className="text-text/70 font-medium text-lg">No items in this category</p>
+          <p className="text-text/50 text-sm mt-2 max-w-[250px] mx-auto">
+            Add your first item here to keep your ingredients organized
+          </p>
         </div>
       )}
     </div>

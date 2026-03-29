@@ -119,7 +119,7 @@ const AddFridgeItemForm: React.FC<AddFridgeItemFormProps> = ({
 
         {/* Amount is only shown after selecting a unit */}
         {unit && (
-          <div className="flex flex-col gap-1 mt-1">
+          <div className="flex flex-col gap-1 mt-1 amount-slide-in">
             <label className="block text-sm font-medium text-text">
               Amount <span className="text-text/50 font-normal">(optional)</span>
             </label>

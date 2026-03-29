@@ -30,6 +30,24 @@
   opacity: 0;
 }
 
+@keyframes amountSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 140px;
+  }
+}
+
+.amount-slide-in {
+  overflow: hidden;
+  animation: amountSlideIn 260ms ease-out forwards;
+}
+
 @keyframes loaderPulse {
   0%,
   100% {
