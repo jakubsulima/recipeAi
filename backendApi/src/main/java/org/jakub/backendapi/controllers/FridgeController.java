@@ -4,8 +4,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.jakub.backendapi.dto.AmountDto;
 import org.jakub.backendapi.dto.FridgeIngredientDto;
 import org.jakub.backendapi.services.FridgeService;
+import org.jakub.backendapi.services.GeminiService;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -14,21 +17,17 @@ import static org.jakub.backendapi.config.JwtUtils.getLoginFromToken;
 @RestController
 public class FridgeController {
     private final FridgeService fridgeService;
+    private final GeminiService geminiService;
 
-    public FridgeController(FridgeService fridgeService) {
+    public FridgeController(FridgeService fridgeService, GeminiService geminiService) {
         this.fridgeService = fridgeService;
+        this.geminiService = geminiService;
     }
 
     @GetMapping("/getFridgeIngredients")
     public ResponseEntity<List<FridgeIngredientDto>> getFridgeIngredients(HttpServletRequest request) {
         List<FridgeIngredientDto> fridgeIngredients = fridgeService.getFridgeIngredients(getLoginFromToken(request));
         return ResponseEntity.ok(fridgeIngredients);
-    }
-
-    @GetMapping("/getFridgeIngredientsGroupedByCategory")
-    public ResponseEntity<?> getFridgeIngredientsGroupedByCategory(HttpServletRequest request) {
-        var groupedIngredients = fridgeService.getFridgeIngredientGroupedByCategory(getLoginFromToken(request));
-        return ResponseEntity.ok(groupedIngredients);
     }
 
     @PostMapping("/addFridgeIngredient")
@@ -47,6 +46,12 @@ public class FridgeController {
     public ResponseEntity<FridgeIngredientDto> updateFridgeIngredient(@PathVariable Long ingredientId, @RequestBody AmountDto amountDto, HttpServletRequest request) {
         fridgeService.changeFridgeIngredientAmount(ingredientId, amountDto.getAmount(), getLoginFromToken(request));
         return ResponseEntity.status(200).build();
+    }
+
+    @PostMapping(value = "/scanFridgeReceipt", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<List<FridgeIngredientDto>> scanFridgeReceipt(@RequestPart("file") MultipartFile file) {
+        List<FridgeIngredientDto> detectedItems = geminiService.extractFridgeIngredientsFromReceipt(file);
+        return ResponseEntity.ok(detectedItems);
     }
 
 }

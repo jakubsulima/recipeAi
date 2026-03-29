@@ -10,7 +10,6 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface FridgeIngredientMapper {
     @Mapping(source = "unit", target = "unit")
-    @Mapping(source = "category", target = "category")
     FridgeIngredientDto toFridgeIngredientDto(FridgeIngredient fridgeIngredient);
 
     @Mapping(target = "user", ignore = true)

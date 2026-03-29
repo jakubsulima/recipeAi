@@ -16,6 +16,7 @@ import Register from "./pages/Register";
 import MePage from "./pages/UserPreferencesPage.tsx";
 import AdminPage from "./pages/AdminPage"; // Import the AdminPage component
 import UserRecipes from "./pages/UserRecipes.tsx";
+import ShoppingList from "./pages/ShoppingList";
 import { AuthProvider } from "./context/context"; // Add import for AuthProvider
 import { FridgeProvider } from "./context/fridgeContext"; // Add import for FridgeProvider
 
@@ -29,6 +30,7 @@ function App() {
       <Route path="/Login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/My Preferences" element={<MePage />} />
+      <Route path="/ShoppingList" element={<ShoppingList />} />
       <Route path="/Recipe" element={<RecipePage />} />
       <Route path="/Recipe/:id" element={<RecipePage />} />
       <Route path="/myRecipes" element={<UserRecipes />} />

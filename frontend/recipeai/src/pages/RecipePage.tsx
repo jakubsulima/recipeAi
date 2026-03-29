@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useFridge } from "../context/fridgeContext";
 import { useUser } from "../context/context";
 import FoodLoadingScreen from "../components/FoodLoadingScreen";
+import { addShoppingItems } from "../lib/shoppingList";
 
 export interface RecipeIngredient {
   name: string;
@@ -19,7 +20,26 @@ export interface RecipeData {
   ingredients: RecipeIngredient[];
   instructions: string[];
   timeToPrepare: string;
+  nutrition?: {
+    calories?: string | number;
+    protein?: string | number;
+    carbs?: string | number;
+    fats?: string | number;
+  };
 }
+
+const formatMacro = (value: string | number | undefined, suffix: string) => {
+  if (value === undefined || value === null || value === "") {
+    return "-";
+  }
+
+  if (typeof value === "number") {
+    return `${value}${suffix}`;
+  }
+
+  const trimmed = value.trim();
+  return trimmed ? `${trimmed}${suffix}` : "-";
+};
 
 const RecipePage = () => {
   const navigate = useNavigate();
@@ -173,6 +193,36 @@ const RecipePage = () => {
     }
   };
 
+  const handleGenerateShoppingList = () => {
+    if (!recipeData?.ingredients?.length) {
+      setError("No ingredients available to generate shopping list.");
+      return;
+    }
+
+    const fridgeNameSet = new Set(
+      getFridgeItemNames().map((item) => item.trim().toLowerCase())
+    );
+
+    const missingIngredients = recipeData.ingredients.filter(
+      (ingredient) => !fridgeNameSet.has(ingredient.name.trim().toLowerCase())
+    );
+
+    if (missingIngredients.length === 0) {
+      setError("Great! You already have all ingredients for this recipe.");
+      return;
+    }
+
+    addShoppingItems(
+      missingIngredients.map((ingredient) => ({
+        name: ingredient.name,
+        amount: ingredient.amount,
+        unit: ingredient.unit,
+      }))
+    );
+
+    navigate("/ShoppingList");
+  };
+
   const handleDelete = async () => {
     if (!recipeId) return;
 
@@ -231,6 +281,38 @@ const RecipePage = () => {
         <p className="text-text/80 mb-6">{recipeData.description}</p>
       )}
 
+      {recipeData.nutrition && (
+        <div className="mb-6 rounded-lg border border-primary/10 bg-secondary p-4">
+          <h3 className="mb-3 text-lg font-semibold text-text">Nutrition (estimated)</h3>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="rounded-md bg-background px-3 py-2 text-sm text-text">
+              <span className="block text-text/60">Calories</span>
+              <span className="font-semibold">
+                {formatMacro(recipeData.nutrition.calories, " kcal")}
+              </span>
+            </div>
+            <div className="rounded-md bg-background px-3 py-2 text-sm text-text">
+              <span className="block text-text/60">Protein</span>
+              <span className="font-semibold">
+                {formatMacro(recipeData.nutrition.protein, " g")}
+              </span>
+            </div>
+            <div className="rounded-md bg-background px-3 py-2 text-sm text-text">
+              <span className="block text-text/60">Carbs</span>
+              <span className="font-semibold">
+                {formatMacro(recipeData.nutrition.carbs, " g")}
+              </span>
+            </div>
+            <div className="rounded-md bg-background px-3 py-2 text-sm text-text">
+              <span className="block text-text/60">Fats</span>
+              <span className="font-semibold">
+                {formatMacro(recipeData.nutrition.fats, " g")}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row gap-8">
         <div className="flex-1">
           <div className="bg-secondary p-6 rounded-lg inline-block min-w-full">
@@ -269,6 +351,15 @@ const RecipePage = () => {
         </div>
       </div>
       <div className="display flex justify-between flex-row items-center mt-8 flex-wrap gap-4">
+        <div>
+          <button
+            className="bg-primary text-background rounded-lg px-4 py-2 font-semibold hover:bg-primary/90 transition-colors"
+            onClick={handleGenerateShoppingList}
+          >
+            Generate Shopping List
+          </button>
+        </div>
+
         {!recipeId && user && (
           <div className="flex flex-col items-start gap-1">
             <button

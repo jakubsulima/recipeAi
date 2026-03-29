@@ -1,7 +1,6 @@
 package org.jakub.backendapi.entities;
 
 import jakarta.persistence.*;
-import org.jakub.backendapi.entities.Enums.CategoryFridgeIngredient;
 import org.jakub.backendapi.entities.Enums.Unit;
 
 import java.time.LocalDate;
@@ -21,10 +20,6 @@ public class FridgeIngredient {
     private LocalDate expirationDate;
 
     @Column()
-    @Enumerated(EnumType.STRING)
-    private CategoryFridgeIngredient category;
-
-    @Column()
     private Double amount;
 
     @Column()
@@ -38,11 +33,10 @@ public class FridgeIngredient {
     public FridgeIngredient() {
     }
 
-    public FridgeIngredient(Long id, String name, LocalDate expirationDate, CategoryFridgeIngredient category, Double amount, Unit unit, User user) {
+    public FridgeIngredient(Long id, String name, LocalDate expirationDate, Double amount, Unit unit, User user) {
         this.id = id;
         this.name = name;
         this.expirationDate = expirationDate;
-        this.category = category;
         this.amount = amount;
         this.unit = unit;
         this.user = user;
@@ -70,14 +64,6 @@ public class FridgeIngredient {
 
     public void setExpirationDate(LocalDate expirationDate) {
         this.expirationDate = expirationDate;
-    }
-
-    public CategoryFridgeIngredient getCategory() {
-        return category;
-    }
-
-    public void setCategory(CategoryFridgeIngredient category) {
-        this.category = category;
     }
 
     public Double getAmount() {
@@ -109,12 +95,12 @@ public class FridgeIngredient {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         FridgeIngredient that = (FridgeIngredient) o;
-        return Objects.equals(id, that.id) && Objects.equals(name, that.name) && Objects.equals(expirationDate, that.expirationDate) && category == that.category && Objects.equals(amount, that.amount) && unit == that.unit && Objects.equals(user, that.user);
+        return Objects.equals(id, that.id) && Objects.equals(name, that.name) && Objects.equals(expirationDate, that.expirationDate) && Objects.equals(amount, that.amount) && unit == that.unit && Objects.equals(user, that.user);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, expirationDate, category, amount, unit, user);
+        return Objects.hash(id, name, expirationDate, amount, unit, user);
     }
 
     @Override
@@ -123,7 +109,6 @@ public class FridgeIngredient {
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", expirationDate=" + expirationDate +
-                ", category=" + category +
                 ", amount=" + amount +
                 ", unit=" + unit +
                 ", user=" + user +

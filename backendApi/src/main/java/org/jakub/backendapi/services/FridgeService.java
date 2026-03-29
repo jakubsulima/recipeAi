@@ -3,7 +3,6 @@ package org.jakub.backendapi.services;
 import jakarta.transaction.Transactional;
 import org.jakub.backendapi.dto.FridgeIngredientDto;
 import org.jakub.backendapi.dto.UserDto;
-import org.jakub.backendapi.entities.Enums.CategoryFridgeIngredient;
 import org.jakub.backendapi.entities.Enums.Unit;
 import org.jakub.backendapi.entities.FridgeIngredient;
 import org.jakub.backendapi.entities.User;
@@ -15,7 +14,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,22 +36,10 @@ public class FridgeService {
         return fridgeIngredientRepository.findByUser_Id(userDto.getId()).stream().map(fridgeIngredientMapper::toFridgeIngredientDto).collect(Collectors.toList());
     }
 
-    public Map<String, List<FridgeIngredientDto>> getFridgeIngredientGroupedByCategory(String email) {
-        List<FridgeIngredientDto> fridgeIngredients = getFridgeIngredients(email);
-        return fridgeIngredients.stream().collect(Collectors.groupingBy(FridgeIngredientDto::getCategory));
-    }
-
     @Transactional
     public FridgeIngredient addFridgeIngredient(FridgeIngredientDto fridgeIngredientDto, String email) {
-        System.out.println("Adding fridge ingredient: " + fridgeIngredientDto);
         if (fridgeIngredientDto.getUnit() != null) {
             validateUnit(fridgeIngredientDto.getUnit());
-        }
-
-        if (fridgeIngredientDto.getCategory() != null) {
-            validateCategory(fridgeIngredientDto.getCategory());
-        } else {
-            throw new AppException("Category is required", HttpStatus.BAD_REQUEST);
         }
 
         if (fridgeIngredientDto.getAmount() != null && fridgeIngredientDto.getAmount() <= 0) {
@@ -101,14 +87,6 @@ public class FridgeService {
             Unit.valueOf(unit.toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new AppException("Invalid unit value provided: " + unit, HttpStatus.BAD_REQUEST);
-        }
-    }
-
-    private void validateCategory(String category) {
-        try {
-            CategoryFridgeIngredient.valueOf(category.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new AppException("Invalid category value provided: " + category, HttpStatus.BAD_REQUEST);
         }
     }
 

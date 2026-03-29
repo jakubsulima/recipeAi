@@ -1,16 +1,14 @@
 package org.jakub.backendapi.controllers;
 
-import com.google.genai.Client;
-import com.google.genai.types.GenerateContentResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.jakub.backendapi.dto.RecipeDto;
 import org.jakub.backendapi.dto.RecipeResponseDto;
 import org.jakub.backendapi.dto.UserDto;
 import org.jakub.backendapi.dto.UserPreferencesDto;
+import org.jakub.backendapi.services.GeminiService;
 import org.jakub.backendapi.services.RecipeService;
 import org.jakub.backendapi.services.UserPreferencesService;
 import org.jakub.backendapi.services.UserService;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -25,15 +23,13 @@ public class RecipesController {
     private final RecipeService recipeService;
     private final UserService userService;
     private final UserPreferencesService userPreferencesService;
-    @Value("${gemini.api.key}")
-    private String geminiApiKey;
-    @Value("${gemini.api.model:gemini-3-flash-preview}")
-    private String geminiModel;
+    private final GeminiService geminiService;
 
-    public RecipesController(RecipeService recipeService, UserService userService, UserPreferencesService userPreferencesService) {
+    public RecipesController(RecipeService recipeService, UserService userService, UserPreferencesService userPreferencesService, GeminiService geminiService) {
         this.recipeService = recipeService;
         this.userService = userService;
         this.userPreferencesService = userPreferencesService;
+        this.geminiService = geminiService;
     }
 
     @PostMapping("/addRecipe")
@@ -103,7 +99,6 @@ public class RecipesController {
 
     @PostMapping("/generateRecipe")
     public ResponseEntity<String> createRecipe(@RequestBody GenerateRecipeRequest recipeRequest, HttpServletRequest request) {
-        GenerateContentResponse response;
         String recipePrompt = recipeRequest != null && StringUtils.hasText(recipeRequest.fullPrompt())
                 ? recipeRequest.fullPrompt()
             : (recipeRequest != null ? recipeRequest.prompt() : null);
@@ -127,18 +122,6 @@ public class RecipesController {
             System.err.println("Could not retrieve user preferences: " + e.getMessage());
         }
 
-        if (!StringUtils.hasText(geminiApiKey)) {
-            return ResponseEntity.status(500).body("Gemini API key is not configured on the server.");
-        }
-
-        try (Client client = Client.builder().apiKey(geminiApiKey).build()) {
-            response = client.models.generateContent(geminiModel,
-                    recipePrompt,
-                    null);
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error creating recipe: " + e.getMessage());
-        }
-
-        return ResponseEntity.ok(response.text());
+        return ResponseEntity.ok(geminiService.generateRecipe(recipePrompt));
     }
 }

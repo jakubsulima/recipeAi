@@ -11,18 +11,16 @@ public class FridgeIngredientDto {
     private String name;
     @JsonFormat(pattern = "dd-MM-yyyy")
     private LocalDate expirationDate;
-    private String category;
     private Double amount;
     private String unit;
 
     public FridgeIngredientDto() {
     }
 
-    public FridgeIngredientDto(Long id, String name, LocalDate expirationDate, String category, Double amount, String unit) {
+    public FridgeIngredientDto(Long id, String name, LocalDate expirationDate, Double amount, String unit) {
         this.id = id;
         this.name = name;
         this.expirationDate = expirationDate;
-        this.category = category;
         this.amount = amount;
         this.unit = unit;
     }
@@ -49,14 +47,6 @@ public class FridgeIngredientDto {
 
     public void setExpirationDate(LocalDate expirationDate) {
         this.expirationDate = expirationDate;
-    }
-
-    public String getCategory() {
-        return category;
-    }
-
-    public void setCategory(String category) {
-        this.category = category;
     }
 
     public Double getAmount() {
@@ -110,12 +100,12 @@ public class FridgeIngredientDto {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         FridgeIngredientDto that = (FridgeIngredientDto) o;
-        return Objects.equals(id, that.id) && Objects.equals(name, that.name) && Objects.equals(expirationDate, that.expirationDate) && Objects.equals(category, that.category) && Objects.equals(amount, that.amount) && Objects.equals(unit, that.unit);
+        return Objects.equals(id, that.id) && Objects.equals(name, that.name) && Objects.equals(expirationDate, that.expirationDate) && Objects.equals(amount, that.amount) && Objects.equals(unit, that.unit);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, expirationDate, category, amount, unit);
+        return Objects.hash(id, name, expirationDate, amount, unit);
     }
 
     @Override
@@ -124,7 +114,6 @@ public class FridgeIngredientDto {
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", expirationDate=" + expirationDate +
-                ", category='" + category + '\'' +
                 ", amount=" + amount +
                 ", unit='" + unit + '\'' +
                 '}';

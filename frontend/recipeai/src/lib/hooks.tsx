@@ -2,7 +2,7 @@ import axios from "axios";
 import { API_URL, TIMEOUT } from "./constants.tsx";
 
 const formOfPrompt =
-  " Answer in the following json format: name: The name of the recipe. description: A brief description of the recipe. timeToPrepare(string): just time to prepare. ingredients: An array of ingredient objects, where each object contains: name: The name of the ingredient. amount(double): The amount needed. unit(not null): The measurement unit (if applicable) only european units like litres. instructions: An array of step-by-step cooking instructions in complete sentences and withouut any special characters. ";
+  " Return ONLY valid JSON with this exact structure: { \"name\": string, \"description\": string, \"timeToPrepare\": string, \"ingredients\": [{\"name\": string, \"amount\": number, \"unit\": string}], \"instructions\": [string], \"nutrition\": { \"calories\": number, \"protein\": number, \"carbs\": number, \"fats\": number } }. Use metric units and avoid markdown/code fences.";
 export const generateRecipe = async function (
   prompt: string,
   productsFridge: string[],
@@ -13,7 +13,7 @@ export const generateRecipe = async function (
       prompt +
       formOfPrompt +
       (productsFridge.length > 0
-        ? "It would be nice if you use some of this products for this recipe" +
+        ? " Prioritize using these products for this recipe: " +
           productsFridge.join(", ")
         : "");
 
@@ -46,6 +46,30 @@ export const cleanAiJsonString = (response: any): string => {
   jsonString = jsonString.replace(/,\s*([}\]])/g, "$1");
   jsonString = jsonString.replace(/"timeToPrepare\(string\)"/g, '"timeToPrepare"');
   return jsonString;
+};
+
+export const lookupProductByBarcode = async (
+  barcode: string
+): Promise<string | null> => {
+  const normalized = barcode.trim();
+  if (!normalized) {
+    return null;
+  }
+
+  const response = await axios.get(
+    `https://world.openfoodfacts.org/api/v0/product/${encodeURIComponent(
+      normalized
+    )}.json`
+  );
+
+  const product = response.data?.product;
+  const name =
+    product?.product_name?.trim() ||
+    product?.product_name_en?.trim() ||
+    product?.generic_name?.trim() ||
+    null;
+
+  return name;
 };
 
 axios.defaults.headers.common["Content-Type"] = "application/json";

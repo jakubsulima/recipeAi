@@ -6,9 +6,15 @@ export interface FridgeIngredient {
   id: number;
   name: string;
   expirationDate: string | null;
-  amount?: string;
+  amount?: string | number;
   unit: unitType;
-  category: categoryType;
+}
+
+export interface AddFridgeIngredientInput {
+  name: string;
+  expirationDate: string | null;
+  amount?: string | number;
+  unit: unitType;
 }
 
 interface FridgeContextType {
@@ -16,14 +22,14 @@ interface FridgeContextType {
   setFridgeItems: React.Dispatch<React.SetStateAction<FridgeIngredient[]>>;
   loading: boolean;
   error: string;
-  addFridgeItem: (item: Omit<FridgeIngredient, "id">) => Promise<void>;
+  addFridgeItem: (item: AddFridgeIngredientInput) => Promise<void>;
+  addFridgeItemsBatch: (items: AddFridgeIngredientInput[]) => Promise<void>;
   removeFridgeItem: (id: number) => Promise<void>;
   updateFridgeItem: (id: number, newAmount: string) => Promise<void>;
   refreshFridgeItems: () => Promise<void>;
   getFridgeItemNames: () => string[];
 }
 
-// Replace enums with const objects
 export const UNITS = {
   g: "GRAMS",
   kg: "KILOGRAMS",
@@ -33,22 +39,10 @@ export const UNITS = {
   "": "",
 } as const;
 
-export const CATEGORIES = {
-  FRIDGE: "FRIDGE",
-  FREEZER: "FREEZER",
-  FRUITS_VEGETABLES: "FRUITS_VEGETABLES",
-  SHELF: "SHELF",
-} as const;
-
-// Create types from the const objects
 export type unitType = keyof typeof UNITS;
-export type categoryType = keyof typeof CATEGORIES;
 
-// Create arrays for easy use in components
 export const UNIT_OPTIONS: unitType[] = Object.keys(UNITS) as unitType[];
 export const UNIT_VALUES = Object.values(UNITS);
-export const CATEGORY_OPTIONS = Object.keys(CATEGORIES) as categoryType[];
-export const CATEGORY_VALUES = Object.values(CATEGORIES);
 
 const FridgeContext = createContext<FridgeContextType>(null!);
 
@@ -64,12 +58,14 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
   const [fridgeItems, setFridgeItems] = useState<FridgeIngredient[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
-  const [expiredAlertShown, setExpiredAlertShown] = useState(false);
-  const { user, loading: userLoading } = useUser();
   const [expirationNotificationShown, setExpirationNotificationShown] =
-    useState(
-      () => localStorage.getItem("expirationNotificationShown") === "true"
-    );
+    useState(() => localStorage.getItem("expirationNotificationShown") === "true");
+  const { user, loading: userLoading } = useUser();
+
+  const handleSetExpirationNotificationShown = (value: boolean) => {
+    setExpirationNotificationShown(value);
+    localStorage.setItem("expirationNotificationShown", value ? "true" : "false");
+  };
 
   const refreshFridgeItems = async () => {
     setLoading(true);
@@ -77,18 +73,20 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const response = await apiClient("getFridgeIngredients", false);
       setFridgeItems(response);
-      if (expirationNotificationShown === false) {
+
+      if (!expirationNotificationShown) {
         const today = new Date();
         const expiredItems = response.filter((item: FridgeIngredient) => {
-          if (item.expirationDate) {
-            const [day, month, year] = item.expirationDate.split("-");
-            const expDate = new Date(`${year}-${month}-${day}`);
-            expDate.setHours(0, 0, 0, 0);
-            return expDate < today;
+          if (!item.expirationDate) {
+            return false;
           }
-          return false;
+          const [day, month, year] = item.expirationDate.split("-");
+          const expDate = new Date(`${year}-${month}-${day}`);
+          expDate.setHours(0, 0, 0, 0);
+          return expDate < today;
         });
-        if (expiredItems.length > 0 && !expiredAlertShown) {
+
+        if (expiredItems.length > 0) {
           alert(
             `Warning: You have expired products: ${expiredItems
               .map((item: FridgeIngredient) => item.name)
@@ -104,19 +102,37 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const addFridgeItem = async (item: Omit<FridgeIngredient, "id">) => {
+  const addFridgeItem = async (item: AddFridgeIngredientInput) => {
     try {
       await apiClient("addFridgeIngredient", true, {
         name: item.name,
         expirationDate: item.expirationDate,
         amount: item.amount,
-        category: item.category,
         unit: UNITS[item.unit],
       });
 
-      refreshFridgeItems();
+      await refreshFridgeItems();
     } catch (err: any) {
       throw new Error("Failed to add fridge item");
+    }
+  };
+
+  const addFridgeItemsBatch = async (items: AddFridgeIngredientInput[]) => {
+    try {
+      await Promise.all(
+        items.map((item) =>
+          apiClient("addFridgeIngredient", true, {
+            name: item.name,
+            expirationDate: item.expirationDate,
+            amount: item.amount,
+            unit: UNITS[item.unit],
+          })
+        )
+      );
+
+      await refreshFridgeItems();
+    } catch (err: any) {
+      throw new Error("Failed to add scanned items");
     }
   };
 
@@ -134,7 +150,6 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
       await apiClient(`updateFridgeIngredient/${id}`, true, {
         amount: newAmount,
       });
-      // Update the local state optimistically
       setFridgeItems((prev) =>
         prev.map((item) =>
           item.id === id ? { ...item, amount: newAmount } : item
@@ -149,22 +164,18 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
     return fridgeItems.map((item) => item.name);
   };
 
-  const handleSetExpirationNotificationShown = (value: boolean) => {
-    setExpirationNotificationShown(value);
-    localStorage.setItem(
-      "expirationNotificationShown",
-      value ? "true" : "false"
-    );
-  };
-
   useEffect(() => {
-    if (userLoading) return;
-    if (!user || !user.id) {
-      setFridgeItems([]);
-      setExpiredAlertShown(false);
-      localStorage.removeItem("expirationNotificationShown");
+    if (userLoading) {
       return;
     }
+
+    if (!user || !user.id) {
+      setFridgeItems([]);
+      localStorage.removeItem("expirationNotificationShown");
+      setExpirationNotificationShown(false);
+      return;
+    }
+
     refreshFridgeItems();
   }, [user, userLoading]);
 
@@ -174,6 +185,7 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
     loading,
     error,
     addFridgeItem,
+    addFridgeItemsBatch,
     removeFridgeItem,
     updateFridgeItem,
     refreshFridgeItems,

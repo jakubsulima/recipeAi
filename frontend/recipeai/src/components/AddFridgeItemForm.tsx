@@ -1,11 +1,7 @@
 import React from "react";
 import { hasAmountError } from "../lib/hooks";
 import OptionsForm from "./OptionsForm";
-import {
-  unitType,
-  categoryType,
-  CATEGORY_VALUES,
-} from "../context/fridgeContext";
+import { unitType } from "../context/fridgeContext";
 
 interface AddFridgeItemFormProps {
   newItem: string;
@@ -14,15 +10,12 @@ interface AddFridgeItemFormProps {
   handleDateChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   unit: unitType;
   setUnit: (value: unitType) => void;
-  category: categoryType;
-  setCategory: (value: categoryType) => void;
   amount: string;
   setAmount: (value: string) => void;
   addItem: () => void;
   error: string;
   dateError: string;
   displayLoading: boolean;
-  categoryDisplayOptions: string[]; // New prop for display names
 }
 
 const AddFridgeItemForm: React.FC<AddFridgeItemFormProps> = ({
@@ -32,15 +25,12 @@ const AddFridgeItemForm: React.FC<AddFridgeItemFormProps> = ({
   handleDateChange,
   unit,
   setUnit,
-  category,
-  setCategory,
   amount,
   setAmount,
   addItem,
   error,
   dateError,
   displayLoading,
-  categoryDisplayOptions,
 }) => {
   return (
     <div className="w-full p-5 sm:p-6 bg-secondary rounded-lg shadow-sm border border-primary/5 h-fit">
@@ -87,18 +77,6 @@ const AddFridgeItemForm: React.FC<AddFridgeItemFormProps> = ({
             disabled={displayLoading}
           />
           {dateError && <p className="text-error text-xs mt-1 font-medium">{dateError}</p>}
-        </div>
-
-        {/* Category */}
-        <div className="mt-1">
-          <OptionsForm
-            label="Category"
-            name="Category"
-            options={CATEGORY_VALUES}
-            displayOptions={categoryDisplayOptions}
-            currentOptions={category}
-            onChange={(value) => setCategory(value as categoryType)}
-          />
         </div>
 
         {/* Unit */}

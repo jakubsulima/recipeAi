@@ -30,6 +30,7 @@ const Navbar = () => {
     if (user) {
       return [
         "Fridge",
+        "ShoppingList",
         ...baseItems,
         "My Preferences",
         isAdmin ? "Admin" : null,

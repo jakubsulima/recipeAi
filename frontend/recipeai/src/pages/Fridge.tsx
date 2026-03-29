@@ -1,59 +1,61 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-  CATEGORIES,
-  CATEGORY_OPTIONS,
-  CATEGORY_VALUES, // Import CATEGORY_VALUES
+  AddFridgeIngredientInput,
   unitType,
   useFridge,
 } from "../context/fridgeContext";
-import { formatDateForBackend } from "../lib/hooks";
-import { categoryType } from "../context/fridgeContext";
+import { formatDateForBackend, lookupProductByBarcode } from "../lib/hooks";
 import AddFridgeItemForm from "../components/AddFridgeItemForm";
 import FridgeDisplay from "../components/FridgeDisplay";
+import BarcodeScanner from "../components/BarcodeScanner";
+import ReceiptScanner from "../components/ReceiptScanner";
+
+const parseBackendDate = (dateString: string) => {
+  const [day, month, year] = dateString.split("-");
+  return new Date(`${year}-${month}-${day}`);
+};
 
 export const Fridge = () => {
+  const navigate = useNavigate();
   const {
     fridgeItems,
     loading: contextLoading,
     error: contextError,
     addFridgeItem,
+    addFridgeItemsBatch,
     removeFridgeItem,
     updateFridgeItem,
   } = useFridge();
+
   const [newItem, setNewItem] = useState<string>("");
   const [newItemDate, setNewItemDate] = useState<string>("");
   const [unit, setUnit] = useState<unitType>("");
-  const [category, setCategory] = useState<categoryType>("FRIDGE");
   const [amount, setAmount] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [dateError, setDateError] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [showedCategory, setShowedCategory] = useState<categoryType | null>(
-    CATEGORIES.FRIDGE
-  );
+  const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false);
+  const [isReceiptScannerOpen, setIsReceiptScannerOpen] = useState(false);
 
-  // Create a display-friendly version of the category names
-  const categoryDisplayOptions = CATEGORY_VALUES.map(
-    (cat) => cat.charAt(0).toUpperCase() + cat.slice(1).toLowerCase()
-  );
+  const expiringSoonNames = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-  const getCurrentCategoryIndex = () => {
-    return showedCategory ? CATEGORY_OPTIONS.indexOf(showedCategory) : 0;
-  };
+    const maxDate = new Date(today);
+    maxDate.setDate(maxDate.getDate() + 3);
 
-  const goToPreviousCategory = () => {
-    const currentIndex = getCurrentCategoryIndex();
-    const previousIndex =
-      currentIndex === 0 ? CATEGORY_OPTIONS.length - 1 : currentIndex - 1;
-    setShowedCategory(CATEGORY_OPTIONS[previousIndex]);
-  };
-
-  const goToNextCategory = () => {
-    const currentIndex = getCurrentCategoryIndex();
-    const nextIndex =
-      currentIndex === CATEGORY_OPTIONS.length - 1 ? 0 : currentIndex + 1;
-    setShowedCategory(CATEGORY_OPTIONS[nextIndex]);
-  };
+    return fridgeItems
+      .filter((item) => {
+        if (!item.expirationDate) {
+          return false;
+        }
+        const expDate = parseBackendDate(item.expirationDate);
+        expDate.setHours(0, 0, 0, 0);
+        return expDate >= today && expDate <= maxDate;
+      })
+      .map((item) => item.name);
+  }, [fridgeItems]);
 
   const validateDate = (dateString: string) => {
     if (!dateString) {
@@ -75,7 +77,6 @@ export const Fridge = () => {
     return true;
   };
 
-  // Handle date input change
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newDate = e.target.value;
     setNewItemDate(newDate);
@@ -90,36 +91,28 @@ export const Fridge = () => {
       return;
     }
 
-    // Validate date before submitting
     if (!validateDate(newItemDate)) {
       return;
     }
 
     setIsLoading(true);
     try {
-      const formattedDate = newItemDate
-        ? formatDateForBackend(newItemDate)
-        : null;
+      const formattedDate = newItemDate ? formatDateForBackend(newItemDate) : null;
 
       await addFridgeItem({
         name: newItem.trim(),
         expirationDate: formattedDate,
-        unit: unit,
-        amount: amount,
-        category: category,
+        unit,
+        amount,
       });
 
       setNewItem("");
       setNewItemDate("");
       setAmount("");
       setUnit("");
-      setDateError(""); // Clear date error on success
+      setDateError("");
     } catch (err: any) {
-      const errorMsg =
-        typeof err === "object" && err !== null && "message" in err
-          ? (err as any).message
-          : String(err) || "Failed to add item";
-      setError(errorMsg);
+      setError(err?.message || "Failed to add item");
     } finally {
       setIsLoading(false);
     }
@@ -129,14 +122,16 @@ export const Fridge = () => {
     const confirmed = window.confirm(
       "Are you sure you want to remove this item?"
     );
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
 
     setIsLoading(true);
     setError("");
     try {
       await removeFridgeItem(id);
     } catch (err: any) {
-      setError(err.message || "Failed to remove item");
+      setError(err?.message || "Failed to remove item");
     } finally {
       setIsLoading(false);
     }
@@ -147,9 +142,61 @@ export const Fridge = () => {
     try {
       await updateFridgeItem(id, newAmount);
     } catch (err: any) {
-      setError(err.message || "Failed to update item amount");
-      throw err; // Re-throw to let the component know it failed
+      setError(err?.message || "Failed to update item amount");
+      throw err;
     }
+  };
+
+  const handleBarcodeDetected = async (barcode: string) => {
+    setError("");
+    setIsLoading(true);
+    try {
+      const productName = await lookupProductByBarcode(barcode);
+      if (!productName) {
+        setError("Barcode scanned, but no product name was found.");
+        return;
+      }
+
+      setNewItem(productName);
+    } catch {
+      setError("Could not fetch product details for this barcode.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleScannedReceiptItems = async (items: AddFridgeIngredientInput[]) => {
+    if (items.length === 0) {
+      return;
+    }
+
+    setError("");
+    setIsLoading(true);
+    try {
+      await addFridgeItemsBatch(items);
+    } catch (err: any) {
+      setError(err?.message || "Could not add scanned receipt items.");
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const generateZeroWasteRecipe = () => {
+    if (expiringSoonNames.length === 0) {
+      setError("No ingredients are expiring in the next 3 days.");
+      return;
+    }
+
+    const prompt = `Create a zero-waste recipe that uses these ingredients first: ${expiringSoonNames.join(
+      ", "
+    )}.`;
+
+    navigate("/Recipe", {
+      state: {
+        search: prompt,
+      },
+    });
   };
 
   const displayError = error || contextError;
@@ -157,35 +204,64 @@ export const Fridge = () => {
 
   return (
     <>
-      <div className="container mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-8 bg-background min-h-screen items-start">
-        <AddFridgeItemForm
-          newItem={newItem}
-          setNewItem={setNewItem}
-          newItemDate={newItemDate}
-          handleDateChange={handleDateChange}
-          unit={unit}
-          setUnit={setUnit}
-          category={category}
-          setCategory={setCategory}
-          amount={amount}
-          setAmount={setAmount}
-          addItem={addItem}
-          error={displayError}
-          dateError={dateError}
-          displayLoading={displayLoading}
-          categoryDisplayOptions={categoryDisplayOptions} // Pass the new prop here
-        />
+      <div className="container mx-auto grid min-h-screen grid-cols-1 items-start gap-8 bg-background p-6 md:grid-cols-3">
+        <div className="w-full space-y-3">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <button
+              onClick={() => setIsBarcodeScannerOpen(true)}
+              className="rounded-md border border-primary/20 bg-secondary px-3 py-2 text-sm font-semibold text-text hover:bg-secondary/80"
+            >
+              Scan Barcode
+            </button>
+            <button
+              onClick={() => setIsReceiptScannerOpen(true)}
+              className="rounded-md border border-primary/20 bg-secondary px-3 py-2 text-sm font-semibold text-text hover:bg-secondary/80"
+            >
+              Scan Receipt
+            </button>
+            <button
+              onClick={generateZeroWasteRecipe}
+              className="rounded-md bg-primary px-3 py-2 text-sm font-semibold text-background hover:bg-primary/90"
+            >
+              Use Expiring Soon
+            </button>
+          </div>
+
+          <AddFridgeItemForm
+            newItem={newItem}
+            setNewItem={setNewItem}
+            newItemDate={newItemDate}
+            handleDateChange={handleDateChange}
+            unit={unit}
+            setUnit={setUnit}
+            amount={amount}
+            setAmount={setAmount}
+            addItem={addItem}
+            error={displayError}
+            dateError={dateError}
+            displayLoading={displayLoading}
+          />
+        </div>
 
         <FridgeDisplay
           fridgeItems={fridgeItems}
-          showedCategory={showedCategory}
-          goToPreviousCategory={goToPreviousCategory}
-          goToNextCategory={goToNextCategory}
           removeItem={removeItem}
           updateAmount={updateAmount}
           error={displayError}
         />
       </div>
+
+      <BarcodeScanner
+        isOpen={isBarcodeScannerOpen}
+        onClose={() => setIsBarcodeScannerOpen(false)}
+        onBarcodeDetected={handleBarcodeDetected}
+      />
+
+      <ReceiptScanner
+        isOpen={isReceiptScannerOpen}
+        onClose={() => setIsReceiptScannerOpen(false)}
+        onConfirm={handleScannedReceiptItems}
+      />
     </>
   );
 };
