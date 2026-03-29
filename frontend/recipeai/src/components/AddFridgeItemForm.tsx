@@ -13,7 +13,7 @@ interface AddFridgeItemFormProps {
   amount: string;
   setAmount: (value: string) => void;
   addItem: () => void;
-  error: string;
+  showNameError: boolean;
   dateError: string;
   displayLoading: boolean;
 }
@@ -28,20 +28,20 @@ const AddFridgeItemForm: React.FC<AddFridgeItemFormProps> = ({
   amount,
   setAmount,
   addItem,
-  error,
+  showNameError,
   dateError,
   displayLoading,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
-    if (newItem || newItemDate || amount || unit || error || dateError) {
+    if (newItem || newItemDate || amount || unit || showNameError || dateError) {
       setIsExpanded(true);
     }
-  }, [newItem, newItemDate, amount, unit, error, dateError]);
+  }, [newItem, newItemDate, amount, unit, showNameError, dateError]);
 
   return (
-    <div className="w-full rounded-2xl border border-primary/10 bg-secondary p-5 shadow-sm sm:p-6">
+    <div className="mobile-card-enter ambient-gradient-card w-full rounded-2xl border border-primary/10 bg-secondary p-5 shadow-sm sm:p-6">
       <button
         type="button"
         onClick={() => setIsExpanded((prev) => !prev)}
@@ -65,15 +65,6 @@ const AddFridgeItemForm: React.FC<AddFridgeItemFormProps> = ({
         }`}
       >
         <div className="min-h-0">
-          {error && (
-            <div className="mb-5 flex items-start gap-2 rounded-xl border border-accent/45 bg-accent/10 px-3 py-3 text-sm text-text shadow-sm">
-              <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-bold text-primary">
-                !
-              </span>
-              <span>{error}</span>
-            </div>
-          )}
-
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-1">
               <label className="block text-sm font-medium text-text">
@@ -85,7 +76,7 @@ const AddFridgeItemForm: React.FC<AddFridgeItemFormProps> = ({
                 onChange={(e) => setNewItem(e.target.value)}
                 placeholder="e.g., Tomatoes"
                 className={`w-full appearance-none rounded-lg border bg-background p-2.5 text-text shadow-sm transition-shadow focus:outline-none focus:ring-2 focus:ring-accent ${
-                  error && !newItem.trim() ? "border-accent" : "border-primary/20"
+                  showNameError && !newItem.trim() ? "border-accent" : "border-primary/20"
                 }`}
                 style={{ WebkitTapHighlightColor: "transparent" }}
                 disabled={displayLoading}
@@ -153,7 +144,7 @@ const AddFridgeItemForm: React.FC<AddFridgeItemFormProps> = ({
             <button
               onClick={addItem}
               disabled={displayLoading || hasAmountError(amount) || !!dateError}
-              className="mt-4 cursor-pointer rounded-lg bg-accent px-4 py-3 font-semibold text-text shadow-[0_10px_24px_rgba(255,212,60,0.28)] transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="mobile-soft-press mt-4 cursor-pointer rounded-lg bg-accent px-4 py-3 font-semibold text-text shadow-[0_10px_24px_rgba(255,212,60,0.28)] transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {displayLoading ? "Adding..." : "Add Item"}
             </button>

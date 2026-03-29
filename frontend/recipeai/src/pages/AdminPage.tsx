@@ -3,6 +3,7 @@ import { AuthContext } from "../context/context";
 import { apiClient, deleteClient } from "../lib/hooks";
 import AdminRecipesPanel from "../components/AdminRecipesPanel";
 import FoodLoadingScreen from "../components/FoodLoadingScreen";
+import ErrorAlert from "../components/ErrorAlert";
 
 interface User {
   id: number;
@@ -56,12 +57,6 @@ const AdminPage: React.FC = () => {
 
   if (loading)
     return <FoodLoadingScreen title="Loading users..." subtitle="Preparing admin dashboard" />;
-  if (error)
-    return (
-      <div className="container mx-auto p-4 bg-background min-h-screen text-accent">
-        Error: {error}
-      </div>
-    );
   if (authContext?.loading)
     return <FoodLoadingScreen title="Loading..." subtitle="Checking admin access" />;
   if (!authContext || authContext.user?.role !== "ADMIN") {
@@ -73,8 +68,9 @@ const AdminPage: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto p-4 bg-background min-h-screen">
+    <div className="mobile-page-enter container mx-auto p-4 bg-background min-h-screen">
       <h1 className="text-3xl font-bold mb-6 text-text">Admin Dashboard</h1>
+      <ErrorAlert message={error} className="mb-6" onAutoHide={() => setError(null)} />
 
       <div className="mb-12">
         <h2 className="text-2xl font-semibold mb-4 text-text">
@@ -105,7 +101,7 @@ const AdminPage: React.FC = () => {
                     <td className="py-3 px-4">
                       <button
                         onClick={() => handleDeleteUser(user.id)}
-                        className="bg-accent hover:bg-accent/80 text-background font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="mobile-soft-press bg-accent hover:bg-accent/80 text-background font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         disabled={user.email === authContext.user?.email} // Prevent admin from deleting themselves
                       >
                         Delete

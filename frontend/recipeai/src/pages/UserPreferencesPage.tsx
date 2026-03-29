@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import OptionsForm from "../components/OptionsForm";
 import { apiClient } from "../lib/hooks";
 import FoodLoadingScreen from "../components/FoodLoadingScreen";
+import ErrorAlert from "../components/ErrorAlert";
 
 const MePage = () => {
   const navigate = useNavigate();
@@ -129,9 +130,9 @@ const MePage = () => {
   const currentDiet = user.preferences?.diet || "";
 
   return (
-    <div className="min-h-screen w-full bg-background">
+    <div className="mobile-page-enter min-h-screen w-full bg-background">
       <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-        <div className="mb-8 overflow-hidden rounded-3xl border border-accent/35 bg-secondary p-6 sm:p-8">
+        <div className="mobile-card-enter ambient-gradient-card mb-8 overflow-hidden rounded-3xl border border-accent/35 bg-secondary p-6 sm:p-8">
           <h1 className="text-3xl font-bold text-text sm:text-4xl">My Preferences</h1>
           <p className="mt-2 max-w-2xl text-text/70">
             One place to tune your diet and ingredient dislikes.
@@ -146,17 +147,7 @@ const MePage = () => {
           </div>
         </div>
 
-        {error && (
-          <div
-            className="mb-6 flex items-start gap-2 rounded-xl border border-accent/45 bg-accent/10 p-4 text-text"
-            role="alert"
-          >
-            <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-background">
-              !
-            </span>
-            <span>{error}</span>
-          </div>
-        )}
+        <ErrorAlert message={error} className="mb-6" onAutoHide={() => setError("")} />
 
         {successMessage && (
           <div
@@ -170,8 +161,8 @@ const MePage = () => {
           </div>
         )}
 
-        <div className="rounded-2xl border border-primary/10 bg-secondary p-5 shadow-sm sm:p-6">
-          <div className="mb-6 rounded-xl border border-primary/10 bg-background p-4">
+        <div className="mobile-card-enter mobile-card-delay-1 ambient-gradient-card rounded-2xl border border-primary/10 bg-secondary p-5 shadow-sm sm:p-6">
+          <div className="mobile-card-enter mobile-card-delay-1 mb-6 rounded-xl border border-primary/10 bg-background p-4">
             <h2 className="mb-1 text-xl font-semibold text-text">Dietary Plan</h2>
             <p className="mb-3 text-sm text-text/60">Pick one option. It updates immediately.</p>
             <OptionsForm
@@ -188,7 +179,7 @@ const MePage = () => {
             />
           </div>
 
-          <div className="rounded-xl border border-primary/10 bg-background p-4">
+          <div className="mobile-card-enter mobile-card-delay-2 rounded-xl border border-primary/10 bg-background p-4">
             <h2 className="mb-1 text-xl font-semibold text-text">Disliked Ingredients</h2>
             <p className="mb-3 text-sm text-text/60">Keep this list short and specific for better recipe matches.</p>
 
@@ -203,7 +194,7 @@ const MePage = () => {
               />
               <button
                 onClick={addDislikedIngredient}
-                className="rounded-lg bg-accent px-4 py-2.5 font-semibold text-text transition-colors hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent"
+                className="mobile-soft-press rounded-lg bg-accent px-4 py-2.5 font-semibold text-text transition-colors hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent"
               >
                 Add
               </button>
@@ -219,7 +210,7 @@ const MePage = () => {
                     <span className="capitalize font-medium text-text">{ingredient}</span>
                     <button
                       onClick={() => removeDislikedIngredient(ingredient)}
-                      className="rounded-md px-2 py-0.5 text-lg font-bold text-text/45 transition-colors hover:bg-accent/15 hover:text-accent"
+                      className="mobile-soft-press rounded-md px-2 py-0.5 text-lg font-bold text-text/45 transition-colors hover:bg-accent/15 hover:text-accent"
                       title={`Remove ${ingredient}`}
                     >
                       &times;

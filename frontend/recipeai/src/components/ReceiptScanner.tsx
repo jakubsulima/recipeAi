@@ -6,6 +6,7 @@ import {
   unitType,
 } from "../context/fridgeContext";
 import { API_URL } from "../lib/constants";
+import ErrorAlert from "./ErrorAlert";
 
 interface ReceiptScannerProps {
   isOpen: boolean;
@@ -165,7 +166,7 @@ const ReceiptScanner = ({ isOpen, onClose, onConfirm }: ReceiptScannerProps) => 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm">
-      <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-primary/20 bg-secondary shadow-2xl">
+      <div className="mobile-card-enter max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-primary/20 bg-secondary shadow-2xl">
         <div className="border-b border-primary/10 bg-primary px-4 py-3 text-background sm:px-6">
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -176,7 +177,7 @@ const ReceiptScanner = ({ isOpen, onClose, onConfirm }: ReceiptScannerProps) => 
             </div>
             <button
               onClick={onClose}
-              className="rounded-md border border-background/20 px-2.5 py-1.5 text-sm font-medium text-background/80 transition-colors hover:bg-background/10 hover:text-background"
+              className="mobile-soft-press rounded-md border border-background/20 px-2.5 py-1.5 text-sm font-medium text-background/80 transition-colors hover:bg-background/10 hover:text-background"
             >
               Close
             </button>
@@ -198,7 +199,7 @@ const ReceiptScanner = ({ isOpen, onClose, onConfirm }: ReceiptScannerProps) => 
               <button
                 onClick={scanReceipt}
                 disabled={isUploading}
-                className="rounded-lg bg-accent px-4 py-2.5 font-semibold text-text transition-colors hover:bg-accent/90 disabled:cursor-wait disabled:opacity-60"
+                className="mobile-soft-press rounded-lg bg-accent px-4 py-2.5 font-semibold text-text transition-colors hover:bg-accent/90 disabled:cursor-wait disabled:opacity-60"
               >
                 {isUploading ? "Scanning..." : "Scan Receipt"}
               </button>
@@ -210,11 +211,7 @@ const ReceiptScanner = ({ isOpen, onClose, onConfirm }: ReceiptScannerProps) => 
             )}
           </div>
 
-          {error && (
-            <p className="rounded-lg border border-accent/50 bg-accent/10 px-3 py-2 text-sm text-text">
-              {error}
-            </p>
-          )}
+          <ErrorAlert message={error} compact onAutoHide={() => setError("")} />
 
           {items.length > 0 && (
             <div className="overflow-hidden rounded-xl border border-primary/15 bg-background">
@@ -293,7 +290,7 @@ const ReceiptScanner = ({ isOpen, onClose, onConfirm }: ReceiptScannerProps) => 
               <div className="flex justify-end border-t border-primary/10 bg-secondary px-4 py-3">
                 <button
                   onClick={addSelectedItems}
-                  className="rounded-lg bg-primary px-4 py-2.5 font-semibold text-background transition-colors hover:bg-primary/90"
+                  className="mobile-soft-press rounded-lg bg-primary px-4 py-2.5 font-semibold text-background transition-colors hover:bg-primary/90"
                 >
                   Add Selected To Inventory
                 </button>

@@ -10,6 +10,7 @@ import AddFridgeItemForm from "../components/AddFridgeItemForm";
 import FridgeDisplay from "../components/FridgeDisplay";
 import BarcodeScanner from "../components/BarcodeScanner";
 import ReceiptScanner from "../components/ReceiptScanner";
+import ErrorAlert from "../components/ErrorAlert";
 
 const parseBackendDate = (dateString: string) => {
   const [day, month, year] = dateString.split("-");
@@ -33,6 +34,7 @@ export const Fridge = () => {
   const [unit, setUnit] = useState<unitType>("");
   const [amount, setAmount] = useState<string>("");
   const [error, setError] = useState<string>("");
+  const [showNameError, setShowNameError] = useState(false);
   const [dateError, setDateError] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false);
@@ -84,13 +86,23 @@ export const Fridge = () => {
     validateDate(newDate);
   };
 
+  const handleNewItemChange = (value: string) => {
+    setNewItem(value);
+    if (showNameError && value.trim()) {
+      setShowNameError(false);
+    }
+  };
+
   const addItem = async () => {
     setError("");
 
     if (!newItem.trim()) {
       setError("Item name is required");
+      setShowNameError(true);
       return;
     }
+
+    setShowNameError(false);
 
     if (!validateDate(newItemDate)) {
       return;
@@ -112,6 +124,7 @@ export const Fridge = () => {
       setAmount("");
       setUnit("");
       setDateError("");
+      setShowNameError(false);
     } catch (err: any) {
       setError(err?.message || "Failed to add item");
     } finally {
@@ -120,17 +133,11 @@ export const Fridge = () => {
   };
 
   const removeItem = async (id: number) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to remove this item?"
-    );
-    if (!confirmed) {
-      return;
-    }
-
     setIsLoading(true);
     setError("");
     try {
       await removeFridgeItem(id);
+      setError("Ingredient deleted.");
     } catch (err: any) {
       setError(err?.message || "Failed to remove item");
     } finally {
@@ -216,24 +223,26 @@ export const Fridge = () => {
 
   return (
     <>
-      <div className="container mx-auto grid min-h-screen grid-cols-1 items-start gap-8 bg-background p-6 md:grid-cols-3">
+      <div className="mobile-page-enter container mx-auto grid min-h-screen grid-cols-1 items-start gap-8 bg-background p-6 md:grid-cols-3">
         <div className="w-full space-y-3">
-          <div className="grid grid-cols-1 gap-2 rounded-xl border border-accent/30 bg-accent/10 p-2 sm:grid-cols-3">
+          <ErrorAlert message={displayError} onAutoHide={() => setError("")} />
+
+          <div className="ambient-gradient-card grid grid-cols-1 gap-2 rounded-xl border border-accent/30 bg-accent/10 p-2 sm:grid-cols-3">
             <button
               onClick={() => setIsBarcodeScannerOpen(true)}
-              className="rounded-md border border-accent/35 bg-background px-3 py-2 text-sm font-semibold text-text transition-colors hover:bg-accent/20"
+              className="mobile-soft-press rounded-md border border-accent/35 bg-background px-3 py-2 text-sm font-semibold text-text transition-colors hover:bg-accent/20"
             >
               Scan Barcode
             </button>
             <button
               onClick={() => setIsReceiptScannerOpen(true)}
-              className="rounded-md border border-accent/35 bg-background px-3 py-2 text-sm font-semibold text-text transition-colors hover:bg-accent/20"
+              className="mobile-soft-press rounded-md border border-accent/35 bg-background px-3 py-2 text-sm font-semibold text-text transition-colors hover:bg-accent/20"
             >
               Scan Receipt
             </button>
             <button
               onClick={generateZeroWasteRecipe}
-              className="rounded-md bg-accent px-3 py-2 text-sm font-semibold text-text shadow-[0_8px_18px_rgba(255,212,60,0.3)] transition-colors hover:bg-accent/90"
+              className="mobile-soft-press rounded-md bg-accent px-3 py-2 text-sm font-semibold text-text shadow-[0_8px_18px_rgba(255,212,60,0.3)] transition-colors hover:bg-accent/90"
             >
               Use Expiring Soon
             </button>
@@ -241,7 +250,7 @@ export const Fridge = () => {
 
           <AddFridgeItemForm
             newItem={newItem}
-            setNewItem={setNewItem}
+            setNewItem={handleNewItemChange}
             newItemDate={newItemDate}
             handleDateChange={handleDateChange}
             unit={unit}
@@ -249,7 +258,7 @@ export const Fridge = () => {
             amount={amount}
             setAmount={setAmount}
             addItem={addItem}
-            error={displayError}
+            showNameError={showNameError}
             dateError={dateError}
             displayLoading={displayLoading}
           />
@@ -259,7 +268,6 @@ export const Fridge = () => {
           fridgeItems={fridgeItems}
           removeItem={removeItem}
           updateAmount={updateAmount}
-          error={displayError}
         />
       </div>
 

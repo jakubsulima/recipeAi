@@ -5,6 +5,7 @@ import { useFridge } from "../context/fridgeContext";
 import { useUser } from "../context/context";
 import FoodLoadingScreen from "../components/FoodLoadingScreen";
 import { addShoppingItems } from "../lib/shoppingList";
+import ErrorAlert from "../components/ErrorAlert";
 
 export interface RecipeIngredient {
   name: string;
@@ -273,18 +274,11 @@ const RecipePage = () => {
   const instructionCount = recipeData.instructions?.length ?? 0;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="mobile-page-enter min-h-screen bg-background">
       <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
-      {error && (
-        <div className="mb-5 flex items-start gap-2 rounded-xl border border-accent/45 bg-accent/10 px-4 py-3 text-sm text-text">
-          <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-background">
-            !
-          </span>
-          <span>{error}</span>
-        </div>
-      )}
+      <ErrorAlert message={error} className="mb-5" onAutoHide={() => setError("")} />
 
-      <section className="relative overflow-hidden rounded-3xl border border-accent/35 bg-secondary p-6 sm:p-8">
+      <section className="mobile-card-enter relative overflow-hidden rounded-3xl border border-accent/35 bg-secondary p-6 sm:p-8">
         <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-accent/20 blur-3xl" />
         <div className="absolute -bottom-12 left-10 h-28 w-28 rounded-full bg-primary/10 blur-2xl" />
 
@@ -319,7 +313,7 @@ const RecipePage = () => {
       </section>
 
       {recipeData.nutrition && (
-        <div className="mt-6 rounded-2xl border border-accent/30 bg-secondary p-5">
+        <div className="mobile-card-enter mobile-card-delay-1 mt-6 rounded-2xl border border-accent/30 bg-secondary p-5">
           <h3 className="mb-4 text-lg font-semibold text-text">Nutrition (estimated)</h3>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <div className="rounded-xl border border-accent/20 bg-background px-3 py-2.5 text-sm text-text">
@@ -352,7 +346,7 @@ const RecipePage = () => {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <div>
-          <div className="h-full rounded-2xl border border-primary/10 bg-secondary p-6">
+          <div className="mobile-card-enter mobile-card-delay-1 h-full rounded-2xl border border-primary/10 bg-secondary p-6">
             <h2 className="mb-4 text-2xl font-semibold text-text">
               Ingredients
             </h2>
@@ -373,7 +367,7 @@ const RecipePage = () => {
         </div>
 
         <div>
-          <div className="h-full rounded-2xl border border-primary/10 bg-secondary p-6">
+          <div className="mobile-card-enter mobile-card-delay-2 h-full rounded-2xl border border-primary/10 bg-secondary p-6">
             <h2 className="mb-4 text-2xl font-semibold text-text">
               Instructions
             </h2>
@@ -391,10 +385,10 @@ const RecipePage = () => {
         </div>
       </div>
 
-      <div className="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/10 bg-secondary p-4">
+      <div className="mobile-card-enter mobile-card-delay-2 mt-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/10 bg-secondary p-4">
         <div className="flex flex-wrap gap-3">
           <button
-            className="rounded-lg bg-primary px-4 py-2.5 font-semibold text-background transition-colors hover:bg-primary/90"
+            className="mobile-soft-press rounded-lg bg-primary px-4 py-2.5 font-semibold text-background transition-colors hover:bg-primary/90"
             onClick={handleGenerateShoppingList}
           >
             Generate Shopping List
@@ -402,7 +396,7 @@ const RecipePage = () => {
 
           {!recipeId && (
             <button
-              className="rounded-lg border border-primary/20 bg-background px-4 py-2.5 font-semibold text-text transition-colors hover:bg-background/80"
+              className="mobile-soft-press rounded-lg border border-primary/20 bg-background px-4 py-2.5 font-semibold text-text transition-colors hover:bg-background/80"
               onClick={() => loadNewRecipeCallback(search)}
             >
               I want new recipe
@@ -418,7 +412,7 @@ const RecipePage = () => {
                   ? "cursor-default bg-green-600 text-white"
                   : saveStatus === "saving"
                   ? "cursor-wait bg-accent/60 text-text"
-                  : "bg-accent text-text hover:bg-accent/90"
+                  : "mobile-soft-press bg-accent text-text hover:bg-accent/90"
               }`}
               onClick={() => saveRecipe()}
               disabled={saveStatus === "saving" || saveStatus === "saved"}
@@ -433,7 +427,7 @@ const RecipePage = () => {
 
           {recipeId && user && (
             <button
-              className="rounded-lg bg-accent px-4 py-2.5 font-semibold text-text transition-colors hover:bg-accent/90"
+              className="mobile-soft-press rounded-lg bg-accent px-4 py-2.5 font-semibold text-text transition-colors hover:bg-accent/90"
               onClick={handleDelete}
             >
               Delete Recipe

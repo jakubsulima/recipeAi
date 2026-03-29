@@ -2,6 +2,7 @@ import React, { useEffect, useState, useContext } from "react";
 import { AuthContext } from "../context/context";
 import { apiClient, deleteClient } from "../lib/hooks";
 import FoodLoadingScreen from "./FoodLoadingScreen";
+import ErrorAlert from "./ErrorAlert";
 
 interface Recipe {
   id: number;
@@ -77,19 +78,16 @@ const AdminRecipesPanel: React.FC = () => {
         compact={true}
       />
     );
-  if (error && recipes.length === 0)
-    return (
-      <div className="p-4 text-red-500">Error fetching recipes: {error}</div>
-    );
 
   return (
     <div className="mt-8">
       <h2 className="text-2xl font-semibold mb-4">Recipe Management</h2>
-      {error && (
-        <div className="mb-4 p-2 text-sm text-red-700 bg-red-100 rounded">
-          Error: {error}
-        </div>
-      )}
+      <ErrorAlert
+        message={error}
+        className="mb-4"
+        compact
+        onAutoHide={() => setError(null)}
+      />
       {recipes.length === 0 && !loading && !error ? (
         <p>No recipes found.</p>
       ) : (
@@ -115,7 +113,7 @@ const AdminRecipesPanel: React.FC = () => {
                   <td className="py-3 px-4">
                     <button
                       onClick={() => handleDeleteRecipe(recipe.id)}
-                      className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-3 rounded focus:outline-none focus:shadow-outline text-sm"
+                      className="mobile-soft-press bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-3 rounded focus:outline-none focus:shadow-outline text-sm"
                     >
                       Delete
                     </button>
@@ -131,7 +129,7 @@ const AdminRecipesPanel: React.FC = () => {
           <button
             onClick={() => setPage((p) => Math.max(0, p - 1))}
             disabled={page === 0}
-            className="px-4 py-2 bg-primary text-white rounded disabled:opacity-40"
+            className="mobile-soft-press px-4 py-2 bg-primary text-white rounded disabled:opacity-40"
           >
             Previous
           </button>
@@ -141,7 +139,7 @@ const AdminRecipesPanel: React.FC = () => {
           <button
             onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
             disabled={page >= totalPages - 1}
-            className="px-4 py-2 bg-primary text-white rounded disabled:opacity-40"
+            className="mobile-soft-press px-4 py-2 bg-primary text-white rounded disabled:opacity-40"
           >
             Next
           </button>

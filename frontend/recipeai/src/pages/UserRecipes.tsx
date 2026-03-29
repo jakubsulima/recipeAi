@@ -5,6 +5,7 @@ import { useUser } from "../context/context";
 import RecipeContainer from "../components/RecipeContainer";
 import PaginationControls from "../components/PaginationControls";
 import FoodLoadingScreen from "../components/FoodLoadingScreen";
+import ErrorAlert from "../components/ErrorAlert";
 
 const Recipes = () => {
   const [recipes, setRecipes] = useState<RecipeData[]>([]);
@@ -120,11 +121,11 @@ const Recipes = () => {
 
   return (
     <>
-      <section className="flex flex-col max-w-4xl mx-auto w-full bg-background h-screen p-4 md:p-6">
+      <section className="mobile-page-enter flex flex-col max-w-4xl mx-auto w-full bg-background h-screen p-4 md:p-6">
         <article className="flex-1">
           {/* Header with decorative elements */}
-          <div className="mb-6 md:mb-8 text-center relative">
-            <div className="pt-6">
+          <div className="ambient-gradient-card mb-6 rounded-3xl border border-accent/35 bg-secondary p-6 text-center md:mb-8 sm:p-8">
+            <div>
               <div className="flex items-center justify-center gap-3 mb-3">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -191,7 +192,7 @@ const Recipes = () => {
                 <div className="w-px h-6 bg-primary/20 mx-1 shrink-0" />
                 <button
                   onClick={handleSearch}
-                  className="shrink-0 bg-accent hover:bg-accent/90 text-primary px-4 py-2 m-1 rounded-full font-medium transition-colors"
+                  className="mobile-soft-press shrink-0 bg-accent hover:bg-accent/90 text-primary px-4 py-2 m-1 rounded-full font-medium transition-colors"
                 >
                   Search
                 </button>
@@ -206,25 +207,7 @@ const Recipes = () => {
             </div>
           </div>
 
-          {error && (
-            <div className="text-accent text-center mb-6 bg-accent/10 p-4 rounded-2xl border border-accent/30">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6 inline-block mr-2"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                />
-              </svg>
-              {error}
-            </div>
-          )}
+          <ErrorAlert message={error} className="mb-6" onAutoHide={() => setError("")} />
 
           {recipes && recipes.length > 0 ? (
             <div className="space-y-3 md:space-y-4">
@@ -282,7 +265,7 @@ const Recipes = () => {
                 {isSearching && (
                   <button
                     onClick={handleClearSearch}
-                    className="mt-4 px-4 py-2 bg-secondary hover:bg-accent hover:text-primary rounded-full transition-colors font-medium"
+                    className="mobile-soft-press mt-4 px-4 py-2 bg-secondary hover:bg-accent hover:text-primary rounded-full transition-colors font-medium"
                   >
                     Clear Search
                   </button>

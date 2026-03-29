@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import ErrorAlert from "./ErrorAlert";
 
 interface BarcodeScannerProps {
   isOpen: boolean;
@@ -147,7 +148,7 @@ const BarcodeScanner = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-xl overflow-hidden rounded-2xl border border-primary/20 bg-secondary shadow-2xl">
+      <div className="mobile-card-enter w-full max-w-xl overflow-hidden rounded-2xl border border-primary/20 bg-secondary shadow-2xl">
         <div className="border-b border-primary/10 bg-primary px-4 py-3 text-background sm:px-6">
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -158,7 +159,7 @@ const BarcodeScanner = ({
             </div>
             <button
               onClick={onClose}
-              className="rounded-md border border-background/20 px-2.5 py-1.5 text-sm font-medium text-background/80 transition-colors hover:bg-background/10 hover:text-background"
+              className="mobile-soft-press rounded-md border border-background/20 px-2.5 py-1.5 text-sm font-medium text-background/80 transition-colors hover:bg-background/10 hover:text-background"
             >
               Close
             </button>
@@ -192,11 +193,12 @@ const BarcodeScanner = ({
             )}
           </div>
 
-          {error && (
-            <p className="mt-3 rounded-lg border border-accent/50 bg-accent/10 px-3 py-2 text-sm text-text">
-              {error}
-            </p>
-          )}
+          <ErrorAlert
+            message={error}
+            compact
+            className="mt-3"
+            onAutoHide={() => setError("")}
+          />
 
           <div className="mt-5 border-t border-primary/10 pt-4">
             <label className="mb-1.5 block text-sm font-medium text-text">
@@ -212,7 +214,7 @@ const BarcodeScanner = ({
               />
               <button
                 onClick={handleManualSubmit}
-                className="rounded-lg bg-accent px-4 py-2.5 font-semibold text-text transition-colors hover:bg-accent/90"
+                className="mobile-soft-press rounded-lg bg-accent px-4 py-2.5 font-semibold text-text transition-colors hover:bg-accent/90"
               >
                 Use Code
               </button>

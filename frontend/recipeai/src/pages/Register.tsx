@@ -5,6 +5,7 @@ import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../context/context";
+import ErrorAlert from "../components/ErrorAlert";
 
 const schema = yup.object({
   email: yup
@@ -151,12 +152,8 @@ const Register = () => {
         </div>
 
         {/* Card */}
-        <div className="w-full bg-secondary rounded-2xl shadow-lg p-8">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 mb-6 text-sm text-center">
-              {error}
-            </div>
-          )}
+        <div className="mobile-card-enter ambient-gradient-card w-full bg-secondary rounded-2xl shadow-lg p-8">
+          <ErrorAlert message={error} className="mb-6" onAutoHide={() => setError("")} />
 
           {/* Google Sign-Up (rendered by Google SDK) */}
           <div
@@ -239,7 +236,7 @@ const Register = () => {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="bg-accent text-primary font-semibold py-2.5 rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-50 mt-2 cursor-pointer"
+              className="mobile-soft-press bg-accent text-primary font-semibold py-2.5 rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-50 mt-2 cursor-pointer"
             >
               {isSubmitting ? "Creating account..." : "Create account"}
             </button>
@@ -251,7 +248,7 @@ const Register = () => {
           Already have an account?{" "}
           <button
             onClick={() => navigate("/login")}
-            className="text-accent font-semibold hover:underline cursor-pointer"
+            className="mobile-soft-press text-accent font-semibold hover:underline cursor-pointer"
           >
             Sign in
           </button>

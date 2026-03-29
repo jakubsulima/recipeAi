@@ -6,7 +6,6 @@ interface FridgeDisplayProps {
   fridgeItems: FridgeIngredient[];
   removeItem: (id: number) => void;
   updateAmount: (id: number, newAmount: string) => Promise<void>;
-  error: string;
 }
 
 const formatShortDate = (dateString: string | null): string => {
@@ -25,7 +24,6 @@ const FridgeDisplay: React.FC<FridgeDisplayProps> = ({
   fridgeItems,
   removeItem,
   updateAmount,
-  error,
 }) => {
   const sortedItems = [...fridgeItems].sort((a, b) => {
     if (!a.expirationDate && !b.expirationDate) {
@@ -46,15 +44,7 @@ const FridgeDisplay: React.FC<FridgeDisplayProps> = ({
   });
 
   return (
-    <div className="md:col-span-2 w-full p-5 sm:p-6 bg-secondary rounded-xl shadow-sm border border-primary/5 min-h-[500px] flex flex-col">
-      {error && (
-        <div className="mb-4 flex items-start gap-2 rounded-xl border border-accent/45 bg-accent/10 px-3 py-3 text-sm text-text shadow-sm">
-          <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-bold text-primary">
-            !
-          </span>
-          <span>{error}</span>
-        </div>
-      )}
+    <div className="mobile-card-enter mobile-card-delay-1 ambient-gradient-card md:col-span-2 w-full p-5 sm:p-6 bg-secondary rounded-xl shadow-sm border border-primary/5 min-h-[500px] flex flex-col">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <h1 className="text-2xl font-bold text-text">My Fridge</h1>
         <span className="text-xs sm:text-sm px-3 py-1 rounded-full bg-accent/20 border border-accent/35 text-text">
