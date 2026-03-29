@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { BrowserMultiFormatReader, type IScannerControls } from "@zxing/browser";
+import { BarcodeFormat, DecodeHintType } from "@zxing/library";
 import ErrorAlert from "./ErrorAlert";
 
 interface BarcodeScannerProps {
@@ -7,20 +9,68 @@ interface BarcodeScannerProps {
   onBarcodeDetected: (barcode: string) => void;
 }
 
-interface DetectedBarcode {
-  rawValue?: string;
-}
+const SUPPORTED_FORMATS = [
+  BarcodeFormat.EAN_13,
+  BarcodeFormat.EAN_8,
+  BarcodeFormat.UPC_A,
+  BarcodeFormat.UPC_E,
+  BarcodeFormat.CODE_128,
+];
 
-interface BarcodeDetectorInstance {
-  detect: (source: CanvasImageSource) => Promise<DetectedBarcode[]>;
-}
+const SCANNER_HINTS = new Map<DecodeHintType, unknown>([
+  [DecodeHintType.POSSIBLE_FORMATS, SUPPORTED_FORMATS],
+]);
 
-interface BarcodeDetectorConstructor {
-  new (options?: { formats?: string[] }): BarcodeDetectorInstance;
-}
+const CAMERA_CONSTRAINTS: MediaStreamConstraints[] = [
+  {
+    audio: false,
+    video: {
+      facingMode: { ideal: "environment" },
+      width: { ideal: 1280 },
+      height: { ideal: 720 },
+    },
+  },
+  {
+    audio: false,
+    video: { facingMode: "environment" },
+  },
+  {
+    audio: false,
+    video: true,
+  },
+];
 
-type WindowWithBarcodeDetector = Window & {
-  BarcodeDetector?: BarcodeDetectorConstructor;
+const isRecoverableScanError = (error?: unknown): boolean => {
+  if (!error || !(error instanceof Error)) {
+    return true;
+  }
+
+  const recoverableNames = [
+    "NotFoundException",
+    "ChecksumException",
+    "FormatException",
+    "NoMultiFormatReadersException",
+  ];
+
+  return recoverableNames.includes(error.name);
+};
+
+const getStartScannerError = (error: unknown): string => {
+  if (error instanceof Error) {
+    if (error.name === "NotAllowedError" || error.name === "SecurityError") {
+      return "Camera access was blocked. Allow camera permission and try again.";
+    }
+
+    if (error.name === "NotFoundError") {
+      return "No camera was found on this device.";
+    }
+
+    if (error.name === "NotReadableError") {
+      return "Camera is already in use by another app. Close it and retry.";
+    }
+  }
+
+  return "Could not start camera scanner. Please allow camera access or enter barcode manually.";
 };
 
 const BarcodeScanner = ({
@@ -29,22 +79,25 @@ const BarcodeScanner = ({
   onBarcodeDetected,
 }: BarcodeScannerProps) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const timerRef = useRef<number | null>(null);
+  const controlsRef = useRef<IScannerControls | null>(null);
+  const hasDetectedRef = useRef(false);
 
   const [manualBarcode, setManualBarcode] = useState("");
   const [error, setError] = useState("");
   const [isStarting, setIsStarting] = useState(false);
 
   const stopScanner = () => {
-    if (timerRef.current) {
-      window.clearInterval(timerRef.current);
-      timerRef.current = null;
+    if (controlsRef.current) {
+      controlsRef.current.stop();
+      controlsRef.current = null;
     }
 
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
+    hasDetectedRef.current = false;
+
+    if (videoRef.current) {
+      const mediaStream = videoRef.current.srcObject as MediaStream | null;
+      mediaStream?.getTracks().forEach((track) => track.stop());
+      videoRef.current.srcObject = null;
     }
   };
 
@@ -59,6 +112,7 @@ const BarcodeScanner = ({
     const startScanner = async () => {
       setError("");
       setIsStarting(true);
+      hasDetectedRef.current = false;
 
       if (!navigator.mediaDevices?.getUserMedia) {
         setError("Your browser does not support camera access.");
@@ -67,59 +121,65 @@ const BarcodeScanner = ({
       }
 
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: "environment",
-          },
-          audio: false,
+        const reader = new BrowserMultiFormatReader(SCANNER_HINTS, {
+          delayBetweenScanAttempts: 250,
+          delayBetweenScanSuccess: 500,
+          tryPlayVideoTimeout: 5000,
         });
+
+        let controls: IScannerControls | null = null;
+        let startError: unknown;
+
+        for (const constraints of CAMERA_CONSTRAINTS) {
+          try {
+            controls = await reader.decodeFromConstraints(
+              constraints,
+              videoRef.current ?? undefined,
+              (result, scanError, activeControls) => {
+                if (hasDetectedRef.current) {
+                  return;
+                }
+
+                if (result) {
+                  const scannedBarcode = result.getText().trim();
+                  if (!scannedBarcode) {
+                    return;
+                  }
+
+                  hasDetectedRef.current = true;
+                  activeControls.stop();
+                  controlsRef.current = null;
+                  onBarcodeDetected(scannedBarcode);
+                  onClose();
+                  return;
+                }
+
+                if (scanError && !isRecoverableScanError(scanError)) {
+                  setError((currentError) =>
+                    currentError ||
+                    "Scanner is active but cannot read this barcode yet. Try better lighting or enter the code manually."
+                  );
+                }
+              }
+            );
+            break;
+          } catch (caughtError) {
+            startError = caughtError;
+          }
+        }
+
+        if (!controls) {
+          throw startError;
+        }
 
         if (isCancelled) {
-          stream.getTracks().forEach((track) => track.stop());
+          controls.stop();
           return;
         }
 
-        streamRef.current = stream;
-
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play();
-        }
-
-        const BarcodeDetectorApi = (window as WindowWithBarcodeDetector)
-          .BarcodeDetector;
-
-        if (!BarcodeDetectorApi) {
-          setError(
-            "Live barcode detection is not supported in this browser. You can still enter the code manually."
-          );
-          return;
-        }
-
-        const detector = new BarcodeDetectorApi({
-          formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128"],
-        });
-
-        timerRef.current = window.setInterval(async () => {
-          if (!videoRef.current) {
-            return;
-          }
-
-          try {
-            const results = await detector.detect(videoRef.current);
-            const firstMatch = results.find((result) => result.rawValue);
-            if (firstMatch?.rawValue) {
-              onBarcodeDetected(firstMatch.rawValue);
-              onClose();
-            }
-          } catch {
-            // Ignore transient detector errors while frames are warming up.
-          }
-        }, 600);
-      } catch {
-        setError(
-          "Could not start camera scanner. Please allow camera access or enter barcode manually."
-        );
+        controlsRef.current = controls;
+      } catch (caughtError) {
+        setError(getStartScannerError(caughtError));
       } finally {
         setIsStarting(false);
       }
