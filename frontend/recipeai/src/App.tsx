@@ -5,113 +5,128 @@ import {
   Route,
   RouterProvider,
 } from "react-router-dom";
+import { Suspense, lazy, type ReactElement } from "react";
 import "./App.css";
 import Layout from "./pages/Layout";
-import HomePage from "./pages/HomePage";
-import Recipes from "./pages/UserRecipes.tsx";
-import { Fridge } from "./pages/Fridge";
-import Login from "./pages/Login";
-import RecipePage from "./pages/RecipePage";
-import Register from "./pages/Register";
-import MePage from "./pages/UserPreferencesPage.tsx";
-import AdminPage from "./pages/AdminPage"; // Import the AdminPage component
-import UserRecipes from "./pages/UserRecipes.tsx";
-import ShoppingList from "./pages/ShoppingList";
+const HomePage = lazy(() => import("./pages/HomePage"));
+const UserRecipes = lazy(() => import("./pages/UserRecipes.tsx"));
+const Fridge = lazy(() =>
+  import("./pages/Fridge.tsx").then((module) => ({ default: module.Fridge }))
+);
+const Login = lazy(() => import("./pages/Login"));
+const RecipePage = lazy(() => import("./pages/RecipePage"));
+const Register = lazy(() => import("./pages/Register"));
+const MePage = lazy(() => import("./pages/UserPreferencesPage.tsx"));
+const AdminPage = lazy(() => import("./pages/AdminPage"));
+const ShoppingList = lazy(() => import("./pages/ShoppingList"));
 import { AuthProvider } from "./context/context"; // Add import for AuthProvider
-import { FridgeProvider } from "./context/fridgeContext"; // Add import for FridgeProvider
+import { FridgeProvider } from "./context/fridgeContext.tsx"; // Add import for FridgeProvider
 import { GuestRoute, ProtectedRoute } from "./components/RouteGuards";
 import ErrorPage from "./pages/ErrorPage";
+
+const withSuspense = (element: ReactElement) => (
+  <Suspense
+    fallback={
+      <div className="flex min-h-[40vh] items-center justify-center text-text/70">
+        Loading...
+      </div>
+    }
+  >
+    {element}
+  </Suspense>
+);
 
 function App() {
   const router = createBrowserRouter(
     createRoutesFromElements(
       <Route path="/" element={<Layout />} errorElement={<ErrorPage />}>
-      <Route index element={<HomePage />} />
-      <Route path="/Recipes" element={<Recipes />} />
-      <Route
-        path="/Fridge"
-        element={
-          <ProtectedRoute>
-            <Fridge />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/login"
-        element={
-          <GuestRoute>
-            <Login />
-          </GuestRoute>
-        }
-      />
-      <Route path="/Login" element={<Navigate to="/login" replace />} />
-      <Route
-        path="/register"
-        element={
-          <GuestRoute>
-            <Register />
-          </GuestRoute>
-        }
-      />
-      <Route
-        path="/My Preferences"
-        element={
-          <ProtectedRoute>
-            <MePage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/ShoppingList"
-        element={
-          <ProtectedRoute>
-            <ShoppingList />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/Recipe"
-        element={
-          <ProtectedRoute>
-            <RecipePage />
-          </ProtectedRoute>
-        }
-      />
-      <Route path="/Recipe/:id" element={<RecipePage />} />
-      <Route
-        path="/myRecipes"
-        element={
-          <ProtectedRoute>
-            <UserRecipes />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin"
-        element={
-          <ProtectedRoute requireAdmin>
-            <AdminPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route path="/Homepage" element={<Navigate to="/" replace />} />
-      <Route
-        path="*"
-        element={
-          <ErrorPage
-            title="Page not found"
-            subtitle="The page you requested does not exist."
-          />
-        }
-      />
+        <Route index element={withSuspense(<HomePage />)} />
+        <Route path="/Recipes" element={withSuspense(<UserRecipes />)} />
+        <Route
+          path="/Fridge"
+          element={withSuspense(
+            <ProtectedRoute>
+              <Fridge />
+            </ProtectedRoute>
+          )}
+        />
+        <Route
+          path="/login"
+          element={withSuspense(
+            <GuestRoute>
+              <Login />
+            </GuestRoute>
+          )}
+        />
+        <Route path="/Login" element={<Navigate to="/login" replace />} />
+        <Route
+          path="/register"
+          element={withSuspense(
+            <GuestRoute>
+              <Register />
+            </GuestRoute>
+          )}
+        />
+        <Route
+          path="/My Preferences"
+          element={withSuspense(
+            <ProtectedRoute>
+              <MePage />
+            </ProtectedRoute>
+          )}
+        />
+        <Route
+          path="/ShoppingList"
+          element={withSuspense(
+            <ProtectedRoute>
+              <ShoppingList />
+            </ProtectedRoute>
+          )}
+        />
+        <Route
+          path="/Recipe"
+          element={withSuspense(
+            <ProtectedRoute>
+              <RecipePage />
+            </ProtectedRoute>
+          )}
+        />
+        <Route path="/Recipe/:id" element={withSuspense(<RecipePage />)} />
+        <Route
+          path="/myRecipes"
+          element={withSuspense(
+            <ProtectedRoute>
+              <UserRecipes />
+            </ProtectedRoute>
+          )}
+        />
+        <Route
+          path="/admin"
+          element={withSuspense(
+            <ProtectedRoute requireAdmin>
+              <AdminPage />
+            </ProtectedRoute>
+          )}
+        />
+        <Route path="/Homepage" element={<Navigate to="/" replace />} />
+        <Route
+          path="*"
+          element={
+            <ErrorPage
+              title="Page not found"
+              subtitle="The page you requested does not exist."
+            />
+          }
+        />
       </Route>
     )
   );
+
   return (
     <AuthProvider>
-    <FridgeProvider>
-    <RouterProvider router={router} />
-    </FridgeProvider>
+      <FridgeProvider>
+        <RouterProvider router={router} />
+      </FridgeProvider>
     </AuthProvider>
   );
 }

@@ -115,7 +115,7 @@ public class RecipesController {
         return ResponseEntity.ok(recipeResponseDto);
     }
 
-    public record GenerateRecipeRequest(String fullPrompt, String prompt) {
+    public record GenerateRecipeRequest(String fullPrompt, String prompt, Integer count) {
     }
 
     @PostMapping("/generateRecipe")
@@ -123,6 +123,7 @@ public class RecipesController {
         String recipePrompt = recipeRequest != null && StringUtils.hasText(recipeRequest.fullPrompt())
                 ? recipeRequest.fullPrompt()
             : (recipeRequest != null ? recipeRequest.prompt() : null);
+        int recipeCount = recipeRequest != null && recipeRequest.count() != null ? recipeRequest.count() : 1;
 
         if (!StringUtils.hasText(recipePrompt)) {
             return ResponseEntity.badRequest().body("Missing prompt. Provide 'fullPrompt' in request body.");
@@ -151,7 +152,7 @@ public class RecipesController {
             System.err.println("Could not retrieve user preferences: " + e.getMessage());
         }
 
-        return ResponseEntity.ok(geminiService.generateRecipe(recipePrompt));
+        return ResponseEntity.ok(geminiService.generateRecipes(recipePrompt, recipeCount));
     }
 
     private String appendPreferencesToPrompt(String recipePrompt, UserPreferencesDto preferences) {

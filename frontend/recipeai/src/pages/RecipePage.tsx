@@ -34,13 +34,102 @@ const formatMacro = (value: string | number | undefined, suffix: string) => {
   if (value === undefined || value === null || value === "") {
     return "-";
   }
-
+  
   if (typeof value === "number") {
     return `${value}${suffix}`;
   }
-
+  
   const trimmed = value.trim();
   return trimmed ? `${trimmed}${suffix}` : "-";
+};
+
+const normalizeGeneratedRecipes = (raw: any): RecipeData[] => {
+  const candidates: any[] = Array.isArray(raw)
+    ? raw
+    : Array.isArray(raw?.recipes)
+    ? raw.recipes
+    : raw && typeof raw === "object"
+    ? [raw]
+    : [];
+
+  return candidates
+    .map((candidate: any, index: number) => {
+      if (!candidate || typeof candidate !== "object") {
+        return null;
+      }
+
+      const name =
+        typeof candidate.name === "string" && candidate.name.trim()
+          ? candidate.name.trim()
+          : `Recipe ${index + 1}`;
+
+      const ingredients = Array.isArray(candidate.ingredients)
+        ? candidate.ingredients
+            .map((ingredient: any) => {
+              if (!ingredient || typeof ingredient !== "object") {
+                return null;
+              }
+
+              const ingredientName =
+                typeof ingredient.name === "string" ? ingredient.name.trim() : "";
+              if (!ingredientName) {
+                return null;
+              }
+
+              return {
+                name: ingredientName,
+                amount:
+                  ingredient.amount === undefined || ingredient.amount === null
+                    ? null
+                    : ingredient.amount,
+                unit:
+                  typeof ingredient.unit === "string" ? ingredient.unit.trim() : "",
+              } as RecipeIngredient;
+            })
+            .filter(
+              (ingredient: RecipeIngredient | null): ingredient is RecipeIngredient =>
+                ingredient !== null
+            )
+        : [];
+
+      const instructions = Array.isArray(candidate.instructions)
+        ? candidate.instructions
+            .map((instruction: any) =>
+              typeof instruction === "string" ? instruction.trim() : ""
+            )
+            .filter((instruction: string) => instruction.length > 0)
+        : [];
+
+      if (!ingredients.length || !instructions.length) {
+        return null;
+      }
+
+      return {
+        title: name,
+        id: candidate.id,
+        name,
+        description:
+          typeof candidate.description === "string"
+            ? candidate.description.trim()
+            : undefined,
+        ingredients,
+        instructions,
+        timeToPrepare:
+          typeof candidate.timeToPrepare === "string" && candidate.timeToPrepare.trim()
+            ? candidate.timeToPrepare.trim()
+            : "",
+        nutrition:
+          candidate.nutrition && typeof candidate.nutrition === "object"
+            ? {
+                calories: candidate.nutrition.calories,
+                protein: candidate.nutrition.protein,
+                carbs: candidate.nutrition.carbs,
+                fats: candidate.nutrition.fats,
+              }
+            : undefined,
+      } as RecipeData;
+    })
+    .filter((recipe: RecipeData | null): recipe is RecipeData => recipe !== null);
 };
 
 const RecipePage = () => {
@@ -50,22 +139,42 @@ const RecipePage = () => {
   const recipeId = params.id;
   const { fridgeItems, getFridgeItemNames, loading: fridgeLoading } = useFridge();
   const { user } = useUser();
-
+  
   const { search, existingRecipe } = location.state || {};
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [recipeData, setRecipeData] = useState<RecipeData | null>(null);
+  const [recipeOptions, setRecipeOptions] = useState<RecipeData[]>([]);
+  const [selectedRecipeIndex, setSelectedRecipeIndex] = useState(0);
   const [error, setError] = useState<string>("");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
-
+  
   const currentRecipeIdentifierRef = useRef<string | null>(null);
+  const generationPromptRef = useRef<string>("");
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  const applyGeneratedRecipeResponse = useCallback((response: any, identifier: string) => {
+    const jsonString = cleanAiJsonString(response);
+    const parsedData = JSON.parse(jsonString);
+    const generatedRecipes = normalizeGeneratedRecipes(parsedData);
+
+    if (!generatedRecipes.length) {
+      throw new Error("AI response did not include valid recipes.");
+    }
+
+    setRecipeOptions(generatedRecipes);
+    setSelectedRecipeIndex(0);
+    setRecipeData(generatedRecipes[0]);
+    setSaveStatus("idle");
+    currentRecipeIdentifierRef.current = identifier;
+  }, []);
+  
   const loadNewRecipeCallback = useCallback(
     async (currentSearchTerm: string) => {
       if (!currentSearchTerm) return;
       try {
         setIsLoading(true);
         setError("");
+        setSaveStatus("idle");
         abortControllerRef.current?.abort();
         const controller = new AbortController();
         abortControllerRef.current = controller;
@@ -73,41 +182,45 @@ const RecipePage = () => {
         const response = await generateRecipe(
           currentSearchTerm,
           fridgeIngredients,
-          controller.signal
+          controller.signal,
+          3
         );
-
-        const jsonString = cleanAiJsonString(response);
-        const parsedData = JSON.parse(jsonString);
-
-        setRecipeData(parsedData);
-        currentRecipeIdentifierRef.current = currentSearchTerm;
+        generationPromptRef.current = currentSearchTerm;
+        applyGeneratedRecipeResponse(response, currentSearchTerm);
         setIsLoading(false);
       } catch (err: any) {
         if (err.name === "AbortError") return; // new request owns loading state
         console.error("Error generating recipe:", err);
         setError("Failed to load recipe. Please try again.");
+        setRecipeOptions([]);
         currentRecipeIdentifierRef.current = null;
         setIsLoading(false);
       }
     },
-    [getFridgeItemNames]
+    [applyGeneratedRecipeResponse, getFridgeItemNames]
   );
-
+  
   useEffect(() => {
     const loadRecipe = async () => {
       if (existingRecipe) {
+        setRecipeOptions([]);
+        setSelectedRecipeIndex(0);
+        setSaveStatus("idle");
         setRecipeData(existingRecipe);
         setIsLoading(false);
         setError("");
         return;
       }
-
+      
       if (recipeId) {
         if (currentRecipeIdentifierRef.current !== recipeId) {
           try {
             setIsLoading(true);
             setError("");
             const response = await apiClient(`getRecipe/${recipeId}`, false);
+            setRecipeOptions([]);
+            setSelectedRecipeIndex(0);
+            setSaveStatus("idle");
             setRecipeData(response);
             currentRecipeIdentifierRef.current = recipeId;
           } catch (err: any) {
@@ -122,7 +235,7 @@ const RecipePage = () => {
         }
         return;
       }
-
+      
       if (search) {
         if (!fridgeLoading) {
           if (currentRecipeIdentifierRef.current !== search) {
@@ -133,17 +246,15 @@ const RecipePage = () => {
               abortControllerRef.current?.abort();
               const controller = new AbortController();
               abortControllerRef.current = controller;
-              const response = await generateRecipe(search, fridgeIngredients, controller.signal);
-
-              const jsonString = cleanAiJsonString(response);
-              const parsedData = JSON.parse(jsonString);
-              setRecipeData(parsedData);
-              currentRecipeIdentifierRef.current = search;
+              const response = await generateRecipe(search, fridgeIngredients, controller.signal, 3);
+              generationPromptRef.current = search;
+              applyGeneratedRecipeResponse(response, search);
               setIsLoading(false);
             } catch (err: any) {
               if (err.name === "AbortError") return; // new request owns loading state
               console.error("Error generating recipe:", err);
               setError("Failed to load recipe. Please try again.");
+              setRecipeOptions([]);
               currentRecipeIdentifierRef.current = null;
               setIsLoading(false);
             }
@@ -153,18 +264,30 @@ const RecipePage = () => {
         }
         return;
       }
-
+      
       if (!fridgeLoading) {
         setError("No search term or recipe ID provided");
         setIsLoading(false);
         setRecipeData(null);
+        setRecipeOptions([]);
         currentRecipeIdentifierRef.current = null;
       }
     };
-
+    
     loadRecipe();
-  }, [search, fridgeLoading, existingRecipe, recipeId]);
+  }, [search, fridgeLoading, existingRecipe, recipeId, applyGeneratedRecipeResponse, getFridgeItemNames]);
 
+  const handleSelectRecipe = (index: number) => {
+    if (index < 0 || index >= recipeOptions.length) {
+      return;
+    }
+
+    setSelectedRecipeIndex(index);
+    setRecipeData(recipeOptions[index]);
+    setSaveStatus("idle");
+    setError("");
+  };
+  
   const saveRecipe = async () => {
     if (!recipeData?.name || !recipeData?.ingredients?.length || !recipeData?.instructions?.length) {
       setError("Recipe data is incomplete and cannot be saved.");
@@ -194,20 +317,20 @@ const RecipePage = () => {
       setIsLoading(false);
     }
   };
-
+  
   const handleGenerateShoppingList = () => {
     if (!recipeData?.ingredients?.length) {
       setError("No ingredients available to generate shopping list.");
       return;
     }
-
+    
     const missingIngredients = getMissingIngredients(recipeData.ingredients, fridgeItems);
-
+    
     if (missingIngredients.length === 0) {
       setError("Great! You already have all ingredients for this recipe.");
       return;
     }
-
+    
     addShoppingItems(
       missingIngredients.map((ingredient) => ({
         name: ingredient.name,
@@ -215,13 +338,13 @@ const RecipePage = () => {
         unit: ingredient.unit,
       }))
     );
-
+    
     navigate("/ShoppingList");
   };
-
+  
   const handleDelete = async () => {
     if (!recipeId) return;
-
+    
     if (window.confirm("Are you sure you want to delete this recipe?")) {
       try {
         setIsLoading(true);
@@ -235,204 +358,242 @@ const RecipePage = () => {
       }
     }
   };
-
+  
   if (isLoading) {
     const isGeneratingRecipe = Boolean(search) && !recipeId && !existingRecipe;
-
+    
     return (
       <FoodLoadingScreen
-        title={isGeneratingRecipe ? "Generating your recipe..." : "Loading recipe..."}
-        subtitle={
-          isGeneratingRecipe
-            ? "Mixing ingredients, matching flavors, and adding a spicy twist"
-            : "Preparing your delicious recipe"
-        }
-        variant={isGeneratingRecipe ? "generating" : "default"}
+      title={isGeneratingRecipe ? "Generating your recipe..." : "Loading recipe..."}
+      subtitle={
+        isGeneratingRecipe
+        ? "Mixing ingredients, matching flavors, and adding a spicy twist"
+        : "Preparing your delicious recipe"
+      }
+      variant={isGeneratingRecipe ? "generating" : "default"}
       />
     );
   }
-
+  
   if (!recipeData) {
     return (
       <div className="flex h-screen items-center justify-center bg-background px-4">
-        <div className="rounded-2xl border border-primary/15 bg-secondary px-6 py-8 text-center shadow-sm">
-          <div className="text-xl font-semibold text-text">No recipe data available</div>
-          <p className="mt-1 text-sm text-text/60">
-            Try generating a new recipe from the homepage.
-          </p>
-        </div>
+      <div className="rounded-2xl border border-primary/15 bg-secondary px-6 py-8 text-center shadow-sm">
+      <div className="text-xl font-semibold text-text">No recipe data available</div>
+      <p className="mt-1 text-sm text-text/60">
+      Try generating a new recipe from the homepage.
+      </p>
+      </div>
       </div>
     );
   }
-
+  
   const ingredientCount = recipeData.ingredients?.length ?? 0;
   const instructionCount = recipeData.instructions?.length ?? 0;
-
+  
   return (
     <div className="mobile-page-enter min-h-screen bg-background">
-      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
-      <ErrorAlert message={error} className="mb-5" onAutoHide={() => setError("")} />
+    <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
+    <ErrorAlert message={error} className="mb-5" onAutoHide={() => setError("")} />
+    
+    <section className="mobile-card-enter relative overflow-hidden rounded-3xl border border-accent/35 bg-secondary p-6 sm:p-8">
+    <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-accent/20 blur-3xl" />
+    <div className="absolute -bottom-12 left-10 h-28 w-28 rounded-full bg-primary/10 blur-2xl" />
+    
+    <div className="relative">
+    <p className="mb-2 inline-flex rounded-full border border-primary/15 bg-background px-3 py-1 text-xs font-semibold uppercase tracking-wide text-text/60">
+    AI Kitchen Recipe
+    </p>
+    <h1 className="text-3xl font-bold leading-tight text-text sm:text-4xl">
+    {recipeData.name}
+    </h1>
+    
+    {recipeData.description && (
+      <p className="mt-3 max-w-3xl text-base text-text/75 sm:text-lg">
+      {recipeData.description}
+      </p>
+    )}
+    
+    <div className="mt-5 flex flex-wrap gap-2">
+    {recipeData.timeToPrepare && (
+      <span className="rounded-full bg-accent px-3 py-1.5 text-sm font-semibold text-text">
+      {recipeData.timeToPrepare}
+      </span>
+    )}
+    <span className="rounded-full border border-primary/15 bg-background px-3 py-1.5 text-sm text-text/75">
+    {ingredientCount} ingredients
+    </span>
+    <span className="rounded-full border border-primary/15 bg-background px-3 py-1.5 text-sm text-text/75">
+    {instructionCount} steps
+    </span>
+    </div>
+    </div>
+    </section>
 
-      <section className="mobile-card-enter relative overflow-hidden rounded-3xl border border-accent/35 bg-secondary p-6 sm:p-8">
-        <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-accent/20 blur-3xl" />
-        <div className="absolute -bottom-12 left-10 h-28 w-28 rounded-full bg-primary/10 blur-2xl" />
-
-        <div className="relative">
-          <p className="mb-2 inline-flex rounded-full border border-primary/15 bg-background px-3 py-1 text-xs font-semibold uppercase tracking-wide text-text/60">
-            AI Kitchen Recipe
-          </p>
-          <h1 className="text-3xl font-bold leading-tight text-text sm:text-4xl">
-            {recipeData.name}
-          </h1>
-
-          {recipeData.description && (
-            <p className="mt-3 max-w-3xl text-base text-text/75 sm:text-lg">
-              {recipeData.description}
-            </p>
-          )}
-
-          <div className="mt-5 flex flex-wrap gap-2">
-            {recipeData.timeToPrepare && (
-              <span className="rounded-full bg-accent px-3 py-1.5 text-sm font-semibold text-text">
-                {recipeData.timeToPrepare}
-              </span>
-            )}
-            <span className="rounded-full border border-primary/15 bg-background px-3 py-1.5 text-sm text-text/75">
-              {ingredientCount} ingredients
-            </span>
-            <span className="rounded-full border border-primary/15 bg-background px-3 py-1.5 text-sm text-text/75">
-              {instructionCount} steps
-            </span>
-          </div>
+    {!recipeId && recipeOptions.length > 1 && (
+      <section className="mobile-card-enter mobile-card-delay-1 mt-6 rounded-2xl border border-primary/10 bg-secondary p-5">
+        <h3 className="text-lg font-semibold text-text">
+          Choose One Of {recipeOptions.length} Different Recipes
+        </h3>
+        <p className="mt-1 text-sm text-text/60">
+          Generated in one request with intentionally different cuisine, technique, and core ingredients.
+        </p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          {recipeOptions.map((option, index) => (
+            <button
+              key={`${option.name}-${index}`}
+              onClick={() => handleSelectRecipe(index)}
+              className={`rounded-xl border px-3 py-3 text-left transition-colors ${
+                selectedRecipeIndex === index
+                  ? "border-accent bg-accent/15"
+                  : "border-primary/15 bg-background hover:border-accent/45"
+              }`}
+            >
+              <p className="text-xs font-semibold uppercase tracking-wide text-text/60">
+                Option {index + 1}
+              </p>
+              <p className="mt-1 line-clamp-2 font-semibold text-text">{option.name}</p>
+              <p className="mt-1 text-xs text-text/60">
+                {option.ingredients.length} ingredients
+                {option.timeToPrepare ? ` • ${option.timeToPrepare}` : ""}
+              </p>
+            </button>
+          ))}
         </div>
       </section>
-
-      {recipeData.nutrition && (
-        <div className="mobile-card-enter mobile-card-delay-1 mt-6 rounded-2xl border border-accent/30 bg-secondary p-5">
-          <h3 className="mb-4 text-lg font-semibold text-text">Nutrition (estimated)</h3>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <div className="rounded-xl border border-accent/20 bg-background px-3 py-2.5 text-sm text-text">
-              <span className="block text-text/60">Calories</span>
-              <span className="font-semibold">
-                {formatMacro(recipeData.nutrition.calories, " kcal")}
-              </span>
-            </div>
-            <div className="rounded-xl border border-accent/20 bg-background px-3 py-2.5 text-sm text-text">
-              <span className="block text-text/60">Protein</span>
-              <span className="font-semibold">
-                {formatMacro(recipeData.nutrition.protein, " g")}
-              </span>
-            </div>
-            <div className="rounded-xl border border-accent/20 bg-background px-3 py-2.5 text-sm text-text">
-              <span className="block text-text/60">Carbs</span>
-              <span className="font-semibold">
-                {formatMacro(recipeData.nutrition.carbs, " g")}
-              </span>
-            </div>
-            <div className="rounded-xl border border-accent/20 bg-background px-3 py-2.5 text-sm text-text">
-              <span className="block text-text/60">Fats</span>
-              <span className="font-semibold">
-                {formatMacro(recipeData.nutrition.fats, " g")}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <div>
-          <div className="mobile-card-enter mobile-card-delay-1 h-full rounded-2xl border border-primary/10 bg-secondary p-6">
-            <h2 className="mb-4 text-2xl font-semibold text-text">
-              Ingredients
-            </h2>
-            <ul className="space-y-2.5">
-              {(recipeData.ingredients || []).map((ingredient, index) => (
-                <li
-                  key={index}
-                  className="flex items-center justify-between rounded-lg border border-primary/10 bg-background px-3 py-2 text-text"
-                >
-                  <span className="font-medium">{ingredient.name}</span>
-                  <span className="text-sm text-text/75">
-                    {ingredient.amount} {ingredient.unit}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-
-        <div>
-          <div className="mobile-card-enter mobile-card-delay-2 h-full rounded-2xl border border-primary/10 bg-secondary p-6">
-            <h2 className="mb-4 text-2xl font-semibold text-text">
-              Instructions
-            </h2>
-            <ol className="space-y-3">
-              {(recipeData.instructions || []).map((instruction, index) => (
-                <li key={index} className="flex gap-3 rounded-lg border border-primary/10 bg-background px-3 py-3 text-text">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent font-bold text-primary">
-                    {index + 1}
-                  </span>
-                  <span className="pt-0.5 text-text/85">{instruction}</span>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </div>
+    )}
+    
+    {recipeData.nutrition && (
+      <div className="mobile-card-enter mobile-card-delay-1 mt-6 rounded-2xl border border-accent/30 bg-secondary p-5">
+      <h3 className="mb-4 text-lg font-semibold text-text">Nutrition (estimated)</h3>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="rounded-xl border border-accent/20 bg-background px-3 py-2.5 text-sm text-text">
+      <span className="block text-text/60">Calories</span>
+      <span className="font-semibold">
+      {formatMacro(recipeData.nutrition.calories, " kcal")}
+      </span>
       </div>
-
-      <div className="mobile-card-enter mobile-card-delay-2 mt-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/10 bg-secondary p-4">
-        <div className="flex flex-wrap gap-3">
-          <button
-            className="mobile-soft-press rounded-lg bg-primary px-4 py-2.5 font-semibold text-background transition-colors hover:bg-primary/90"
-            onClick={handleGenerateShoppingList}
-          >
-            Generate Shopping List
-          </button>
-
-          {!recipeId && (
-            <button
-              className="mobile-soft-press rounded-lg border border-primary/20 bg-background px-4 py-2.5 font-semibold text-text transition-colors hover:bg-background/80"
-              onClick={() => loadNewRecipeCallback(search)}
-            >
-              I want new recipe
-            </button>
-          )}
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          {!recipeId && user && (
-            <button
-              className={`rounded-lg px-4 py-2.5 font-semibold transition-colors ${
-                saveStatus === "saved"
-                  ? "cursor-default bg-green-600 text-white"
-                  : saveStatus === "saving"
-                  ? "cursor-wait bg-accent/60 text-text"
-                  : "mobile-soft-press bg-accent text-text hover:bg-accent/90"
-              }`}
-              onClick={() => saveRecipe()}
-              disabled={saveStatus === "saving" || saveStatus === "saved"}
-            >
-              {saveStatus === "saving"
-                ? "Saving..."
-                : saveStatus === "saved"
-                ? "Saved ✓"
-                : "Save Recipe"}
-            </button>
-          )}
-
-          {recipeId && user && (
-            <button
-              className="mobile-soft-press rounded-lg bg-accent px-4 py-2.5 font-semibold text-text transition-colors hover:bg-accent/90"
-              onClick={handleDelete}
-            >
-              Delete Recipe
-            </button>
-          )}
-        </div>
+      <div className="rounded-xl border border-accent/20 bg-background px-3 py-2.5 text-sm text-text">
+      <span className="block text-text/60">Protein</span>
+      <span className="font-semibold">
+      {formatMacro(recipeData.nutrition.protein, " g")}
+      </span>
+      </div>
+      <div className="rounded-xl border border-accent/20 bg-background px-3 py-2.5 text-sm text-text">
+      <span className="block text-text/60">Carbs</span>
+      <span className="font-semibold">
+      {formatMacro(recipeData.nutrition.carbs, " g")}
+      </span>
+      </div>
+      <div className="rounded-xl border border-accent/20 bg-background px-3 py-2.5 text-sm text-text">
+      <span className="block text-text/60">Fats</span>
+      <span className="font-semibold">
+      {formatMacro(recipeData.nutrition.fats, " g")}
+      </span>
       </div>
       </div>
+      </div>
+    )}
+    
+    <div className="mt-6 grid gap-6 lg:grid-cols-2">
+    <div>
+    <div className="mobile-card-enter mobile-card-delay-1 h-full rounded-2xl border border-primary/10 bg-secondary p-6">
+    <h2 className="mb-4 text-2xl font-semibold text-text">
+    Ingredients
+    </h2>
+    <ul className="space-y-2.5">
+    {(recipeData.ingredients || []).map((ingredient, index) => (
+      <li
+      key={index}
+      className="flex items-center justify-between rounded-lg border border-primary/10 bg-background px-3 py-2 text-text"
+      >
+      <span className="font-medium">{ingredient.name}</span>
+      <span className="text-sm text-text/75">
+      {ingredient.amount} {ingredient.unit}
+      </span>
+      </li>
+    ))}
+    </ul>
     </div>
-  );
-};
-
-export default RecipePage;
+    </div>
+    
+    <div>
+    <div className="mobile-card-enter mobile-card-delay-2 h-full rounded-2xl border border-primary/10 bg-secondary p-6">
+    <h2 className="mb-4 text-2xl font-semibold text-text">
+    Instructions
+    </h2>
+    <ol className="space-y-3">
+    {(recipeData.instructions || []).map((instruction, index) => (
+      <li key={index} className="flex gap-3 rounded-lg border border-primary/10 bg-background px-3 py-3 text-text">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent font-bold text-primary">
+      {index + 1}
+      </span>
+      <span className="pt-0.5 text-text/85">{instruction}</span>
+      </li>
+    ))}
+    </ol>
+    </div>
+    </div>
+    </div>
+    
+    <div className="mobile-card-enter mobile-card-delay-2 mt-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/10 bg-secondary p-4">
+    <div className="flex flex-wrap gap-3">
+    <button
+    className="mobile-soft-press rounded-lg bg-primary px-4 py-2.5 font-semibold text-background transition-colors hover:bg-primary/90"
+    onClick={handleGenerateShoppingList}
+    >
+    Generate Shopping List
+    </button>
+    
+    {!recipeId && (
+      <button
+      className="mobile-soft-press rounded-lg border border-primary/20 bg-background px-4 py-2.5 font-semibold text-text transition-colors hover:bg-background/80"
+      onClick={() =>
+        loadNewRecipeCallback(
+          generationPromptRef.current || search || recipeData?.name || ""
+        )
+      }
+      >
+      Generate 3 New Recipes
+      </button>
+    )}
+    </div>
+    
+    <div className="flex flex-wrap gap-3">
+    {!recipeId && user && (
+      <button
+      className={`rounded-lg px-4 py-2.5 font-semibold transition-colors ${
+        saveStatus === "saved"
+        ? "cursor-default bg-green-600 text-white"
+        : saveStatus === "saving"
+        ? "cursor-wait bg-accent/60 text-text"
+        : "mobile-soft-press bg-accent text-text hover:bg-accent/90"
+      }`}
+      onClick={() => saveRecipe()}
+      disabled={saveStatus === "saving" || saveStatus === "saved"}
+      >
+      {saveStatus === "saving"
+        ? "Saving..."
+        : saveStatus === "saved"
+        ? "Saved ✓"
+        : "Save Recipe"}
+        </button>
+      )}
+      
+      {recipeId && user && (
+        <button
+        className="mobile-soft-press rounded-lg bg-accent px-4 py-2.5 font-semibold text-text transition-colors hover:bg-accent/90"
+        onClick={handleDelete}
+        >
+        Delete Recipe
+        </button>
+      )}
+      </div>
+      </div>
+      </div>
+      </div>
+    );
+  };
+  
+  export default RecipePage;
+  

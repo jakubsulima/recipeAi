@@ -1,16 +1,104 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  fetchShoppingList,
   readShoppingList,
   ShoppingListItem,
+  syncShoppingList,
   writeShoppingList,
 } from "../lib/shoppingList";
+import ErrorAlert from "../components/ErrorAlert";
+
+const areItemsEqual = (a: ShoppingListItem[], b: ShoppingListItem[]) =>
+  JSON.stringify(a) === JSON.stringify(b);
 
 const ShoppingList = () => {
   const [items, setItems] = useState<ShoppingListItem[]>(() => readShoppingList());
   const [newItem, setNewItem] = useState("");
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncError, setSyncError] = useState("");
+  const syncTimeoutRef = useRef<number | null>(null);
+  const isSyncReadyRef = useRef(false);
+
+  useEffect(() => {
+    let disposed = false;
+
+    const hydrateFromServer = async () => {
+      try {
+        setSyncError("");
+        const remoteItems = await fetchShoppingList();
+        if (disposed) {
+          return;
+        }
+
+        if (remoteItems.length > 0) {
+          setItems(remoteItems);
+          writeShoppingList(remoteItems);
+        } else {
+          const localItems = readShoppingList();
+          if (localItems.length > 0) {
+            setIsSyncing(true);
+            const synced = await syncShoppingList(localItems);
+            if (disposed) {
+              return;
+            }
+            setItems(synced);
+            writeShoppingList(synced);
+          }
+        }
+      } catch {
+        if (!disposed) {
+          setSyncError("Could not sync list with server. Using local data for now.");
+        }
+      } finally {
+        if (!disposed) {
+          isSyncReadyRef.current = true;
+          setIsSyncing(false);
+        }
+      }
+    };
+
+    hydrateFromServer();
+
+    return () => {
+      disposed = true;
+      if (syncTimeoutRef.current) {
+        window.clearTimeout(syncTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     writeShoppingList(items);
+
+    if (!isSyncReadyRef.current) {
+      return;
+    }
+
+    if (syncTimeoutRef.current) {
+      window.clearTimeout(syncTimeoutRef.current);
+    }
+
+    syncTimeoutRef.current = window.setTimeout(async () => {
+      try {
+        setIsSyncing(true);
+        setSyncError("");
+        const syncedItems = await syncShoppingList(items);
+        setItems((previous) =>
+          areItemsEqual(previous, syncedItems) ? previous : syncedItems
+        );
+        writeShoppingList(syncedItems);
+      } catch {
+        setSyncError("Could not sync latest changes. They are still saved locally.");
+      } finally {
+        setIsSyncing(false);
+      }
+    }, 600);
+
+    return () => {
+      if (syncTimeoutRef.current) {
+        window.clearTimeout(syncTimeoutRef.current);
+      }
+    };
   }, [items]);
 
   const remainingCount = useMemo(
@@ -74,8 +162,18 @@ const ShoppingList = () => {
           <span className="rounded-full border border-accent/35 bg-background px-3 py-1.5 text-sm text-text/75">
             {completedCount} completed
           </span>
+          <span className="rounded-full border border-primary/20 bg-background px-3 py-1.5 text-sm text-text/75">
+            {isSyncing ? "Syncing..." : "Synced"}
+          </span>
         </div>
       </div>
+
+      <ErrorAlert
+        message={syncError}
+        compact
+        className="mb-4"
+        onAutoHide={() => setSyncError("")}
+      />
 
       <div className="mb-5 rounded-2xl border border-primary/10 bg-secondary p-4 sm:p-5">
         <label className="mb-2 block text-sm font-medium text-text">

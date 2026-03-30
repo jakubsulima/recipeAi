@@ -23,9 +23,25 @@ interface AuthContextType {
   logout: () => Promise<void>;
 }
 
-export const AuthContext = createContext<AuthContextType>(null!);
+const defaultAuthContext: AuthContextType = {
+  user: null,
+  setUser: () => {
+    // no-op default for safe context fallback during HMR/provider mismatch
+  },
+  loading: true,
+  isAdmin: false,
+  getUserPreferences: async () => {
+    // no-op default for safe context fallback during HMR/provider mismatch
+  },
+  refreshSession: async () => false,
+  logout: async () => {
+    // no-op default for safe context fallback during HMR/provider mismatch
+  },
+};
 
-export const useUser = () => useContext(AuthContext);
+export const AuthContext = createContext<AuthContextType>(defaultAuthContext);
+
+export const useUser = () => useContext(AuthContext) || defaultAuthContext;
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<UserProps | null>(null);

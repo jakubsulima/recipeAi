@@ -3,35 +3,99 @@ import { API_URL, TIMEOUT } from "./constants.tsx";
 
 const formOfPrompt =
   " Return ONLY valid JSON with this exact structure: { \"name\": string, \"description\": string, \"timeToPrepare\": string, \"ingredients\": [{\"name\": string, \"amount\": number, \"unit\": string}], \"instructions\": [string], \"nutrition\": { \"calories\": number, \"protein\": number, \"carbs\": number, \"fats\": number } }. Use metric units and avoid markdown/code fences.";
+const batchFormOfPrompt =
+  " Return ONLY valid JSON with this exact structure: { \"recipes\": [{ \"name\": string, \"description\": string, \"timeToPrepare\": string, \"ingredients\": [{\"name\": string, \"amount\": number, \"unit\": string}], \"instructions\": [string], \"nutrition\": { \"calories\": number, \"protein\": number, \"carbs\": number, \"fats\": number } }] }. Make recipes truly different in cuisine, technique, and core ingredients. Use metric units and avoid markdown/code fences.";
+
+const inFlightRecipeRequests = new Map<string, Promise<any>>();
+
+const buildRecipePrompt = (
+  prompt: string,
+  productsFridge: string[],
+  requestedCount: number
+) => {
+  const promptFormat = requestedCount > 1 ? batchFormOfPrompt : formOfPrompt;
+  return (
+    prompt +
+    promptFormat +
+    (productsFridge.length > 0
+      ? " Prioritize using these products for this recipe: " +
+        productsFridge.join(", ")
+      : "")
+  );
+};
+
+const requestRecipeGeneration = async (
+  prompt: string,
+  productsFridge: string[],
+  requestedCount: number,
+  signal?: AbortSignal
+) => {
+  const fullPrompt = buildRecipePrompt(prompt, productsFridge, requestedCount);
+  const result = await axios.post(
+    `${API_URL}generateRecipe`,
+    {
+      fullPrompt,
+      count: requestedCount,
+    },
+    { signal }
+  );
+
+  return result.data;
+};
+
+const buildGenerationKey = (
+  prompt: string,
+  productsFridge: string[],
+  requestedCount: number
+) => `${requestedCount}::${prompt}::${productsFridge.join("|")}`;
+
 export const generateRecipe = async function (
   prompt: string,
   productsFridge: string[],
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  count: number = 1
 ) {
   try {
-    const fullPrompt =
-      prompt +
-      formOfPrompt +
-      (productsFridge.length > 0
-        ? " Prioritize using these products for this recipe: " +
-          productsFridge.join(", ")
-        : "");
+    const normalizedCount = Math.max(1, Math.min(5, Math.floor(count)));
 
-    const result = await axios.post(
-      `${API_URL}generateRecipe`,
-      {
-        fullPrompt,
-      },
-      { signal }
-    );
-    return result.data;
+    // Requests controlled by AbortController should never share promises,
+    // otherwise a previously aborted request can cancel a fresh one.
+    if (signal) {
+      return await requestRecipeGeneration(
+        prompt,
+        productsFridge,
+        normalizedCount,
+        signal
+      );
+    }
+
+    const requestKey = buildGenerationKey(prompt, productsFridge, normalizedCount);
+
+    if (!inFlightRecipeRequests.has(requestKey)) {
+      const requestPromise = requestRecipeGeneration(
+        prompt,
+        productsFridge,
+        normalizedCount,
+        signal
+      ).finally(() => {
+        inFlightRecipeRequests.delete(requestKey);
+      });
+
+      inFlightRecipeRequests.set(requestKey, requestPromise);
+    }
+
+    return await inFlightRecipeRequests.get(requestKey)!;
   } catch (error: any) {
     if (axios.isCancel(error)) {
       throw new DOMException("Recipe generation cancelled", "AbortError");
     }
+
     const message = axios.isAxiosError(error)
       ? typeof error.response?.data === "string" && error.response.data.trim() !== ""
         ? error.response.data
+        : typeof error.response?.data?.message === "string" &&
+          error.response.data.message.trim() !== ""
+        ? error.response.data.message
         : error.message
       : error?.message || "Unknown AI error";
     throw new Error(`AI Generation Error: ${message}`);
@@ -100,13 +164,16 @@ axios.interceptors.response.use(
     const originalRequest = error.config;
     const requestUrl = String(originalRequest?.url ?? "");
     const isRefreshRequest = requestUrl.includes("/refresh");
+    const shouldAttemptTokenRefresh =
+      localStorage.getItem("isLoggedIn") === "true";
 
     // If error is 401 and we haven't retried yet
     if (
       error.response?.status === 401 &&
       originalRequest &&
       !originalRequest._retry &&
-      !isRefreshRequest
+      !isRefreshRequest &&
+      shouldAttemptTokenRefresh
     ) {
       originalRequest._retry = true;
 
@@ -131,6 +198,17 @@ export const apiClient = async function (
   uploadData: boolean = false,
   body: any = null
 ) {
+  const normalizedUrl = String(url ?? "");
+  const authNoiseEndpoints = [
+    "me",
+    "refresh",
+    "getFridgeIngredients",
+    "shoppingList",
+  ];
+  const isAuthNoiseEndpoint = authNoiseEndpoints.some((endpoint) =>
+    normalizedUrl.includes(endpoint)
+  );
+
   try {
     const isPlainString = typeof body === "string";
     const fetchOperation = uploadData
@@ -158,18 +236,32 @@ export const apiClient = async function (
         "Received HTML instead of JSON. Backend endpoint may be incorrect or down."
       );
       (htmlError as any).isContentTypeError = true;
+      if (isAuthNoiseEndpoint) {
+        (htmlError as any).status = 401;
+      }
       throw htmlError;
     }
 
     const data = await res.data;
     return data;
   } catch (error: any) {
-    console.error(
-      "AJAX Error Details:",
-      error.response
-        ? { status: error.response.status, data: error.response.data }
-        : error.message
-    );
+    const status = axios.isAxiosError(error)
+      ? error.response?.status
+      : typeof error?.status === "number"
+      ? error.status
+      : undefined;
+    const isExpectedAuthNoise =
+      ((status === 401 || status === 400) && isAuthNoiseEndpoint) ||
+      (Boolean(error?.isContentTypeError) && isAuthNoiseEndpoint);
+
+    if (!isExpectedAuthNoise) {
+      console.error(
+        "AJAX Error Details:",
+        error.response
+          ? { status: error.response.status, data: error.response.data }
+          : error.message
+      );
+    }
 
     let finalError: Error;
 

@@ -1,6 +1,31 @@
 server {
     listen ${PORT};
 
+    add_header Cross-Origin-Opener-Policy "same-origin-allow-popups" always;
+    add_header Cross-Origin-Embedder-Policy "unsafe-none" always;
+
+    gzip on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css application/javascript application/json image/svg+xml;
+
+    location = /index.html {
+        root /usr/share/nginx/html;
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+    }
+
+    location = /robots.txt {
+        root /usr/share/nginx/html;
+        try_files $uri =404;
+    }
+
+    location ~* \.(?:js|css|svg|png|jpg|jpeg|gif|webp|ico|woff2?)$ {
+        root /usr/share/nginx/html;
+        expires 7d;
+        add_header Cache-Control "public, max-age=604800, immutable";
+        try_files $uri =404;
+        access_log off;
+    }
+
     # This first location block handles serving your React App
     location / {
         root   /usr/share/nginx/html;
@@ -22,6 +47,9 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_connect_timeout 15s;
+        proxy_send_timeout 180s;
+        proxy_read_timeout 180s;
     }
 
     error_page   500 502 503 504  /50x.html;

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { BrowserMultiFormatReader, type IScannerControls } from "@zxing/browser";
-import { BarcodeFormat, DecodeHintType } from "@zxing/library";
+import type { IScannerControls } from "@zxing/browser";
+import type { DecodeHintType, Result } from "@zxing/library";
 import ErrorAlert from "./ErrorAlert";
 
 interface BarcodeScannerProps {
@@ -9,17 +9,7 @@ interface BarcodeScannerProps {
   onBarcodeDetected: (barcode: string) => void;
 }
 
-const SUPPORTED_FORMATS = [
-  BarcodeFormat.EAN_13,
-  BarcodeFormat.EAN_8,
-  BarcodeFormat.UPC_A,
-  BarcodeFormat.UPC_E,
-  BarcodeFormat.CODE_128,
-];
-
-const SCANNER_HINTS = new Map<DecodeHintType, unknown>([
-  [DecodeHintType.POSSIBLE_FORMATS, SUPPORTED_FORMATS],
-]);
+type ScannerControls = IScannerControls;
 
 const CAMERA_CONSTRAINTS: MediaStreamConstraints[] = [
   {
@@ -79,7 +69,7 @@ const BarcodeScanner = ({
   onBarcodeDetected,
 }: BarcodeScannerProps) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const controlsRef = useRef<IScannerControls | null>(null);
+  const controlsRef = useRef<ScannerControls | null>(null);
   const hasDetectedRef = useRef(false);
 
   const [manualBarcode, setManualBarcode] = useState("");
@@ -121,13 +111,29 @@ const BarcodeScanner = ({
       }
 
       try {
-        const reader = new BrowserMultiFormatReader(SCANNER_HINTS, {
+        const [{ BrowserMultiFormatReader }, { BarcodeFormat, DecodeHintType }] =
+          await Promise.all([import("@zxing/browser"), import("@zxing/library")]);
+
+        const scannerHints = new Map<DecodeHintType, unknown>([
+          [
+            DecodeHintType.POSSIBLE_FORMATS,
+            [
+              BarcodeFormat.EAN_13,
+              BarcodeFormat.EAN_8,
+              BarcodeFormat.UPC_A,
+              BarcodeFormat.UPC_E,
+              BarcodeFormat.CODE_128,
+            ],
+          ],
+        ]);
+
+        const reader = new BrowserMultiFormatReader(scannerHints, {
           delayBetweenScanAttempts: 250,
           delayBetweenScanSuccess: 500,
           tryPlayVideoTimeout: 5000,
         });
 
-        let controls: IScannerControls | null = null;
+        let controls: ScannerControls | null = null;
         let startError: unknown;
 
         for (const constraints of CAMERA_CONSTRAINTS) {
@@ -135,7 +141,11 @@ const BarcodeScanner = ({
             controls = await reader.decodeFromConstraints(
               constraints,
               videoRef.current ?? undefined,
-              (result, scanError, activeControls) => {
+              (
+                  result: Result | undefined,
+                scanError: unknown,
+                activeControls: ScannerControls
+              ) => {
                 if (hasDetectedRef.current) {
                   return;
                 }

@@ -32,6 +32,26 @@ interface RegisterProps {
   confirmPassword: string;
 }
 
+type GoogleCallback = (response: { credential: string }) => void;
+
+interface GsiState {
+  initialized: boolean;
+  clientId: string;
+  callback: GoogleCallback | null;
+}
+
+const getGsiState = (): GsiState => {
+  const globalWindow = window as any;
+  if (!globalWindow.__recipeAiGsiState) {
+    globalWindow.__recipeAiGsiState = {
+      initialized: false,
+      clientId: "",
+      callback: null,
+    } as GsiState;
+  }
+  return globalWindow.__recipeAiGsiState as GsiState;
+};
+
 const Register = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -84,10 +104,29 @@ const Register = () => {
   useEffect(() => {
     const initGoogle = () => {
       if (window.google?.accounts?.id && googleBtnRef.current) {
-        window.google.accounts.id.initialize({
-          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || "",
-          callback: handleGoogleCallback,
-        });
+        const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+        if (!clientId) {
+          return;
+        }
+
+        const gsiState = getGsiState();
+        gsiState.callback = handleGoogleCallback;
+
+        if (!gsiState.initialized || gsiState.clientId !== clientId) {
+          window.google.accounts.id.initialize({
+            client_id: clientId,
+            callback: (response: { credential: string }) => {
+              const activeCallback = getGsiState().callback;
+              if (activeCallback) {
+                activeCallback(response);
+              }
+            },
+          });
+          gsiState.initialized = true;
+          gsiState.clientId = clientId;
+        }
+
+        googleBtnRef.current.innerHTML = "";
         window.google.accounts.id.renderButton(googleBtnRef.current, {
           type: "standard",
           theme: "outline",

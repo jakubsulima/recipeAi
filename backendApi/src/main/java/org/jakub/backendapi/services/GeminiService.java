@@ -40,6 +40,10 @@ public class GeminiService {
     private static final long MAX_RECEIPT_FILE_SIZE_BYTES = 5L * 1024L * 1024L;
     private static final int MAX_IMAGE_DIMENSION = 6000;
     private static final int MAX_RETRY_ATTEMPTS = 3;
+    private static final int GEMINI_CONNECT_TIMEOUT_MS = 10_000;
+    private static final int GEMINI_READ_TIMEOUT_MS = 45_000;
+    private static final int MIN_RECIPE_COUNT = 1;
+    private static final int MAX_RECIPE_COUNT = 5;
 
     private static final Set<String> SUPPORTED_UNITS =
             java.util.Arrays.stream(Unit.values()).map(Enum::name).collect(Collectors.toSet());
@@ -53,7 +57,7 @@ public class GeminiService {
     @Value("${gemini.api.key}")
     private String geminiApiKey;
 
-    @Value("${gemini.api.model:gemini-3-flash-preview}")
+    @Value("${gemini.api.model:gemini-3.1-flash-lite-preview}")
     private String geminiModel;
 
     private final ObjectMapper objectMapper;
@@ -63,8 +67,8 @@ public class GeminiService {
         this.objectMapper = objectMapper;
 
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(5000);
-        requestFactory.setReadTimeout(15000);
+        requestFactory.setConnectTimeout(GEMINI_CONNECT_TIMEOUT_MS);
+        requestFactory.setReadTimeout(GEMINI_READ_TIMEOUT_MS);
         this.restTemplate = new RestTemplate(requestFactory);
     }
 
@@ -82,6 +86,34 @@ public class GeminiService {
         }
 
         return textResponse;
+    }
+
+    public String generateRecipes(String recipePrompt, Integer requestedCount) {
+        int recipeCount = normalizeRecipeCount(requestedCount);
+        if (recipeCount == 1) {
+            return generateRecipe(recipePrompt);
+        }
+
+        String batchPrompt = recipePrompt + """
+
+                Additional requirement:
+                - Generate %d truly different recipes (not small variations).
+                - Each recipe must differ in at least three of these dimensions: cuisine, core ingredients, cooking method, flavor profile.
+                - Do not repeat the same main protein or base ingredient across recipes.
+                - Keep each recipe realistic and fully cookable.
+                - Return ONLY valid JSON with this exact structure:
+                {"recipes":[{"name":string,"description":string,"timeToPrepare":string,"ingredients":[{"name":string,"amount":number,"unit":string}],"instructions":[string],"nutrition":{"calories":number,"protein":number,"carbs":number,"fats":number}}]}
+                - The recipes array must contain exactly %d items.
+                """.formatted(recipeCount, recipeCount);
+
+        return generateRecipe(batchPrompt);
+    }
+
+    private int normalizeRecipeCount(Integer requestedCount) {
+        if (requestedCount == null) {
+            return MIN_RECIPE_COUNT;
+        }
+        return Math.max(MIN_RECIPE_COUNT, Math.min(MAX_RECIPE_COUNT, requestedCount));
     }
 
     public List<FridgeIngredientDto> extractFridgeIngredientsFromReceipt(MultipartFile file) {
@@ -153,12 +185,23 @@ public class GeminiService {
                 ResponseEntity<JsonNode> response = restTemplate.exchange(endpoint, HttpMethod.POST, request, JsonNode.class);
                 return response.getBody();
             } catch (RestClientResponseException e) {
-                boolean retryableStatus = e.getStatusCode().is5xxServerError() || e.getStatusCode().value() == 429;
-                if (!retryableStatus || attempt == MAX_RETRY_ATTEMPTS) {
-                    throw new AppException(operationLabel + ": " + e.getMessage(), HttpStatus.BAD_GATEWAY);
+                int statusCode = e.getStatusCode().value();
+                boolean retryableStatus = e.getStatusCode().is5xxServerError() || statusCode == 429;
+                if (retryableStatus && attempt < MAX_RETRY_ATTEMPTS) {
+                    sleepWithBackoff(backoffMillis);
+                    backoffMillis *= 2;
+                    continue;
                 }
-                sleepWithBackoff(backoffMillis);
-                backoffMillis *= 2;
+
+                if (statusCode == 429) {
+                    throw new AppException("AI provider quota/rate limit reached. Please try again in a minute.", HttpStatus.TOO_MANY_REQUESTS);
+                }
+
+                if (e.getStatusCode().is4xxClientError()) {
+                    throw new AppException(operationLabel + ": " + extractGeminiErrorMessage(e), HttpStatus.BAD_REQUEST);
+                }
+
+                throw new AppException(operationLabel + ": " + extractGeminiErrorMessage(e), HttpStatus.BAD_GATEWAY);
             } catch (RestClientException e) {
                 if (attempt == MAX_RETRY_ATTEMPTS) {
                     throw new AppException(operationLabel + ": " + e.getMessage(), HttpStatus.BAD_GATEWAY);
@@ -169,6 +212,16 @@ public class GeminiService {
         }
 
         throw new AppException(operationLabel + ": retry limit exceeded", HttpStatus.BAD_GATEWAY);
+    }
+
+    private String extractGeminiErrorMessage(RestClientResponseException e) {
+        String body = e.getResponseBodyAsString();
+        if (!StringUtils.hasText(body)) {
+            return e.getMessage();
+        }
+
+        String compact = body.replaceAll("\\s+", " ").trim();
+        return compact.length() > 300 ? compact.substring(0, 300) + "..." : compact;
     }
 
     private void sleepWithBackoff(long millis) {
