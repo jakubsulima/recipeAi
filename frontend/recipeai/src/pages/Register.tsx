@@ -53,7 +53,10 @@ const Register = () => {
       refreshSession().catch(() => {
         // Route guards will handle unauthenticated fallback if session sync fails.
       });
-      navigate("/", { replace: true });
+      navigate("/My Preferences", {
+        replace: true,
+        state: { fromRegistration: true },
+      });
     },
     [setUser, refreshSession, navigate]
   );

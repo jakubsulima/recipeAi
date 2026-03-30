@@ -6,6 +6,7 @@ import RecipeContainer from "../components/RecipeContainer";
 import PaginationControls from "../components/PaginationControls";
 import FoodLoadingScreen from "../components/FoodLoadingScreen";
 import ErrorAlert from "../components/ErrorAlert";
+import { Link } from "react-router-dom";
 
 const Recipes = () => {
   const [recipes, setRecipes] = useState<RecipeData[]>([]);
@@ -18,15 +19,17 @@ const Recipes = () => {
   const [isSearching, setIsSearching] = useState<boolean>(false);
 
   const RECIPES_PER_PAGE = 9;
+  const GUEST_RECIPES_LIMIT = 10;
+  const isGuest = !user;
 
   const fetchAllRecipes = async () => {
     try {
       setIsLoading(true);
       setError("");
-      const response = await apiClient(
-        `getAllRecipes?page=${currentPage}&size=${RECIPES_PER_PAGE}`,
-        false
-      );
+      const endpoint = isGuest
+        ? `getAllRecipes?page=0&size=${GUEST_RECIPES_LIMIT}&sort=id,desc`
+        : `getAllRecipes?page=${currentPage}&size=${RECIPES_PER_PAGE}`;
+      const response = await apiClient(endpoint, false);
       setRecipes(response.content);
       setTotalPages(response.totalPages);
     } catch (error) {
@@ -65,6 +68,10 @@ const Recipes = () => {
   };
 
   const handleSearch = () => {
+    if (isGuest) {
+      return;
+    }
+
     setCurrentPage(0);
     setIsSearching(!!searchTerm.trim());
   };
@@ -142,70 +149,95 @@ const Recipes = () => {
                   />
                 </svg>
                 <h1 className="text-3xl md:text-4xl font-bold text-text tracking-tight">
-                  {user ? "My Recipes" : "All Recipes"}
+                  {user ? "My Recipes" : "Latest Recipes"}
                 </h1>
               </div>
               <p className="text-text/60 text-xs md:text-sm">
                 {user
                   ? "Your personal recipe collection"
-                  : "Discover delicious recipes from our community"}
+                  : "Discover 10 newest community recipes and unlock full features after login"}
               </p>
             </div>
           </div>
 
           {/* Search Bar */}
-          <div className="mb-6">
-            <div className="relative max-w-2xl mx-auto">
-              <div className="flex items-center rounded-full border border-primary/20 bg-secondary focus-within:ring-2 focus-within:ring-accent transition-all">
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handleSearch();
-                    }
-                  }}
-                  placeholder="Search recipes by name..."
-                  className="flex-1 min-w-0 px-4 py-3 bg-transparent text-text focus:outline-none placeholder:text-text/50"
-                />
-                {searchTerm && (
-                  <button
-                    onClick={handleClearSearch}
-                    className="shrink-0 px-2 text-text/70 hover:text-accent focus:outline-none transition-colors"
-                    aria-label="Clear search"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
+          {user && (
+            <div className="mb-6">
+              <div className="relative max-w-2xl mx-auto">
+                <div className="flex items-center rounded-full border border-primary/20 bg-secondary focus-within:ring-2 focus-within:ring-accent transition-all">
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleSearch();
+                      }
+                    }}
+                    placeholder="Search recipes by name..."
+                    className="flex-1 min-w-0 px-4 py-3 bg-transparent text-text focus:outline-none placeholder:text-text/50"
+                  />
+                  {searchTerm && (
+                    <button
+                      onClick={handleClearSearch}
+                      className="shrink-0 px-2 text-text/70 hover:text-accent focus:outline-none transition-colors"
+                      aria-label="Clear search"
                     >
-                      <path
-                        fillRule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </button>
+                  )}
+                  <div className="w-px h-6 bg-primary/20 mx-1 shrink-0" />
+                  <button
+                    onClick={handleSearch}
+                    className="mobile-soft-press shrink-0 bg-accent hover:bg-accent/90 text-primary px-4 py-2 m-1 rounded-full font-medium transition-colors"
+                  >
+                    Search
                   </button>
-                )}
-                <div className="w-px h-6 bg-primary/20 mx-1 shrink-0" />
-                <button
-                  onClick={handleSearch}
-                  className="mobile-soft-press shrink-0 bg-accent hover:bg-accent/90 text-primary px-4 py-2 m-1 rounded-full font-medium transition-colors"
-                >
-                  Search
-                </button>
-              </div>
-              {isSearching && (
-                <div className="mt-2 text-center">
-                  <span className="inline-block px-3 py-1 bg-accent/20 rounded-full text-text text-sm">
-                    Searching for: "{searchTerm}"
-                  </span>
                 </div>
-              )}
+                {isSearching && (
+                  <div className="mt-2 text-center">
+                    <span className="inline-block px-3 py-1 bg-accent/20 rounded-full text-text text-sm">
+                      Searching for: "{searchTerm}"
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
+
+          {isGuest && (
+            <div className="mb-6 rounded-2xl border border-accent/35 bg-secondary p-4 text-center">
+              <p className="text-sm text-text/75">
+                You are browsing as a guest. Create an account to generate AI recipes, save favorites,
+                and unlock your Virtual Fridge.
+              </p>
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+                <Link
+                  to="/login"
+                  className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-accent/90"
+                >
+                  Log In
+                </Link>
+                <Link
+                  to="/register"
+                  className="rounded-full border border-primary/20 bg-background px-4 py-2 text-sm font-semibold text-text transition-colors hover:text-accent"
+                >
+                  Sign Up Free
+                </Link>
+              </div>
+            </div>
+          )}
 
           <ErrorAlert message={error} className="mb-6" onAutoHide={() => setError("")} />
 
@@ -255,11 +287,15 @@ const Recipes = () => {
                 <p className="text-lg md:text-xl font-medium">
                   {isSearching
                     ? `No recipes found for "${searchTerm}"`
+                    : isGuest
+                    ? "No public recipes available yet."
                     : "No recipes found."}
                 </p>
                 <p className="text-sm md:text-base mt-2">
                   {isSearching
                     ? "Try searching with different keywords"
+                    : isGuest
+                    ? "Sign in to generate your own recipes and start saving favorites."
                     : "Start creating your first recipe!"}
                 </p>
                 {isSearching && (
@@ -274,13 +310,15 @@ const Recipes = () => {
             )
           )}
         </article>
-        <article className="pt-4 md:pt-6 pb-2">
-          <PaginationControls
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-          />
-        </article>
+        {user && (
+          <article className="pt-4 md:pt-6 pb-2">
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          </article>
+        )}
       </section>
     </>
   );

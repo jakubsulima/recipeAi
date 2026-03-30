@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useUser } from "../context/context";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import OptionsForm from "../components/OptionsForm";
 import { apiClient } from "../lib/hooks";
 import FoodLoadingScreen from "../components/FoodLoadingScreen";
@@ -8,6 +8,7 @@ import ErrorAlert from "../components/ErrorAlert";
 
 const MePage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, loading: userLoading, getUserPreferences } = useUser();
 
   const [error, setError] = useState<string>("");
@@ -17,6 +18,9 @@ const MePage = () => {
   const [displayDietOptions, setDisplayDietOptions] = useState<string[]>([]); // State for display-friendly options
   const [newIngredient, setNewIngredient] = useState<string>("");
   const [preferencesLoaded, setPreferencesLoaded] = useState<boolean>(false);
+
+  const navigationState = location.state as { fromRegistration?: boolean } | null;
+  const showRegistrationOnboarding = Boolean(navigationState?.fromRegistration);
 
   useEffect(() => {
     const fetchDietOptions = async () => {
@@ -148,6 +152,15 @@ const MePage = () => {
         </div>
 
         <ErrorAlert message={error} className="mb-6" onAutoHide={() => setError("")} />
+
+        {showRegistrationOnboarding && (
+          <div className="mb-6 rounded-xl border border-accent/40 bg-accent/15 p-4 text-text">
+            <p className="font-semibold">Account created successfully.</p>
+            <p className="mt-1 text-sm text-text/80">
+              Choose your diet and disliked ingredients now to get better recipe suggestions from the start.
+            </p>
+          </div>
+        )}
 
         {successMessage && (
           <div

@@ -7,11 +7,11 @@
 - For full setup, architecture details, Docker flows, and API endpoints, see `README.md`.
 
 ## Build and Test
-- Frontend uses `yarn` (not npm): `yarn install`, `yarn dev`, `yarn test`, `yarn build`.
+- Frontend uses `npm` (not yarn): `npm install`, `npm run dev`, `npm run test`, `npm run build`.
 - Backend uses Gradle wrapper commands from `backendApi/`: `./gradlew test`, `./gradlew bootRun`, `./gradlew build`.
 - Prefer the smallest useful validation first; do not fix unrelated failing tests.
 - Quick local validation defaults:
-	- Frontend: `yarn build`
+	- Frontend: `npm run build`
 	- Backend: `./gradlew test`
 - For environment setup and Docker orchestration, see `README.md`.
 

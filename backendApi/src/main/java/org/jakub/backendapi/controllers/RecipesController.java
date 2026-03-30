@@ -12,7 +12,9 @@ import org.jakub.backendapi.services.UserPreferencesService;
 import org.jakub.backendapi.services.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -53,7 +55,13 @@ public class RecipesController {
 
     @GetMapping("/getAllRecipes")
     public ResponseEntity<Page<RecipeDto>> getAllRecipes(Pageable p) {
-        Page<RecipeDto> recipes = recipeService.getAllRecipes(p);
+        Pageable effectivePageable = p;
+        String authenticatedUserEmail = getAuthenticatedUserEmail();
+        if (!StringUtils.hasText(authenticatedUserEmail)) {
+            effectivePageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "id"));
+        }
+
+        Page<RecipeDto> recipes = recipeService.getAllRecipes(effectivePageable);
         return ResponseEntity.ok(recipes);
     }
 

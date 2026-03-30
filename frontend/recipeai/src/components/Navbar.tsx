@@ -1,14 +1,18 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { DropDownButton } from "./DropDownButton";
 import DropDownMenu from "./DropDownMenu";
 import { useUser } from "../context/context";
-import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { user, loading, isAdmin, logout } = useUser();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    setIsOpen(false);
+  }, [location.pathname]);
 
   const toggleOpen = () => {
     setIsOpen(!isOpen);
@@ -17,6 +21,10 @@ const Navbar = () => {
   const handleLogout = async () => {
     await logout();
     navigate("/");
+  };
+
+  const handleLogoClick = () => {
+    setIsOpen(false);
   };
 
   const getNavItems = () => {
@@ -47,7 +55,7 @@ const Navbar = () => {
         <ul className="flex w-full text-background justify-between items-center">
           {/* --- Left Side: Logo --- */}
           <li className="list-none text-lg font-bold transition-colors hover:text-accent">
-            <Link to="/">Recipe.ai</Link>
+            <Link to="/" onClick={handleLogoClick}>Recipe.ai</Link>
           </li>
 
           {/* --- Right Side: Controls (Desktop) / Burger (Mobile) --- */}
@@ -110,12 +118,12 @@ const Navbar = () => {
             }`}
             dropdownItems={
               loading
-                ? ["Homepage"]
+                ? navItems
                 : user
-                ? ["Homepage", ...navItems, "Logout"].filter(
+                ? [...navItems, "Logout"].filter(
                     (item): item is string => !!item
                   )
-                : ["Homepage", ...navItems]
+                : navItems
             }
             handleLogout={handleLogout}
             onItemClick={() => setIsOpen(false)}

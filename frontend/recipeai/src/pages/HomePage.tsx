@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useFridge } from "../context/fridgeContext";
 import { useUser } from "../context/context";
 import ButtonsForm from "../components/ButtonsForm";
@@ -18,6 +18,11 @@ const HomePage = () => {
   const [selectedCuisine, setSelectedCuisine] = useState<string | null>(null);
 
   const handleSearch = () => {
+    if (!user) {
+      navigate("/login", { state: { from: { pathname: "/Recipe" } } });
+      return;
+    }
+
     let finalSearch = search;
     if (!search.trim()) {
       finalSearch = "random recipe";
@@ -40,6 +45,10 @@ const HomePage = () => {
 
   const handleClear = () => {
     setSearch("");
+  };
+
+  const handleBrowseLatest = () => {
+    navigate("/Recipes");
   };
 
   const hasIngredients = fridgeItems.length > 0;
@@ -140,27 +149,28 @@ const HomePage = () => {
                     <span>Generating...</span>
                   </>
                 ) : (
-                  "Generate Recipe"
+                  user ? "Generate Recipe" : "Log in to Generate Recipes"
                 )}
               </button>
 
               {!user && (
-                <div className="mt-6 flex flex-col items-center justify-center gap-3 rounded-2xl bg-secondary/40 p-4 text-sm text-text/80 backdrop-blur-sm">
-                  <p className="text-center font-medium">Want to save recipes and use the Virtual Fridge?</p>
-                  <div className="flex gap-4">
-                    <Link
-                      to="/login"
-                      className="rounded-full bg-background px-4 py-1.5 font-semibold text-text shadow-sm transition-colors hover:text-accent"
-                    >
-                      Log In
-                    </Link>
-                    <Link
-                      to="/register"
-                      className="rounded-full bg-background px-4 py-1.5 font-semibold text-text shadow-sm transition-colors hover:text-accent"
-                    >
-                      Sign Up
-                    </Link>
-                  </div>
+                <div className="mt-6 rounded-2xl border border-primary/15 bg-secondary/40 p-4 text-left text-sm text-text/80 backdrop-blur-sm">
+                  <p className="font-semibold text-text">Guest mode: what you can do now</p>
+                  <ul className="mt-2 space-y-1.5 text-text/75">
+                    <li>Browse the 10 latest public recipes.</li>
+                    <li>Open full recipe details with ingredients and steps.</li>
+                    <li>Try the app UI before creating an account.</li>
+                  </ul>
+                  <p className="mt-3 text-text/70">
+                    After sign up you unlock AI recipe generation, saving recipes, the Virtual Fridge,
+                    and personal diet preferences.
+                  </p>
+                  <button
+                    onClick={handleBrowseLatest}
+                    className="mobile-soft-press mt-4 rounded-full bg-background px-4 py-2 font-semibold text-text shadow-sm transition-colors hover:text-accent"
+                  >
+                    Browse 10 Latest Recipes
+                  </button>
                 </div>
               )}
             </section>
