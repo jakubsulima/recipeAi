@@ -1,15 +1,18 @@
 import React, { useEffect, useState, useContext } from "react";
 import { AuthContext } from "../context/context";
-import { apiClient, deleteClient } from "../lib/hooks";
+import { apiClient, deleteClient, putClient } from "../lib/hooks";
 import AdminRecipesPanel from "../components/AdminRecipesPanel";
 import FoodLoadingScreen from "../components/FoodLoadingScreen";
 import ErrorAlert from "../components/ErrorAlert";
 import PaginationControls from "../components/PaginationControls";
 
+type SubscriptionPlan = "FREE" | "PAID";
+
 interface User {
   id: number;
   email: string;
   role: string;
+  subscriptionPlan?: SubscriptionPlan;
 }
 
 const AdminPage: React.FC = () => {
@@ -19,6 +22,7 @@ const AdminPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [updatingPlanUserId, setUpdatingPlanUserId] = useState<number | null>(null);
   const authContext = useContext(AuthContext);
 
   const fetchUsers = async (pageNum: number = currentPage) => {
@@ -64,6 +68,35 @@ const AdminPage: React.FC = () => {
     }
   };
 
+  const handlePlanChange = async (userId: number, plan: SubscriptionPlan) => {
+    setUpdatingPlanUserId(userId);
+    setError(null);
+    try {
+      const updatedUser: User = await putClient(`admin/users/${userId}/plan`, {
+        plan,
+      });
+      setUsers((prevUsers) =>
+        prevUsers.map((user) =>
+          user.id === userId
+            ? {
+                ...user,
+                subscriptionPlan: (updatedUser.subscriptionPlan || plan) as SubscriptionPlan,
+              }
+            : user
+        )
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "An unknown error occurred while updating the user plan"
+      );
+      console.error(err);
+    } finally {
+      setUpdatingPlanUserId(null);
+    }
+  };
+
   if (loading)
     return <FoodLoadingScreen title="Loading users..." subtitle="Preparing admin dashboard" />;
   if (authContext?.loading)
@@ -95,6 +128,7 @@ const AdminPage: React.FC = () => {
                   <th className="py-3 px-4 text-left">ID</th>
                   <th className="py-3 px-4 text-left">Email</th>
                   <th className="py-3 px-4 text-left">Role</th>
+                  <th className="py-3 px-4 text-left">Plan</th>
                   <th className="py-3 px-4 text-left">Actions</th>
                 </tr>
               </thead>
@@ -107,6 +141,19 @@ const AdminPage: React.FC = () => {
                     <td className="py-3 px-4">{user.id}</td>
                     <td className="py-3 px-4">{user.email}</td>
                     <td className="py-3 px-4">{user.role}</td>
+                    <td className="py-3 px-4">
+                      <select
+                        value={user.subscriptionPlan || "FREE"}
+                        onChange={(e) =>
+                          handlePlanChange(user.id, e.target.value as SubscriptionPlan)
+                        }
+                        className="rounded border border-primary/30 bg-background px-2 py-1 text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent"
+                        disabled={updatingPlanUserId === user.id}
+                      >
+                        <option value="FREE">FREE</option>
+                        <option value="PAID">PAID</option>
+                      </select>
+                    </td>
                     <td className="py-3 px-4">
                       <button
                         onClick={() => handleDeleteUser(user.id)}

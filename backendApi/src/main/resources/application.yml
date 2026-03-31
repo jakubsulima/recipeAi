@@ -53,3 +53,9 @@ security:
     cookie:
       secure: ${JWT_COOKIE_SECURE:false}
       same-site: ${JWT_COOKIE_SAME_SITE:Lax}
+
+app:
+  limits:
+    recipes:
+      free: ${FREE_PLAN_RECIPE_LIMIT:1000}
+      paid: ${PAID_PLAN_RECIPE_LIMIT:-1}

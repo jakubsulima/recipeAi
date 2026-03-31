@@ -6,10 +6,12 @@ import org.jakub.backendapi.dto.SignUpDto;
 import org.jakub.backendapi.dto.UserDto;
 import org.jakub.backendapi.entities.Enums.Diet;
 import org.jakub.backendapi.entities.Enums.Role;
+import org.jakub.backendapi.entities.Enums.SubscriptionPlan;
 import org.jakub.backendapi.entities.User;
 import org.jakub.backendapi.entities.UserPreferences;
 import org.jakub.backendapi.exceptions.AppException;
 import org.jakub.backendapi.mappers.UserMapper;
+import org.jakub.backendapi.repositories.RecipeRepository;
 import org.jakub.backendapi.repositories.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,19 +28,37 @@ import java.util.stream.Collectors;
 @Service
 public class UserService {
     private final UserRepository userRepository;
+    private final RecipeRepository recipeRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final RecipePlanLimitService recipePlanLimitService;
 
-    public UserService(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, RecipeRepository recipeRepository, UserMapper userMapper, PasswordEncoder passwordEncoder, RecipePlanLimitService recipePlanLimitService) {
         this.userRepository = userRepository;
+        this.recipeRepository = recipeRepository;
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
+        this.recipePlanLimitService = recipePlanLimitService;
     }
 
     public UserDto findByEmail(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException("Unknown user", HttpStatus.NOT_FOUND));
         return userMapper.toUserDto(user);
+    }
+
+    public UserDto getUserProfileByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new AppException("Unknown user", HttpStatus.NOT_FOUND));
+
+        long recipesCreated = recipeRepository.countByUser(user);
+        UserDto userDto = userMapper.toUserDto(user);
+        userDto.setSubscriptionPlan(recipePlanLimitService.getEffectivePlan(user));
+        userDto.setRecipeCreationLimit(recipePlanLimitService.resolveRecipeLimit(user));
+        userDto.setRecipesCreated(recipesCreated);
+        userDto.setRecipesRemaining(recipePlanLimitService.getRemainingRecipes(user, recipesCreated));
+        userDto.setRecipeCreationLimitReached(recipePlanLimitService.isLimitReached(user, recipesCreated));
+        return userDto;
     }
 
     public UserDto login(CredentialsDto credentialsDto) {
@@ -92,6 +112,13 @@ public class UserService {
     public UserDto updateUserRole(Long id, Role role) {
         User user = userRepository.findById(id).orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
         user.setRole(role);
+        User updatedUser = userRepository.save(user);
+        return userMapper.toUserDto(updatedUser);
+    }
+
+    public UserDto updateUserPlan(Long id, SubscriptionPlan subscriptionPlan) {
+        User user = userRepository.findById(id).orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
+        user.setSubscriptionPlan(subscriptionPlan);
         User updatedUser = userRepository.save(user);
         return userMapper.toUserDto(updatedUser);
     }

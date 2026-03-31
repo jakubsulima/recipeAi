@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import org.jakub.backendapi.entities.Enums.AuthMethod;
 import org.jakub.backendapi.entities.Enums.Role;
+import org.jakub.backendapi.entities.Enums.SubscriptionPlan;
 
 import java.util.List;
 
@@ -28,6 +29,10 @@ public class User {
     @Column(name = "auth_method", nullable = false)
     @Enumerated(EnumType.STRING)
     private AuthMethod authMethod = AuthMethod.CREDENTIALS;
+
+    @Column(name = "subscription_plan", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private SubscriptionPlan subscriptionPlan = SubscriptionPlan.FREE;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Recipe> recipes;
@@ -115,6 +120,14 @@ public class User {
         this.fridgeIngredients = fridgeIngredients;
     }
 
+    public SubscriptionPlan getSubscriptionPlan() {
+        return subscriptionPlan;
+    }
+
+    public void setSubscriptionPlan(SubscriptionPlan subscriptionPlan) {
+        this.subscriptionPlan = subscriptionPlan;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -139,6 +152,7 @@ public class User {
                 ", email='" + email + '\'' +
                 ", role=" + role +
                 ", authMethod=" + authMethod +
+            ", subscriptionPlan=" + subscriptionPlan +
                 '}';
     }
 }

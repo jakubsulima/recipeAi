@@ -121,7 +121,7 @@ public class AuthController {
         }
 
         try {
-            UserDto userDto = userService.findByEmail(emailFromToken);
+            UserDto userDto = userService.getUserProfileByEmail(emailFromToken);
             return ResponseEntity.ok(userDto);
         } catch (AppException e) {
             // Handle cases where user might not be found based on a valid-looking email from token (e.g., user deleted after token issuance)

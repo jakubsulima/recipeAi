@@ -8,6 +8,11 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring", uses = UserPreferencesMapper.class)
 public interface UserMapper {
+    @Mapping(target = "token", ignore = true)
+    @Mapping(target = "recipeCreationLimit", ignore = true)
+    @Mapping(target = "recipesCreated", ignore = true)
+    @Mapping(target = "recipesRemaining", ignore = true)
+    @Mapping(target = "recipeCreationLimitReached", ignore = true)
     UserDto toUserDto(User user);
 
     @Mapping(target = "password", ignore = true)
@@ -17,6 +22,7 @@ public interface UserMapper {
     @Mapping(target = "userPreferences", ignore = true)
     @Mapping(target = "fridgeIngredients", ignore = true)
     @Mapping(target = "authMethod", ignore = true)
+    @Mapping(target = "subscriptionPlan", ignore = true)
     User signUpToUser(SignUpDto userDto);
 
 }

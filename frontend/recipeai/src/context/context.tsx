@@ -10,7 +10,12 @@ interface UserProps {
   email: string;
   id: number;
   role: string;
-  preferences: UserPreferences;
+  subscriptionPlan?: string;
+  recipeCreationLimit?: number;
+  recipesCreated?: number;
+  recipesRemaining?: number | null;
+  recipeCreationLimitReached?: boolean;
+  preferences?: UserPreferences;
 }
 
 interface AuthContextType {

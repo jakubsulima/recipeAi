@@ -82,3 +82,9 @@ security:
     cookie:
       secure: ${JWT_COOKIE_SECURE:true}
       same-site: ${JWT_COOKIE_SAME_SITE:Lax}
+
+app:
+  limits:
+    recipes:
+      free: ${FREE_PLAN_RECIPE_LIMIT:75}
+      paid: ${PAID_PLAN_RECIPE_LIMIT:-1}

@@ -26,13 +26,13 @@ import ErrorPage from "./pages/ErrorPage";
 
 const withSuspense = (element: ReactElement) => (
   <Suspense
-    fallback={
-      <div className="flex min-h-[40vh] items-center justify-center text-text/70">
-        Loading...
-      </div>
-    }
+  fallback={
+    <div className="flex min-h-[40vh] items-center justify-center text-text/70">
+    Loading...
+    </div>
+  }
   >
-    {element}
+  {element}
   </Suspense>
 );
 
@@ -40,93 +40,93 @@ function App() {
   const router = createBrowserRouter(
     createRoutesFromElements(
       <Route path="/" element={<Layout />} errorElement={<ErrorPage />}>
-        <Route index element={withSuspense(<HomePage />)} />
-        <Route path="/Recipes" element={withSuspense(<UserRecipes />)} />
-        <Route
-          path="/Fridge"
-          element={withSuspense(
-            <ProtectedRoute>
-              <Fridge />
-            </ProtectedRoute>
-          )}
+      <Route index element={withSuspense(<HomePage />)} />
+      <Route path="/Recipes" element={withSuspense(<UserRecipes />)} />
+      <Route
+      path="/Fridge"
+      element={withSuspense(
+        <ProtectedRoute>
+        <Fridge />
+        </ProtectedRoute>
+      )}
+      />
+      <Route
+      path="/login"
+      element={withSuspense(
+        <GuestRoute>
+        <Login />
+        </GuestRoute>
+      )}
+      />
+      <Route path="/Login" element={<Navigate to="/login" replace />} />
+      <Route
+      path="/register"
+      element={withSuspense(
+        <GuestRoute>
+        <Register />
+        </GuestRoute>
+      )}
+      />
+      <Route
+      path="/My Preferences"
+      element={withSuspense(
+        <ProtectedRoute>
+        <MePage />
+        </ProtectedRoute>
+      )}
+      />
+      <Route
+      path="/ShoppingList"
+      element={withSuspense(
+        <ProtectedRoute>
+        <ShoppingList />
+        </ProtectedRoute>
+      )}
+      />
+      <Route
+      path="/Recipe"
+      element={withSuspense(
+        <ProtectedRoute>
+        <RecipePage />
+        </ProtectedRoute>
+      )}
+      />
+      <Route path="/Recipe/:id" element={withSuspense(<RecipePage />)} />
+      <Route
+      path="/myRecipes"
+      element={withSuspense(
+        <ProtectedRoute>
+        <UserRecipes />
+        </ProtectedRoute>
+      )}
+      />
+      <Route
+      path="/admin"
+      element={withSuspense(
+        <ProtectedRoute requireAdmin>
+        <AdminPage />
+        </ProtectedRoute>
+      )}
+      />
+      <Route path="/Homepage" element={<Navigate to="/" replace />} />
+      <Route
+      path="*"
+      element={
+        <ErrorPage
+        title="Page not found"
+        subtitle="The page you requested does not exist."
         />
-        <Route
-          path="/login"
-          element={withSuspense(
-            <GuestRoute>
-              <Login />
-            </GuestRoute>
-          )}
-        />
-        <Route path="/Login" element={<Navigate to="/login" replace />} />
-        <Route
-          path="/register"
-          element={withSuspense(
-            <GuestRoute>
-              <Register />
-            </GuestRoute>
-          )}
-        />
-        <Route
-          path="/My Preferences"
-          element={withSuspense(
-            <ProtectedRoute>
-              <MePage />
-            </ProtectedRoute>
-          )}
-        />
-        <Route
-          path="/ShoppingList"
-          element={withSuspense(
-            <ProtectedRoute>
-              <ShoppingList />
-            </ProtectedRoute>
-          )}
-        />
-        <Route
-          path="/Recipe"
-          element={withSuspense(
-            <ProtectedRoute>
-              <RecipePage />
-            </ProtectedRoute>
-          )}
-        />
-        <Route path="/Recipe/:id" element={withSuspense(<RecipePage />)} />
-        <Route
-          path="/myRecipes"
-          element={withSuspense(
-            <ProtectedRoute>
-              <UserRecipes />
-            </ProtectedRoute>
-          )}
-        />
-        <Route
-          path="/admin"
-          element={withSuspense(
-            <ProtectedRoute requireAdmin>
-              <AdminPage />
-            </ProtectedRoute>
-          )}
-        />
-        <Route path="/Homepage" element={<Navigate to="/" replace />} />
-        <Route
-          path="*"
-          element={
-            <ErrorPage
-              title="Page not found"
-              subtitle="The page you requested does not exist."
-            />
-          }
-        />
+      }
+      />
       </Route>
     )
   );
-
+  
   return (
     <AuthProvider>
-      <FridgeProvider>
-        <RouterProvider router={router} />
-      </FridgeProvider>
+    <FridgeProvider>
+    <RouterProvider router={router} />
+    </FridgeProvider>
     </AuthProvider>
   );
 }

@@ -334,6 +334,33 @@ export const deleteClient = async function (url: string) {
   }
 };
 
+export const putClient = async function (url: string, body: any = null) {
+  try {
+    const res = await axios.put(API_URL + url, body, {
+      headers: { "Content-Type": "application/json" },
+    });
+    return res.data;
+  } catch (error: any) {
+    console.error(
+      "Put Error:",
+      error.response
+        ? { status: error.response.status, data: error.response.data }
+        : error.message
+    );
+    if (axios.isAxiosError(error) && error.response) {
+      const status = error.response.status;
+      const message =
+        typeof error.response.data?.message === "string"
+          ? error.response.data.message
+          : `Server error with status ${status}`;
+      const finalError = new Error(`AJAX Error (${status}): ${message}`);
+      (finalError as any).status = status;
+      throw finalError;
+    }
+    throw new Error(error.message || "Unknown put error");
+  }
+};
+
 export const formatDateForBackend = (dateString: string): string => {
   const date = new Date(dateString);
 

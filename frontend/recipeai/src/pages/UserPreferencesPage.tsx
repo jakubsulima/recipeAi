@@ -132,6 +132,14 @@ const MePage = () => {
   const dislikedIngredients = user.preferences?.dislikedIngredients || [];
   const activeDiet = user.preferences?.diet || "Not set";
   const currentDiet = user.preferences?.diet || "";
+  const accountPlan = (user.subscriptionPlan || "FREE").toUpperCase();
+  const recipesCreated = user.recipesCreated ?? 0;
+  const recipeCreationLimit = user.recipeCreationLimit ?? -1;
+  const hasUnlimitedRecipes = recipeCreationLimit < 0;
+  const recipesRemaining = user.recipesRemaining;
+  const recipeUsageLabel = hasUnlimitedRecipes
+    ? `${recipesCreated} created • unlimited`
+    : `${recipesCreated}/${recipeCreationLimit} used`;
 
   return (
     <div className="mobile-page-enter min-h-screen w-full bg-background">
@@ -142,8 +150,14 @@ const MePage = () => {
             One place to tune your diet and ingredient dislikes.
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
+            <span className="rounded-full bg-primary px-3 py-1.5 text-sm font-semibold text-background">
+              Plan: {accountPlan}
+            </span>
             <span className="rounded-full bg-accent px-3 py-1.5 text-sm font-semibold text-text">
               Diet: {activeDiet}
+            </span>
+            <span className="rounded-full border border-accent/35 bg-background px-3 py-1.5 text-sm text-text/75">
+              Recipes: {recipeUsageLabel}
             </span>
             <span className="rounded-full border border-accent/35 bg-background px-3 py-1.5 text-sm text-text/75">
               {dislikedIngredients.length} disliked ingredient{dislikedIngredients.length === 1 ? "" : "s"}
@@ -175,6 +189,36 @@ const MePage = () => {
         )}
 
         <div className="mobile-card-enter mobile-card-delay-1 ambient-gradient-card rounded-2xl border border-primary/10 bg-secondary p-5 shadow-sm sm:p-6">
+          <div className="mobile-card-enter mb-6 rounded-xl border border-primary/10 bg-background p-4">
+            <h2 className="mb-1 text-xl font-semibold text-text">Plan and Limits</h2>
+            <p className="mb-3 text-sm text-text/60">
+              Your account plan controls how many recipes you can save.
+            </p>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-lg border border-primary/10 bg-secondary p-3">
+                <p className="text-xs uppercase tracking-wide text-text/60">Current plan</p>
+                <p className="mt-1 text-base font-semibold text-text">{accountPlan}</p>
+              </div>
+              <div className="rounded-lg border border-primary/10 bg-secondary p-3">
+                <p className="text-xs uppercase tracking-wide text-text/60">Recipe limit</p>
+                <p className="mt-1 text-base font-semibold text-text">
+                  {hasUnlimitedRecipes ? "Unlimited" : recipeCreationLimit}
+                </p>
+              </div>
+              <div className="rounded-lg border border-primary/10 bg-secondary p-3">
+                <p className="text-xs uppercase tracking-wide text-text/60">Remaining</p>
+                <p className="mt-1 text-base font-semibold text-text">
+                  {hasUnlimitedRecipes ? "Unlimited" : recipesRemaining ?? 0}
+                </p>
+              </div>
+            </div>
+            {!hasUnlimitedRecipes && user.recipeCreationLimitReached && (
+              <p className="mt-3 rounded-lg border border-accent/45 bg-accent/10 px-3 py-2 text-sm text-text">
+                You reached your current recipe limit. Remove an existing recipe or upgrade your plan.
+              </p>
+            )}
+          </div>
+
           <div className="mobile-card-enter mobile-card-delay-1 mb-6 rounded-xl border border-primary/10 bg-background p-4">
             <h2 className="mb-1 text-xl font-semibold text-text">Dietary Plan</h2>
             <p className="mb-3 text-sm text-text/60">Pick one option. It updates immediately.</p>

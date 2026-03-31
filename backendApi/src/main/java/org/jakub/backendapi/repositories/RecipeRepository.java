@@ -16,6 +16,8 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
 
     Page<Recipe> findByUser(User user, Pageable pageable);
 
+    long countByUser(User user);
+
     Optional<Recipe> findByNameAndUser(String name, User user);
 
     @Query("""

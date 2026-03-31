@@ -1,6 +1,7 @@
 package org.jakub.backendapi.dto;
 
 import org.jakub.backendapi.entities.Enums.Role;
+import org.jakub.backendapi.entities.Enums.SubscriptionPlan;
 
 import java.util.Objects;
 
@@ -10,6 +11,11 @@ public class UserDto {
     private Long id;
     private Role role;
     private String token;
+    private SubscriptionPlan subscriptionPlan;
+    private Integer recipeCreationLimit;
+    private Long recipesCreated;
+    private Integer recipesRemaining;
+    private Boolean recipeCreationLimitReached;
 
     public UserDto() {
     }
@@ -53,17 +59,65 @@ public class UserDto {
         this.token = token;
     }
 
+    public SubscriptionPlan getSubscriptionPlan() {
+        return subscriptionPlan;
+    }
+
+    public void setSubscriptionPlan(SubscriptionPlan subscriptionPlan) {
+        this.subscriptionPlan = subscriptionPlan;
+    }
+
+    public Integer getRecipeCreationLimit() {
+        return recipeCreationLimit;
+    }
+
+    public void setRecipeCreationLimit(Integer recipeCreationLimit) {
+        this.recipeCreationLimit = recipeCreationLimit;
+    }
+
+    public Long getRecipesCreated() {
+        return recipesCreated;
+    }
+
+    public void setRecipesCreated(Long recipesCreated) {
+        this.recipesCreated = recipesCreated;
+    }
+
+    public Integer getRecipesRemaining() {
+        return recipesRemaining;
+    }
+
+    public void setRecipesRemaining(Integer recipesRemaining) {
+        this.recipesRemaining = recipesRemaining;
+    }
+
+    public Boolean getRecipeCreationLimitReached() {
+        return recipeCreationLimitReached;
+    }
+
+    public void setRecipeCreationLimitReached(Boolean recipeCreationLimitReached) {
+        this.recipeCreationLimitReached = recipeCreationLimitReached;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         UserDto userDto = (UserDto) o;
-        return Objects.equals(email, userDto.email) && Objects.equals(id, userDto.id) && role == userDto.role && Objects.equals(token, userDto.token);
+        return Objects.equals(email, userDto.email)
+            && Objects.equals(id, userDto.id)
+            && role == userDto.role
+            && Objects.equals(token, userDto.token)
+            && subscriptionPlan == userDto.subscriptionPlan
+            && Objects.equals(recipeCreationLimit, userDto.recipeCreationLimit)
+            && Objects.equals(recipesCreated, userDto.recipesCreated)
+            && Objects.equals(recipesRemaining, userDto.recipesRemaining)
+            && Objects.equals(recipeCreationLimitReached, userDto.recipeCreationLimitReached);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(email, id, role, token);
+        return Objects.hash(email, id, role, token, subscriptionPlan, recipeCreationLimit, recipesCreated, recipesRemaining, recipeCreationLimitReached);
     }
 
     @Override
@@ -73,6 +127,11 @@ public class UserDto {
                 ", id=" + id +
                 ", role=" + role +
                 ", token='" + token + '\'' +
+                ", subscriptionPlan=" + subscriptionPlan +
+                ", recipeCreationLimit=" + recipeCreationLimit +
+                ", recipesCreated=" + recipesCreated +
+                ", recipesRemaining=" + recipesRemaining +
+                ", recipeCreationLimitReached=" + recipeCreationLimitReached +
                 '}';
     }
 }
