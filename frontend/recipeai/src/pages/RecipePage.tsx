@@ -1,7 +1,7 @@
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { apiClient, generateRecipe, deleteClient, cleanAiJsonString } from "../lib/hooks";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useFridge } from "../context/fridgeContext";
+import { useFridge } from "../context/fridgeContext.tsx";
 import { useUser } from "../context/context";
 import FoodLoadingScreen from "../components/FoodLoadingScreen";
 import { addShoppingItems } from "../lib/shoppingList";
@@ -149,7 +149,6 @@ const RecipePage = () => {
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   
   const currentRecipeIdentifierRef = useRef<string | null>(null);
-  const generationPromptRef = useRef<string>("");
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const applyGeneratedRecipeResponse = useCallback((response: any, identifier: string) => {
@@ -167,38 +166,6 @@ const RecipePage = () => {
     setSaveStatus("idle");
     currentRecipeIdentifierRef.current = identifier;
   }, []);
-  
-  const loadNewRecipeCallback = useCallback(
-    async (currentSearchTerm: string) => {
-      if (!currentSearchTerm) return;
-      try {
-        setIsLoading(true);
-        setError("");
-        setSaveStatus("idle");
-        abortControllerRef.current?.abort();
-        const controller = new AbortController();
-        abortControllerRef.current = controller;
-        const fridgeIngredients = getFridgeItemNames();
-        const response = await generateRecipe(
-          currentSearchTerm,
-          fridgeIngredients,
-          controller.signal,
-          3
-        );
-        generationPromptRef.current = currentSearchTerm;
-        applyGeneratedRecipeResponse(response, currentSearchTerm);
-        setIsLoading(false);
-      } catch (err: any) {
-        if (err.name === "AbortError") return; // new request owns loading state
-        console.error("Error generating recipe:", err);
-        setError("Failed to load recipe. Please try again.");
-        setRecipeOptions([]);
-        currentRecipeIdentifierRef.current = null;
-        setIsLoading(false);
-      }
-    },
-    [applyGeneratedRecipeResponse, getFridgeItemNames]
-  );
   
   useEffect(() => {
     const loadRecipe = async () => {
@@ -247,7 +214,6 @@ const RecipePage = () => {
               const controller = new AbortController();
               abortControllerRef.current = controller;
               const response = await generateRecipe(search, fridgeIngredients, controller.signal, 3);
-              generationPromptRef.current = search;
               applyGeneratedRecipeResponse(response, search);
               setIsLoading(false);
             } catch (err: any) {
@@ -325,19 +291,22 @@ const RecipePage = () => {
     }
     
     const missingIngredients = getMissingIngredients(recipeData.ingredients, fridgeItems);
-    
-    if (missingIngredients.length === 0) {
-      setError("Great! You already have all ingredients for this recipe.");
-      return;
-    }
-    
-    addShoppingItems(
-      missingIngredients.map((ingredient) => ({
+
+    const sourceIngredients =
+      missingIngredients.length > 0 ? missingIngredients : recipeData.ingredients;
+
+    const updated = addShoppingItems(
+      sourceIngredients.map((ingredient) => ({
         name: ingredient.name,
         amount: ingredient.amount,
         unit: ingredient.unit,
       }))
     );
+
+    if (updated.length === 0) {
+      setError("Could not add items to the shopping list. Please try again.");
+      return;
+    }
     
     navigate("/ShoppingList");
   };
@@ -522,13 +491,13 @@ const RecipePage = () => {
     <h2 className="mb-4 text-2xl font-semibold text-text">
     Instructions
     </h2>
-    <ol className="space-y-3">
+    <ol className="space-y-3.5">
     {(recipeData.instructions || []).map((instruction, index) => (
-      <li key={index} className="flex gap-3 rounded-lg border border-primary/10 bg-background px-3 py-3 text-text">
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent font-bold text-primary">
+      <li key={index} className="group flex items-start gap-3 rounded-xl border border-primary/12 bg-background px-4 py-3.5 text-text shadow-sm transition-colors hover:border-accent/45">
+      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-base font-bold text-primary shadow-[0_2px_0_rgba(0,0,0,0.08)]">
       {index + 1}
       </span>
-      <span className="pt-0.5 text-text/85">{instruction}</span>
+      <span className="pt-0.5 text-[1.04rem] leading-relaxed text-text/90">{instruction}</span>
       </li>
     ))}
     </ol>
@@ -536,33 +505,18 @@ const RecipePage = () => {
     </div>
     </div>
     
-    <div className="mobile-card-enter mobile-card-delay-2 mt-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/10 bg-secondary p-4">
-    <div className="flex flex-wrap gap-3">
+    <div className="mobile-card-enter mobile-card-delay-2 mt-8 rounded-2xl border border-primary/10 bg-secondary p-4 sm:p-5">
+    <div className="grid gap-3 sm:grid-cols-2">
     <button
-    className="mobile-soft-press rounded-lg bg-primary px-4 py-2.5 font-semibold text-background transition-colors hover:bg-primary/90"
+    className="mobile-soft-press inline-flex w-full items-center justify-center rounded-xl bg-primary px-4 py-3 font-semibold text-background transition-colors hover:bg-primary/90"
     onClick={handleGenerateShoppingList}
     >
     Generate Shopping List
     </button>
-    
-    {!recipeId && (
-      <button
-      className="mobile-soft-press rounded-lg border border-primary/20 bg-background px-4 py-2.5 font-semibold text-text transition-colors hover:bg-background/80"
-      onClick={() =>
-        loadNewRecipeCallback(
-          generationPromptRef.current || search || recipeData?.name || ""
-        )
-      }
-      >
-      Generate 3 New Recipes
-      </button>
-    )}
-    </div>
-    
-    <div className="flex flex-wrap gap-3">
+
     {!recipeId && user && (
       <button
-      className={`rounded-lg px-4 py-2.5 font-semibold transition-colors ${
+      className={`inline-flex w-full items-center justify-center rounded-xl px-4 py-3 font-semibold transition-colors ${
         saveStatus === "saved"
         ? "cursor-default bg-green-600 text-white"
         : saveStatus === "saving"
@@ -582,10 +536,10 @@ const RecipePage = () => {
       
       {recipeId && user && (
         <button
-        className="mobile-soft-press rounded-lg bg-accent px-4 py-2.5 font-semibold text-text transition-colors hover:bg-accent/90"
+        className="mobile-soft-press inline-flex w-full items-center justify-center rounded-xl bg-accent px-4 py-3 font-semibold text-text transition-colors hover:bg-accent/90"
         onClick={handleDelete}
         >
-        Delete Recipe
+        🗑 Delete Recipe
         </button>
       )}
       </div>

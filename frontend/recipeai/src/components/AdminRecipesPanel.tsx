@@ -115,7 +115,7 @@ const AdminRecipesPanel: React.FC = () => {
                       onClick={() => handleDeleteRecipe(recipe.id)}
                       className="mobile-soft-press bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-3 rounded focus:outline-none focus:shadow-outline text-sm"
                     >
-                      Delete
+                      🗑 Delete
                     </button>
                   </td>
                 </tr>

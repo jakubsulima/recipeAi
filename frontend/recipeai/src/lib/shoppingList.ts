@@ -19,6 +19,8 @@ interface ShoppingItemInput {
 const STORAGE_KEY = "recipeai.shoppingList";
 
 const normalizeName = (value: string) => value.trim().toLowerCase();
+const normalizeUnit = (value: string | null | undefined) =>
+  typeof value === "string" && value.trim() ? value.trim().toLowerCase() : null;
 const SHOPPING_LIST_ENDPOINT = `${API_URL}shoppingList`;
 
 const toNumberOrNull = (value: string | number | null | undefined): number | null => {
@@ -94,21 +96,71 @@ export const addShoppingItems = (
   newItems: ShoppingItemInput[]
 ): ShoppingListItem[] => {
   const existing = readShoppingList();
-  const existingNames = new Set(existing.map((item) => normalizeName(item.name)));
+  const updated = [...existing];
 
-  const additions: ShoppingListItem[] = newItems
-    .filter((item) => item.name && item.name.trim() !== "")
-    .filter((item) => !existingNames.has(normalizeName(item.name)))
-    .map((item) => ({
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      name: item.name.trim(),
-      amount: item.amount ?? null,
-      unit: item.unit ?? null,
-      checked: false,
-      createdAt: new Date().toISOString(),
-    }));
+  for (const item of newItems) {
+    if (!item.name || item.name.trim() === "") {
+      continue;
+    }
 
-  const updated = [...existing, ...additions];
+    const incomingName = item.name.trim();
+    const incomingNameKey = normalizeName(incomingName);
+    const incomingUnit = normalizeUnit(item.unit);
+    const incomingAmount = toNumberOrNull(item.amount);
+
+    const sameNameIndexes = updated
+      .map((existingItem, index) =>
+        normalizeName(existingItem.name) === incomingNameKey ? index : -1
+      )
+      .filter((index) => index !== -1);
+
+    if (sameNameIndexes.length === 0) {
+      updated.push({
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        name: incomingName,
+        amount: incomingAmount,
+        unit: item.unit ?? null,
+        checked: false,
+        createdAt: new Date().toISOString(),
+      });
+      continue;
+    }
+
+    const compatibleIndex = sameNameIndexes.find((index) => {
+      const existingUnit = normalizeUnit(updated[index].unit);
+      return existingUnit === incomingUnit || existingUnit === null || incomingUnit === null;
+    });
+
+    if (compatibleIndex === undefined) {
+      updated.push({
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        name: incomingName,
+        amount: incomingAmount,
+        unit: item.unit ?? null,
+        checked: false,
+        createdAt: new Date().toISOString(),
+      });
+      continue;
+    }
+
+    const existingItem = updated[compatibleIndex];
+    const existingAmount = toNumberOrNull(existingItem.amount);
+
+    if (incomingAmount !== null) {
+      if (existingAmount !== null) {
+        existingItem.amount = Number((existingAmount + incomingAmount).toFixed(2));
+      } else {
+        existingItem.amount = incomingAmount;
+      }
+    }
+
+    if (!existingItem.unit && item.unit) {
+      existingItem.unit = item.unit;
+    }
+
+    existingItem.checked = false;
+  }
+
   writeShoppingList(updated);
   return updated;
 };

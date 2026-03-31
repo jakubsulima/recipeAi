@@ -2,9 +2,9 @@ import axios from "axios";
 import { API_URL, TIMEOUT } from "./constants.tsx";
 
 const formOfPrompt =
-  " Return ONLY valid JSON with this exact structure: { \"name\": string, \"description\": string, \"timeToPrepare\": string, \"ingredients\": [{\"name\": string, \"amount\": number, \"unit\": string}], \"instructions\": [string], \"nutrition\": { \"calories\": number, \"protein\": number, \"carbs\": number, \"fats\": number } }. Use metric units and avoid markdown/code fences.";
+  " Act as a professional culinary database architect and recommendation engine. Return ONLY a single valid JSON object following this exact schema: { \"name\": string, \"description\": string, \"timeToPrepare\": string, \"ingredients\": [{\"name\": string, \"amount\": number, \"unit\": string}], \"instructions\": [string], \"nutrition\": { \"calories\": number, \"protein\": number, \"carbs\": number, \"fats\": number } }. Enforce user filters from the request text (meal type, cuisine, time constraint, and additional notes). Include 8-14 ingredients with realistic amounts for 2 servings. Use strict metric units (g, ml, kg) or whole counts. Provide 6-9 technical instructions with sensory cues and clear time/temperature markers. Avoid vague steps like 'cook until done'. Ensure nutrition values are internally consistent with the listed ingredients. Do not include markdown or conversational text.";
 const batchFormOfPrompt =
-  " Return ONLY valid JSON with this exact structure: { \"recipes\": [{ \"name\": string, \"description\": string, \"timeToPrepare\": string, \"ingredients\": [{\"name\": string, \"amount\": number, \"unit\": string}], \"instructions\": [string], \"nutrition\": { \"calories\": number, \"protein\": number, \"carbs\": number, \"fats\": number } }] }. Make recipes truly different in cuisine, technique, and core ingredients. Use metric units and avoid markdown/code fences.";
+  " Act as a professional culinary database architect and recommendation engine. Return ONLY a single valid JSON object following this exact schema: { \"recipes\": [{ \"name\": string, \"description\": string, \"timeToPrepare\": string, \"ingredients\": [{\"name\": string, \"amount\": number, \"unit\": string}], \"instructions\": [string], \"nutrition\": { \"calories\": number, \"protein\": number, \"carbs\": number, \"fats\": number } }] }. Enforce user filters from the request text (meal type, cuisine, time constraint, and additional notes). All generated recipes must match those filters. Create meaningful diversity across recipes by varying core protein category, cooking technique, and flavor profile while staying plausible. For EACH recipe: include 8-14 ingredients with realistic amounts for 2 servings, use strict metric units (g, ml, kg) or whole counts, and provide 6-9 technical instructions with sensory cues and clear time/temperature markers. Ensure nutrition values are internally consistent with the listed ingredients. Do not include markdown or conversational text.";
 
 const inFlightRecipeRequests = new Map<string, Promise<any>>();
 
@@ -14,9 +14,14 @@ const buildRecipePrompt = (
   requestedCount: number
 ) => {
   const promptFormat = requestedCount > 1 ? batchFormOfPrompt : formOfPrompt;
+  const countInstruction =
+    requestedCount > 1
+      ? ` Return exactly ${requestedCount} recipes in the recipes array.`
+      : " Return exactly 1 recipe object.";
   return (
     prompt +
     promptFormat +
+    countInstruction +
     (productsFridge.length > 0
       ? " Prioritize using these products for this recipe: " +
         productsFridge.join(", ")

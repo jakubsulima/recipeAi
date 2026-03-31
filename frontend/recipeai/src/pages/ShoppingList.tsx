@@ -11,6 +11,67 @@ import ErrorAlert from "../components/ErrorAlert";
 const areItemsEqual = (a: ShoppingListItem[], b: ShoppingListItem[]) =>
   JSON.stringify(a) === JSON.stringify(b);
 
+const hasUnsyncedLocalChanges = (
+  localItems: ShoppingListItem[],
+  remoteItems: ShoppingListItem[]
+) => {
+  if (localItems.length !== remoteItems.length) {
+    return true;
+  }
+
+  const remoteById = new Map(remoteItems.map((item) => [item.id, item]));
+
+  return localItems.some((localItem) => {
+    const remoteItem = remoteById.get(localItem.id);
+    if (!remoteItem) {
+      return true;
+    }
+
+    return (
+      remoteItem.name !== localItem.name ||
+      String(remoteItem.amount ?? "") !== String(localItem.amount ?? "") ||
+      (remoteItem.unit ?? null) !== (localItem.unit ?? null) ||
+      remoteItem.checked !== localItem.checked
+    );
+  });
+};
+
+const TrashIcon = ({ className = "h-4 w-4" }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    aria-hidden="true"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+    />
+  </svg>
+);
+
+const CloseIcon = ({ className = "h-4 w-4" }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    aria-hidden="true"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M6 18L18 6M6 6l12 12"
+    />
+  </svg>
+);
+
 const ShoppingList = () => {
   const [items, setItems] = useState<ShoppingListItem[]>(() => readShoppingList());
   const [newItem, setNewItem] = useState("");
@@ -25,16 +86,32 @@ const ShoppingList = () => {
     const hydrateFromServer = async () => {
       try {
         setSyncError("");
+        const localItems = readShoppingList();
         const remoteItems = await fetchShoppingList();
         if (disposed) {
           return;
         }
 
         if (remoteItems.length > 0) {
-          setItems(remoteItems);
-          writeShoppingList(remoteItems);
+          if (
+            localItems.length > 0 &&
+            hasUnsyncedLocalChanges(localItems, remoteItems)
+          ) {
+            setItems(localItems);
+            writeShoppingList(localItems);
+
+            setIsSyncing(true);
+            const synced = await syncShoppingList(localItems);
+            if (disposed) {
+              return;
+            }
+            setItems(synced);
+            writeShoppingList(synced);
+          } else {
+            setItems(remoteItems);
+            writeShoppingList(remoteItems);
+          }
         } else {
-          const localItems = readShoppingList();
           if (localItems.length > 0) {
             setIsSyncing(true);
             const synced = await syncShoppingList(localItems);
@@ -142,10 +219,6 @@ const ShoppingList = () => {
     setItems((prev) => prev.filter((item) => !item.checked));
   };
 
-  const clearAll = () => {
-    setItems([]);
-  };
-
   const completedCount = items.length - remainingCount;
 
   return (
@@ -207,55 +280,53 @@ const ShoppingList = () => {
             <p className="mt-1 text-sm text-text/60">Add items above or generate a list from a recipe.</p>
           </div>
         ) : (
-          <ul className="space-y-2.5">
-            {items.map((item) => (
-              <li
-                key={item.id}
-                className="flex items-center justify-between gap-3 rounded-xl border border-primary/10 bg-background px-3 py-2.5"
-              >
-                <div className="flex min-w-0 items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={item.checked}
-                    onChange={() => toggleItem(item.id)}
-                    className="h-4 w-4 rounded border-primary/30 text-accent focus:ring-accent"
-                  />
-                  <span
-                    className={`truncate ${
-                      item.checked ? "text-text/40 line-through" : "text-text"
-                    }`}
-                  >
-                    {item.name}
-                    {item.amount ? ` - ${item.amount}` : ""}
-                    {item.unit ? ` ${item.unit}` : ""}
-                  </span>
-                </div>
-                <button
-                  onClick={() => removeItem(item.id)}
-                  className="rounded-md px-2.5 py-1 text-sm font-medium text-text/60 transition-colors hover:bg-accent/15 hover:text-accent"
+          <>
+            <ul className="space-y-2.5">
+              {items.map((item) => (
+                <li
+                  key={item.id}
+                  className="flex items-center justify-between gap-3 rounded-xl border border-primary/10 bg-background px-3 py-2.5"
                 >
-                  Remove
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
+                  <div className="flex min-w-0 items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={item.checked}
+                      onChange={() => toggleItem(item.id)}
+                      className="h-4 w-4 rounded border-primary/30 accent-accent focus:ring-2 focus:ring-accent/50"
+                    />
+                    <span
+                      className={`truncate ${
+                        item.checked ? "text-text/40 line-through" : "text-text"
+                      }`}
+                    >
+                      {item.name}
+                      {item.amount ? ` - ${item.amount}` : ""}
+                      {item.unit ? ` ${item.unit}` : ""}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => removeItem(item.id)}
+                    aria-label={`Remove ${item.name}`}
+                    title="Remove item"
+                    className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-sm font-medium text-text/60 transition-colors hover:bg-accent/15 hover:text-accent"
+                  >
+                    <TrashIcon />
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
 
-        {items.length > 0 && (
-          <div className="mt-4 flex flex-wrap gap-2 border-t border-primary/10 pt-4">
-            <button
-              onClick={clearChecked}
-              className="rounded-lg border border-accent/35 bg-background px-3 py-2 text-sm font-medium text-text transition-colors hover:bg-accent/10"
-            >
-              Remove Checked
-            </button>
-            <button
-              onClick={clearAll}
-              className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-background transition-colors hover:bg-primary/90"
-            >
-              Clear All
-            </button>
-          </div>
+            <div className="mt-4 flex flex-wrap justify-start gap-2 border-t border-primary/10 pt-4">
+              <button
+                onClick={clearChecked}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-background transition-colors hover:bg-primary/90"
+              >
+                <CloseIcon />
+                Clear Checked
+              </button>
+            </div>
+          </>
         )}
       </div>
     </div>
