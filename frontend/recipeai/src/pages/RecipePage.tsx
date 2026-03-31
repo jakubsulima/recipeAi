@@ -276,6 +276,8 @@ const RecipePage = () => {
         setError("You must be logged in to save a recipe.");
       } else if (error.status === 409) {
         setError("This recipe is already saved in your collection.");
+      } else if (error.status === 403) {
+        setError("You reached your current recipe limit. Remove one saved recipe or switch to a paid plan.");
       } else {
         setError(error.message || "Failed to save recipe. Please try again.");
       }
@@ -491,13 +493,16 @@ const RecipePage = () => {
     <h2 className="mb-4 text-2xl font-semibold text-text">
     Instructions
     </h2>
-    <ol className="space-y-3.5">
+    <ol className="space-y-4">
     {(recipeData.instructions || []).map((instruction, index) => (
-      <li key={index} className="group flex items-start gap-3 rounded-xl border border-primary/12 bg-background px-4 py-3.5 text-text shadow-sm transition-colors hover:border-accent/45">
-      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-base font-bold text-primary shadow-[0_2px_0_rgba(0,0,0,0.08)]">
+      <li
+      key={index}
+      className="group flex items-start gap-3.5 rounded-2xl border border-primary/12 bg-background/95 px-4 py-4 text-text shadow-[0_10px_28px_-22px_rgba(17,17,17,0.9)] transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/55 hover:shadow-[0_16px_34px_-24px_rgba(17,17,17,0.9)] sm:px-5"
+      >
+      <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-base font-extrabold text-primary ring-2 ring-accent/35 ring-offset-2 ring-offset-background shadow-[0_3px_0_rgba(0,0,0,0.08)]">
       {index + 1}
       </span>
-      <span className="pt-0.5 text-[1.04rem] leading-relaxed text-text/90">{instruction}</span>
+      <span className="pt-0.5 text-[1.03rem] font-medium leading-8 text-text/90">{instruction}</span>
       </li>
     ))}
     </ol>

@@ -310,7 +310,6 @@ const ShoppingList = () => {
                     title="Remove item"
                     className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-sm font-medium text-text/60 transition-colors hover:bg-accent/15 hover:text-accent"
                   >
-                    <TrashIcon />
                     Remove
                   </button>
                 </li>

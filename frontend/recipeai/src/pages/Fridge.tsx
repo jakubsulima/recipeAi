@@ -223,29 +223,39 @@ export const Fridge = () => {
 
   return (
     <>
-      <div className="mobile-page-enter container mx-auto grid min-h-screen grid-cols-1 items-start gap-8 bg-background p-6 md:grid-cols-3">
-        <div className="w-full space-y-3">
+      <div className="mobile-page-enter container mx-auto grid grid-cols-1 items-start gap-5 bg-background px-4 py-5 sm:px-6 md:grid-cols-3 md:gap-6">
+        <div className="w-full space-y-4">
           <ErrorAlert message={displayError} onAutoHide={() => setError("")} />
 
-          <div className="ambient-gradient-card grid grid-cols-1 gap-2 rounded-xl border border-accent/30 bg-accent/10 p-2 sm:grid-cols-3">
+          <div className="ambient-gradient-card rounded-2xl border border-accent/30 bg-accent/10 p-3 sm:p-3.5">
+            <div className="mb-2.5 px-1">
+              <h2 className="text-sm font-semibold text-text/75">Quick Add Options</h2>
+              <p className="text-xs text-text/55">Choose how you want to add products to your fridge.</p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             <button
               onClick={() => setIsBarcodeScannerOpen(true)}
-              className="mobile-soft-press rounded-md border border-accent/35 bg-background px-3 py-2 text-sm font-semibold text-text transition-colors hover:bg-accent/20"
+              className="mobile-soft-press flex min-h-16 flex-col items-center justify-center rounded-xl border border-accent/35 bg-background px-3 py-2 text-center transition-colors hover:bg-accent/20"
             >
-              Scan Barcode
+              <span className="text-sm font-semibold text-text">Scan Barcode</span>
+              <span className="mt-0.5 text-[11px] text-text/60">Use your camera</span>
             </button>
             <button
               onClick={() => setIsReceiptScannerOpen(true)}
-              className="mobile-soft-press rounded-md border border-accent/35 bg-background px-3 py-2 text-sm font-semibold text-text transition-colors hover:bg-accent/20"
+              className="mobile-soft-press flex min-h-16 flex-col items-center justify-center rounded-xl border border-accent/35 bg-background px-3 py-2 text-center transition-colors hover:bg-accent/20"
             >
-              Scan Receipt
+              <span className="text-sm font-semibold text-text">Scan Receipt</span>
+              <span className="mt-0.5 text-[11px] text-text/60">Import multiple items</span>
             </button>
             <button
               onClick={generateZeroWasteRecipe}
-              className="mobile-soft-press rounded-md bg-accent px-3 py-2 text-sm font-semibold text-text shadow-[0_8px_18px_rgba(255,212,60,0.3)] transition-colors hover:bg-accent/90"
+              className="mobile-soft-press flex min-h-16 flex-col items-center justify-center rounded-xl bg-accent px-3 py-2 text-center shadow-[0_8px_18px_rgba(255,212,60,0.3)] transition-colors hover:bg-accent/90"
             >
-              Use Expiring Soon
+              <span className="text-sm font-semibold text-text">Use Expiring Soon</span>
+              <span className="mt-0.5 text-[11px] text-text/70">Generate zero-waste recipe</span>
             </button>
+            </div>
           </div>
 
           <AddFridgeItemForm

@@ -48,7 +48,7 @@ const FridgeDisplay: React.FC<FridgeDisplayProps> = ({
   );
 
   return (
-    <div className="mobile-card-enter mobile-card-delay-1 ambient-gradient-card md:col-span-2 w-full p-5 sm:p-6 bg-secondary rounded-xl shadow-sm border border-primary/5 min-h-[500px] flex flex-col">
+    <div className="mobile-card-enter mobile-card-delay-1 ambient-gradient-card md:col-span-2 w-full rounded-xl border border-primary/5 bg-secondary p-5 shadow-sm sm:p-6 min-h-[320px] md:min-h-[380px] flex flex-col">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <h1 className="text-2xl font-bold text-text">My Fridge</h1>
         <span className="text-xs sm:text-sm px-3 py-1 rounded-full bg-accent/20 border border-accent/35 text-text">
