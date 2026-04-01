@@ -121,11 +121,11 @@ POSTGRES_PASSWORD=your_secure_password_here
 GEMINI_API_KEY=your_gemini_api_key_here
 ALLOWED_ORIGINS=http://localhost:5173,http://localhost:80
 
-# Recipe plan limits
-# Free plan recipe save limit (dev default in backend config is 1000, prod default is 75)
-FREE_PLAN_RECIPE_LIMIT=1000
-# Paid plan recipe save limit (-1 means unlimited)
-PAID_PLAN_RECIPE_LIMIT=-1
+# Recipe plan daily request limits
+# Free plan daily recipe request limit (dev default in backend config is 1000, prod default is 75)
+FREE_PLAN_RECIPE_REQUESTS_PER_DAY=1000
+# Paid plan daily recipe request limit (-1 means unlimited)
+PAID_PLAN_RECIPE_REQUESTS_PER_DAY=-1
 
 # Frontend Configuration
 BACKEND_URL=http://backend:8080

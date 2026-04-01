@@ -123,6 +123,7 @@ public class RecipesController {
         String recipePrompt = recipeRequest != null && StringUtils.hasText(recipeRequest.fullPrompt())
                 ? recipeRequest.fullPrompt()
             : (recipeRequest != null ? recipeRequest.prompt() : null);
+        String userEmail = getAuthenticatedUserEmail();
         int recipeCount = recipeRequest != null && recipeRequest.count() != null ? recipeRequest.count() : 1;
 
         if (!StringUtils.hasText(recipePrompt)) {
@@ -137,8 +138,11 @@ public class RecipesController {
             "Too many recipe generation requests. Please try again in a minute."
         );
 
+        if (StringUtils.hasText(userEmail)) {
+            userService.consumeDailyRecipeRequestQuota(userEmail);
+        }
+
         try {
-            String userEmail = getAuthenticatedUserEmail();
             if (userEmail != null && !userEmail.isEmpty()) {
                 UserDto user = userService.findByEmail(userEmail);
                 if (user != null) {

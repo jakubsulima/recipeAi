@@ -17,10 +17,11 @@
 - Run frontend commands from `frontend/recipeai/`.
 - Backend uses Gradle wrapper commands from `backendApi/`: `./gradlew test`, `./gradlew bootRun`, `./gradlew build`.
 - Backend commands should run on Java 17; if local tooling points to a newer JDK, set `JAVA_HOME` to JDK 17 before running Gradle.
+- Current repository state: backend test sources are out of sync with production code and `./gradlew test` may fail at `compileTestJava`; use `./gradlew compileJava` for quick feature-level backend validation unless your task includes fixing tests.
 - Prefer the smallest useful validation first; do not fix unrelated failing tests.
 - Quick local validation defaults:
 	- Frontend: `npm run build`
-	- Backend: `./gradlew test`
+	- Backend: `./gradlew compileJava`
 - For environment setup and Docker orchestration, see `README.md`.
 
 ## Conventions
@@ -58,6 +59,7 @@
 - Root setup and endpoint docs: `README.md`
 - Frontend design tokens and color system: `frontend/recipeai/COLOR_SCHEME_GUIDE.md`
 - Frontend theme implementation: `frontend/recipeai/src/App.css`
+- Frontend migration note (historical context only): `frontend/recipeai/MIGRATION_COMPLETE.md`
 - Backend runtime/profile behavior: `backendApi/src/main/resources/application.yml` and `backendApi/src/main/resources/application-prod.yml`
 
 ## When to Ask Questions

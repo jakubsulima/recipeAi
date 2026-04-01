@@ -39,7 +39,7 @@ const Navbar = () => {
         ...baseItems,
         "Fridge",
         "ShoppingList",
-        "My Preferences",
+        "My Profile",
         isAdmin ? "Admin" : null,
       ].filter(Boolean) as string[];
     } else {

@@ -37,15 +37,13 @@ public class RecipeService {
     private final IngredientRepository ingredientRepository;
     private final RecipeIngredientRepository recipeIngredientRepository;
     private final RecipeMapper recipeMapper;
-    private final RecipePlanLimitService recipePlanLimitService;
 
-    public RecipeService(RecipeRepository recipeRepository, UserRepository userRepository, IngredientRepository ingredientRepository, RecipeIngredientRepository recipeIngredientRepository, RecipeMapper recipeMapper, RecipePlanLimitService recipePlanLimitService) {
+    public RecipeService(RecipeRepository recipeRepository, UserRepository userRepository, IngredientRepository ingredientRepository, RecipeIngredientRepository recipeIngredientRepository, RecipeMapper recipeMapper) {
         this.recipeRepository = recipeRepository;
         this.userRepository = userRepository;
         this.ingredientRepository = ingredientRepository;
         this.recipeIngredientRepository = recipeIngredientRepository;
         this.recipeMapper = recipeMapper;
-        this.recipePlanLimitService = recipePlanLimitService;
     }
 
     @Transactional
@@ -65,9 +63,6 @@ public class RecipeService {
     public Recipe saveRecipe(RecipeDto recipeDto, String login) {
         User user = userRepository.findByEmailForUpdate(login)
                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
-
-        long userRecipeCount = recipeRepository.countByUser(user);
-        recipePlanLimitService.assertCanCreateRecipe(user, userRecipeCount);
 
         recipeRepository.findByNameAndUser(recipeDto.getName(), user)
                 .ifPresent(existing -> {

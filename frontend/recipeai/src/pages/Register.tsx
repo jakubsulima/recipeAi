@@ -73,7 +73,7 @@ const Register = () => {
       refreshSession().catch(() => {
         // Route guards will handle unauthenticated fallback if session sync fails.
       });
-      navigate("/My Preferences", {
+      navigate("/My Profile", {
         replace: true,
         state: { fromRegistration: true },
       });
@@ -200,7 +200,7 @@ const Register = () => {
           {/* Google Sign-Up (rendered by Google SDK) */}
           <div
             ref={googleBtnRef}
-            className="w-full flex justify-center [&_iframe]:!rounded-lg mb-6"
+            className="w-full flex justify-center [&_iframe]:rounded-lg! mb-6"
           />
 
           {/* Divider */}

@@ -18,15 +18,32 @@ public class RateLimitService {
         Deque<Long> timestamps = requestBuckets.computeIfAbsent(key, ignored -> new ArrayDeque<>());
 
         synchronized (timestamps) {
-            while (!timestamps.isEmpty() && now - timestamps.peekFirst() > windowMillis) {
-                timestamps.pollFirst();
-            }
+            trimExpiredRequests(timestamps, now, windowMillis);
 
             if (timestamps.size() >= maxRequests) {
                 throw new AppException(errorMessage, HttpStatus.TOO_MANY_REQUESTS);
             }
 
             timestamps.addLast(now);
+        }
+    }
+
+    public int getCurrentRequestCount(String key, long windowMillis) {
+        long now = System.currentTimeMillis();
+        Deque<Long> timestamps = requestBuckets.get(key);
+        if (timestamps == null) {
+            return 0;
+        }
+
+        synchronized (timestamps) {
+            trimExpiredRequests(timestamps, now, windowMillis);
+            return timestamps.size();
+        }
+    }
+
+    private void trimExpiredRequests(Deque<Long> timestamps, long now, long windowMillis) {
+        while (!timestamps.isEmpty() && now - timestamps.peekFirst() > windowMillis) {
+            timestamps.pollFirst();
         }
     }
 }

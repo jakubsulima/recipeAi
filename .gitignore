@@ -61,3 +61,4 @@ postgres/Dockerfile
 *.sh
 postgres/init-admin.sh
 postgres/init-users.sh
+.playwright-mcp/

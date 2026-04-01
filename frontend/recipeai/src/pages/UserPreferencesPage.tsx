@@ -138,14 +138,14 @@ const MePage = () => {
   const hasUnlimitedRecipes = recipeCreationLimit < 0;
   const recipesRemaining = user.recipesRemaining;
   const recipeUsageLabel = hasUnlimitedRecipes
-    ? `${recipesCreated} created • unlimited`
-    : `${recipesCreated}/${recipeCreationLimit} used`;
+    ? `${recipesCreated} requests today • unlimited`
+    : `${recipesCreated}/${recipeCreationLimit} requests today`;
 
   return (
     <div className="mobile-page-enter min-h-screen w-full bg-background">
       <div className="container mx-auto p-4 sm:p-6 lg:p-8">
         <div className="mobile-card-enter ambient-gradient-card mb-8 overflow-hidden rounded-3xl border border-accent/35 bg-secondary p-6 sm:p-8">
-          <h1 className="text-3xl font-bold text-text sm:text-4xl">My Preferences</h1>
+          <h1 className="text-3xl font-bold text-text sm:text-4xl">My Profile</h1>
           <p className="mt-2 max-w-2xl text-text/70">
             One place to tune your diet and ingredient dislikes.
           </p>
@@ -157,7 +157,7 @@ const MePage = () => {
               Diet: {activeDiet}
             </span>
             <span className="rounded-full border border-accent/35 bg-background px-3 py-1.5 text-sm text-text/75">
-              Recipes: {recipeUsageLabel}
+              Requests: {recipeUsageLabel}
             </span>
             <span className="rounded-full border border-accent/35 bg-background px-3 py-1.5 text-sm text-text/75">
               {dislikedIngredients.length} disliked ingredient{dislikedIngredients.length === 1 ? "" : "s"}
@@ -192,7 +192,7 @@ const MePage = () => {
           <div className="mobile-card-enter mb-6 rounded-xl border border-primary/10 bg-background p-4">
             <h2 className="mb-1 text-xl font-semibold text-text">Plan and Limits</h2>
             <p className="mb-3 text-sm text-text/60">
-              Your account plan controls how many recipes you can save.
+              Your account plan controls how many recipe save requests you can make per day.
             </p>
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="rounded-lg border border-primary/10 bg-secondary p-3">
@@ -200,13 +200,13 @@ const MePage = () => {
                 <p className="mt-1 text-base font-semibold text-text">{accountPlan}</p>
               </div>
               <div className="rounded-lg border border-primary/10 bg-secondary p-3">
-                <p className="text-xs uppercase tracking-wide text-text/60">Recipe limit</p>
+                <p className="text-xs uppercase tracking-wide text-text/60">Daily request limit</p>
                 <p className="mt-1 text-base font-semibold text-text">
                   {hasUnlimitedRecipes ? "Unlimited" : recipeCreationLimit}
                 </p>
               </div>
               <div className="rounded-lg border border-primary/10 bg-secondary p-3">
-                <p className="text-xs uppercase tracking-wide text-text/60">Remaining</p>
+                <p className="text-xs uppercase tracking-wide text-text/60">Remaining today</p>
                 <p className="mt-1 text-base font-semibold text-text">
                   {hasUnlimitedRecipes ? "Unlimited" : recipesRemaining ?? 0}
                 </p>
@@ -214,7 +214,7 @@ const MePage = () => {
             </div>
             {!hasUnlimitedRecipes && user.recipeCreationLimitReached && (
               <p className="mt-3 rounded-lg border border-accent/45 bg-accent/10 px-3 py-2 text-sm text-text">
-                You reached your current recipe limit. Remove an existing recipe or upgrade your plan.
+                You reached your daily request limit. Try again tomorrow or upgrade your plan.
               </p>
             )}
           </div>

@@ -68,13 +68,14 @@ function App() {
       )}
       />
       <Route
-      path="/My Preferences"
+      path="/My Profile"
       element={withSuspense(
         <ProtectedRoute>
         <MePage />
         </ProtectedRoute>
       )}
       />
+      <Route path="/My Preferences" element={<Navigate to="/My Profile" replace />} />
       <Route
       path="/ShoppingList"
       element={withSuspense(
