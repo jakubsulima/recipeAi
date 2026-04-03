@@ -44,9 +44,8 @@ A full-stack web application that helps users discover and manage recipes using 
 
 ### DevOps & Infrastructure
 - **Docker** & **Docker Compose** for containerization
-- **Nginx** as reverse proxy
-- **Let's Encrypt/Certbot** for SSL certificates
-- **Render.com** deployment configuration included
+- **Dokploy** as the primary production deployment platform
+- **GitHub Actions** Docker CI workflow for image validation/build
 
 ## 📁 Project Structure
 
@@ -92,18 +91,20 @@ recipeAi/
 │   ├── init-admin.sh
 │   └── init-user.sh
 │
-├── nginx/                   # Nginx reverse proxy
-│   └── nginx.conf
+├── docs/                    # Deployment runbooks and env presets
+│   ├── DOKPLOY_DEPLOYMENT.md
+│   └── DOKPLOY_ENV_PRESETS.md
 │
 ├── docker-compose.yml       # Multi-container orchestration
-└── render.yaml             # Render.com deployment config
+├── .env.example             # Copy-ready environment template
+└── .github/workflows/       # CI pipelines
 ```
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 - **Docker** and **Docker Compose** installed
-- **Java 17** or higher (for local backend development)
+- **Java 17** (for local backend development)
 - **Node.js 18+** and **npm** (for local frontend development)
 - **Google Gemini API Key** (get it from [Google AI Studio](https://makersuite.google.com/app/apikey))
 
@@ -116,22 +117,29 @@ Create a `.env` file in the root directory:
 POSTGRES_DB=recipeai
 POSTGRES_USER=recipe_user
 POSTGRES_PASSWORD=your_secure_password_here
+POSTGRES_HOST=db
+POSTGRES_PORT=5432
 
 # Backend Configuration
 GEMINI_API_KEY=your_gemini_api_key_here
-ALLOWED_ORIGINS=http://localhost:5173,http://localhost:80
+GOOGLE_OAUTH_CLIENT_ID=
+ALLOWED_ORIGINS=https://example.com,https://www.example.com
+SPRING_PROFILES_ACTIVE=prod
+JWT_SECRET_KEY=your_super_long_jwt_secret_min_32_chars
+TRUSTED_PROXY_IPS=
+JWT_COOKIE_SECURE=true
+JWT_COOKIE_SAME_SITE=Lax
 
-# Recipe plan daily request limits
-# Free plan daily recipe request limit (dev default in backend config is 1000, prod default is 75)
-FREE_PLAN_RECIPE_REQUESTS_PER_DAY=1000
-# Paid plan daily recipe request limit (-1 means unlimited)
-PAID_PLAN_RECIPE_REQUESTS_PER_DAY=-1
+# Recipe plan limits
+FREE_PLAN_RECIPE_LIMIT=75
+PAID_PLAN_RECIPE_LIMIT=-1
 
 # Frontend Configuration
-BACKEND_URL=http://backend:8080
+VITE_API_URL=/api/
+FRONTEND_PORT=80
 ```
 
-### Quick Start with Docker
+### Quick Start (Dokploy)
 
 1. **Clone the repository**
    ```bash
@@ -145,21 +153,36 @@ BACKEND_URL=http://backend:8080
    # Edit .env with your actual values
    ```
 
-3. **Start all services**
-   ```bash
-   docker-compose up -d
-   ```
+3. **Create application in Dokploy**
+  - Deployment type: Docker Compose
+  - Compose file: `docker-compose.yml`
 
-4. **Access the application**
-   - Frontend: http://localhost:80
-   - Backend API: http://localhost:8080 (via Nginx proxy)
-   - Database: localhost:5434
+4. **Set environment variables in Dokploy UI**
+  - Use `.env.example` as source of required keys
 
-5. **Create an admin user** (optional)
-   ```bash
-   docker exec -it recipeai-db psql -U recipe_user -d recipeai
-   # Then run SQL to update a user's role to ADMIN
-   ```
+5. **Deploy and validate**
+  - Check service logs (`frontend`, `backend`, `db`)
+  - Verify auth and recipe endpoints from the UI
+
+### Production with Dokploy (Recommended)
+
+1. **Create app in Dokploy from this repository**
+  - Deployment type: Docker Compose
+  - Compose file: `docker-compose.yml`
+
+2. **Set environment variables in Dokploy UI**
+  - Use values from `.env.example`
+  - Required minimum: `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `GEMINI_API_KEY`, `ALLOWED_ORIGINS`, `JWT_SECRET_KEY`
+
+3. **Expose services in Dokploy**
+  - Option A: expose frontend only + configure Dokploy path routing `/api/*` to backend (port 8080)
+  - Option B: expose frontend (port 80) and backend (port 8080) on separate domain
+
+4. **Deploy and validate**
+  - Check logs for `frontend`, `backend`, `db`
+  - Verify login/refresh flow and browser CORS
+
+Detailed checklist: `docs/DOKPLOY_DEPLOYMENT.md`
 
 ### Local Development
 
@@ -176,6 +199,9 @@ SPRING_PROFILES_ACTIVE=prod ./gradlew bootRun
 
 # Run tests
 ./gradlew test
+
+# Quick compile validation (recommended for this repo right now)
+./gradlew compileJava
 
 # Build JAR
 ./gradlew build
@@ -195,7 +221,7 @@ npm install
 npm run dev
 
 # Run tests
-npm test
+npm run test
 
 # Build for production
 npm run build
@@ -277,24 +303,17 @@ The frontend will be available at http://localhost:5173
 
 ## 🌐 Deployment
 
-### Docker Compose (Production)
+### Dokploy (Primary)
 
-The project includes a production-ready `docker-compose.yml` with:
-- Nginx reverse proxy with SSL support
-- Certbot for automatic SSL certificate renewal
-- Health checks for all services
-- Persistent PostgreSQL storage
+Primary production path is Dokploy using `docker-compose.yml`.
 
 ```bash
-# Deploy to production
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop services
-docker-compose down
+# Core compose validation
+docker compose -f docker-compose.yml config
 ```
+
+Dokploy-specific runbook:
+- `docs/DOKPLOY_DEPLOYMENT.md`
 
 ## 🧪 Testing
 
@@ -304,12 +323,19 @@ cd backendApi
 ./gradlew test
 ```
 
+Note: Some backend tests may fail to compile due to legacy test code drift. For feature-level validation, prefer:
+
+```bash
+cd backendApi
+./gradlew compileJava
+```
+
 ### Frontend Tests
 ```bash
 cd frontend/recipeai
-npm test              # Run tests once
-npm test -- --watch   # Watch mode
-npm test -- --ui      # UI mode
+npm run test              # Run tests once
+npm run test -- --watch   # Watch mode
+npm run test -- --ui      # UI mode
 ```
 
 ## 🤝 Contributing
