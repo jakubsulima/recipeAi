@@ -12,7 +12,7 @@ COPY settings.gradle .
 
 # Pre-download dependencies without triggering bootJar
 RUN --mount=type=cache,target=/home/gradle/.gradle \
-    ./gradlew compileJava -x test --no-daemon -Dorg.gradle.vfs.watch=false || true
+    ./gradlew compileJava -x test --no-daemon -Dorg.gradle.vfs.watch=false
 
 # Copy source code
 COPY src ./src

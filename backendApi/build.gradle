@@ -1,12 +1,14 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.1.0'
-    id 'io.spring.dependency-management' version '1.1.0'
+    id 'org.springframework.boot' version '3.3.11'
+    id 'io.spring.dependency-management' version '1.1.7'
 }
 
 group = 'org.jakub' // use all lowercase to match folder structure
 version = '0.0.1-SNAPSHOT'
 sourceCompatibility = '17'
+
+ext['spring-security.version'] = '6.5.9'
 
 repositories { mavenCentral() }
 
@@ -22,7 +24,7 @@ dependencies {
     implementation 'com.google.genai:google-genai:1.0.0'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.flywaydb:flyway-core'
-    runtimeOnly 'com.h2database:h2'
+    runtimeOnly 'com.h2database:h2:2.2.224'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'

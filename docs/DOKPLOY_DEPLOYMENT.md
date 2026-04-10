@@ -2,6 +2,14 @@
 
 This project is ready to run as a Docker Compose app in Dokploy using [docker-compose.yml](../docker-compose.yml).
 
+Production deployment is image-only: Dokploy pulls prebuilt images, it does not build from source during deploy.
+
+CI image publishing source: [.github/workflows/docker-ci.yml](../.github/workflows/docker-ci.yml)
+
+Published image tags:
+- `latest` on push to default branch
+- `sha-<short-commit>` on push to default branch
+
 ## 1. Recommended Topology
 
 Option A: Single public domain (simpler)
@@ -22,6 +30,8 @@ Option B: Separate API domain
 3. Set compose file path to docker-compose.yml.
 4. Set branch and webhook auto-deploy as needed.
 
+If GHCR packages are private, configure Dokploy registry credentials so image pulls can authenticate.
+
 ## 3. Service Exposure in Dokploy
 
 Option A (single domain):
@@ -39,6 +49,9 @@ Database service should never be publicly exposed.
 Copy-ready presets are available in [DOKPLOY_ENV_PRESETS.md](DOKPLOY_ENV_PRESETS.md).
 
 Minimum required:
+- BACKEND_IMAGE
+- FRONTEND_IMAGE
+- DB_IMAGE
 - POSTGRES_DB
 - POSTGRES_USER
 - POSTGRES_PASSWORD
@@ -53,9 +66,17 @@ Recommended:
 - JWT_COOKIE_SAME_SITE=Lax
 - FREE_PLAN_RECIPE_LIMIT=75
 - PAID_PLAN_RECIPE_LIMIT=-1
-- VITE_API_URL=/api/ (or API domain URL)
 - FRONTEND_PORT=80
 - SPRING_PROFILES_ACTIVE=prod
+
+Frontend build-time variables are configured in GitHub Actions repository variables (not Dokploy runtime env):
+- `VITE_API_URL` (default `/api/`)
+- `VITE_GOOGLE_CLIENT_ID`
+
+For immutable deploys, point image variables to SHA tags, for example:
+- `BACKEND_IMAGE=ghcr.io/<namespace>/<repo>-backend:sha-abc1234`
+- `FRONTEND_IMAGE=ghcr.io/<namespace>/<repo>-frontend:sha-abc1234`
+- `DB_IMAGE=ghcr.io/<namespace>/<repo>-db:sha-abc1234`
 
 ## 5. First Deployment Checklist
 
@@ -65,6 +86,11 @@ Recommended:
 4. Confirm no CORS errors in browser console.
 5. Confirm cookies are set with expected attributes.
 6. Confirm DB migrations and startup complete successfully.
+
+Update flow after each release:
+1. Push to `main` and wait for CI image publish.
+2. Update `BACKEND_IMAGE`, `FRONTEND_IMAGE`, `DB_IMAGE` to the new SHA tags in Dokploy.
+3. Redeploy (Dokploy will pull new images).
 
 ## 6. Scaling Guidance
 

@@ -3,6 +3,7 @@ build/
 .gradle/
 out/
 bin/
+src/test/
 *.log
 
 # IDE files

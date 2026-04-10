@@ -113,6 +113,11 @@ recipeAi/
 Create a `.env` file in the root directory:
 
 ```env
+# Image-only deployment (published by GitHub Actions)
+BACKEND_IMAGE=ghcr.io/your-github-namespace/recipeai-backend:latest
+FRONTEND_IMAGE=ghcr.io/your-github-namespace/recipeai-frontend:latest
+DB_IMAGE=ghcr.io/your-github-namespace/recipeai-db:latest
+
 # Database Configuration
 POSTGRES_DB=recipeai
 POSTGRES_USER=recipe_user
@@ -134,9 +139,12 @@ JWT_COOKIE_SAME_SITE=Lax
 FREE_PLAN_RECIPE_LIMIT=75
 PAID_PLAN_RECIPE_LIMIT=-1
 
-# Frontend Configuration
-VITE_API_URL=/api/
+# Frontend runtime configuration
 FRONTEND_PORT=80
+
+# Frontend build-time variables are configured in GitHub Actions Variables:
+# VITE_API_URL (default /api/)
+# VITE_GOOGLE_CLIENT_ID
 ```
 
 ### Quick Start (Dokploy)
@@ -159,6 +167,7 @@ FRONTEND_PORT=80
 
 4. **Set environment variables in Dokploy UI**
   - Use `.env.example` as source of required keys
+  - Set `BACKEND_IMAGE`, `FRONTEND_IMAGE`, `DB_IMAGE` to images published by CI (GHCR)
 
 5. **Deploy and validate**
   - Check service logs (`frontend`, `backend`, `db`)
@@ -172,7 +181,8 @@ FRONTEND_PORT=80
 
 2. **Set environment variables in Dokploy UI**
   - Use values from `.env.example`
-  - Required minimum: `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `GEMINI_API_KEY`, `ALLOWED_ORIGINS`, `JWT_SECRET_KEY`
+  - Required minimum: `BACKEND_IMAGE`, `FRONTEND_IMAGE`, `DB_IMAGE`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `GEMINI_API_KEY`, `ALLOWED_ORIGINS`, `JWT_SECRET_KEY`
+  - For deterministic deploys, use image tags `sha-<commit>` instead of `latest`
 
 3. **Expose services in Dokploy**
   - Option A: expose frontend only + configure Dokploy path routing `/api/*` to backend (port 8080)
@@ -310,6 +320,10 @@ Primary production path is Dokploy using `docker-compose.yml`.
 ```bash
 # Core compose validation
 docker compose -f docker-compose.yml config
+
+# Pull and roll out newest images
+docker compose -f docker-compose.yml pull
+docker compose -f docker-compose.yml up -d
 ```
 
 Dokploy-specific runbook:

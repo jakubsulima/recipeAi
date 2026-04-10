@@ -1,0 +1,6 @@
+# Keep postgres image context minimal and explicit
+*
+!Dockerfile
+!init-user.sh
+!init-admin.sh
+!init.sql
