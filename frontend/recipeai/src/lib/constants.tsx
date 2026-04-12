@@ -1,4 +1,4 @@
 /// <reference types="vite/client" />
 
 export const TIMEOUT = 10;
-export const API_URL: string = import.meta.env.VITE_API_URL ?? "https://recipeai.ddns.net/api/";
+export const API_URL: string = import.meta.env.VITE_API_URL ?? "/api/";

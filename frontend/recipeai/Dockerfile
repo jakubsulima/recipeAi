@@ -1,25 +1,30 @@
 # Stage 1: Build the React application
 FROM node:20-alpine AS build
-RUN apk update && apk upgrade
 WORKDIR /app
-ARG VITE_BACKEND_URL
-ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
-COPY package.json ./
-COPY package-lock.json ./
-RUN npm install
+ARG VITE_API_URL
+ARG VITE_GOOGLE_CLIENT_ID
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
+COPY package.json package-lock.json ./
+RUN --mount=type=cache,target=/root/.npm npm ci
 COPY . .
 RUN npm run build
 
 # Stage 2: Serve the application with Nginx
-FROM nginx:stable-alpine
-COPY --from=build /app/dist /usr/share/nginx/html
+FROM nginxinc/nginx-unprivileged:stable-alpine
 
-RUN apk add --no-cache gettext
-COPY nginx.conf.template /etc/nginx/templates/default.conf.template
+USER root
+RUN apk add --no-cache gettext && \
+	chown -R 101:101 /etc/nginx/conf.d /usr/share/nginx/html
+
+COPY --from=build --chown=101:101 /app/dist /usr/share/nginx/html
+
+COPY --chown=101:101 nginx.conf.template /etc/nginx/templates/default.conf.template
 
 # Copy and set up the entrypoint script
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY --chmod=755 --chown=101:101 entrypoint.sh /entrypoint.sh
+
+USER 101
 
 EXPOSE 8080
 ENTRYPOINT ["/entrypoint.sh"]

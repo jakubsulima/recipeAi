@@ -1,6 +1,9 @@
-# Maven
-target/
-!target/*.jar
+# Gradle build outputs
+build/
+.gradle/
+out/
+bin/
+src/test/
 *.log
 
 # IDE files

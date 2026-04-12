@@ -8,3 +8,8 @@ coverage
 .gitignore
 .vscode
 *.local
+.env
+.env.*
+tests
+README.md
+COLOR_SCHEME_GUIDE.md
