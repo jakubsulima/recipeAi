@@ -151,7 +151,7 @@ jobs:
           esac
 
       - name: Trivy CRITICAL gate
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
         with:
           image-ref: recipeai-scan:${{ matrix.image_name }}
           format: table
@@ -162,7 +162,7 @@ jobs:
           exit-code: "1"
 
       - name: Trivy HIGH+CRITICAL report
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
         with:
           image-ref: recipeai-scan:${{ matrix.image_name }}
           format: table
