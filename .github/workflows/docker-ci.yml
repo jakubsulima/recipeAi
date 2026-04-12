@@ -156,7 +156,7 @@ jobs:
           image-ref: recipeai-scan:${{ matrix.image_name }}
           format: table
           scanners: vuln
-          vuln-type: os,library
+          pkg-types: os,library
           severity: CRITICAL
           ignore-unfixed: false
           exit-code: "1"
@@ -169,7 +169,7 @@ jobs:
           format: table
           output: trivy-${{ matrix.image_name }}.txt
           scanners: vuln
-          vuln-type: os,library
+          pkg-types: os,library
           severity: HIGH,CRITICAL
           ignore-unfixed: false
           exit-code: "0"
