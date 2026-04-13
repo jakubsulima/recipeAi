@@ -66,6 +66,17 @@ jobs:
           set -euo pipefail
           npm audit --audit-level=high --json > npm-audit.json || true
 
+      - name: Fail on critical npm vulnerabilities
+        working-directory: frontend/recipeai
+        shell: bash
+        run: |
+          set -euo pipefail
+          critical_count="$(node -e "const report = require('./npm-audit.json'); const critical = report?.metadata?.vulnerabilities?.critical ?? 0; process.stdout.write(String(critical));")"
+          if [ "$critical_count" != "0" ]; then
+            echo "Critical npm vulnerabilities found: $critical_count"
+            exit 1
+          fi
+
       - name: Upload npm audit artifact
         if: always()
         uses: actions/upload-artifact@v4
