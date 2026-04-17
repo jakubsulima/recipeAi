@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Arrays;
+import java.util.List;
+
 import static org.jakub.backendapi.config.JwtUtils.getLoginFromToken;
 
 @RestController
@@ -29,6 +32,12 @@ public class UserPreferencesController {
     @PostMapping("/user/changeDiet")
     public ResponseEntity<UserPreferencesDto> changeDiet(HttpServletRequest request, @RequestBody String diet) {
         return ResponseEntity.ok(userPreferencesService.changeDiet(getLoginFromToken(request), diet));
+    }
+
+    @PostMapping("/user/changeDiets")
+    public ResponseEntity<UserPreferencesDto> changeDiets(HttpServletRequest request, @RequestBody String[] diets) {
+        List<String> requestedDiets = diets == null ? List.of() : Arrays.asList(diets);
+        return ResponseEntity.ok(userPreferencesService.changeDiets(getLoginFromToken(request), requestedDiets));
     }
 
     @PostMapping("/user/addDislikedIngredient")

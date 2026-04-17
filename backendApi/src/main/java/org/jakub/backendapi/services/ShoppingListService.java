@@ -13,7 +13,10 @@ import org.springframework.util.StringUtils;
 
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -42,7 +45,7 @@ public class ShoppingListService {
     @Transactional
     public List<ShoppingListItemDto> replaceShoppingList(String email, List<ShoppingListItemDto> items) {
         User user = resolveUser(email);
-        List<ShoppingListItemDto> safeItems = items == null ? List.of() : items;
+        List<ShoppingListItemDto> safeItems = normalizeIncomingItems(items);
 
         if (safeItems.size() > MAX_SHOPPING_LIST_ITEMS) {
             throw new AppException("Shopping list is too large. Maximum allowed items: " + MAX_SHOPPING_LIST_ITEMS, HttpStatus.BAD_REQUEST);
@@ -59,10 +62,42 @@ public class ShoppingListService {
             return List.of();
         }
 
-        return shoppingListItemRepository.saveAll(entities)
+        shoppingListItemRepository.saveAll(entities);
+
+        return shoppingListItemRepository.findByUserOrderByCreatedAtAsc(user)
                 .stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());
+    }
+
+    private List<ShoppingListItemDto> normalizeIncomingItems(List<ShoppingListItemDto> items) {
+        if (items == null || items.isEmpty()) {
+            return List.of();
+        }
+
+        Map<String, ShoppingListItemDto> deduplicatedByClientId = new LinkedHashMap<>();
+
+        for (ShoppingListItemDto item : items) {
+            if (item == null || !StringUtils.hasText(item.getName())) {
+                continue;
+            }
+
+            String normalizedId = resolveClientItemId(item.getId());
+            ShoppingListItemDto normalized = new ShoppingListItemDto(
+                    normalizedId,
+                    item.getName().trim(),
+                    item.getAmount(),
+                    trimToNull(item.getUnit()),
+                    item.isChecked(),
+                    item.getCreatedAt()
+            );
+
+            // Keep the latest occurrence for duplicated IDs from the client payload.
+            deduplicatedByClientId.remove(normalizedId);
+            deduplicatedByClientId.put(normalizedId, normalized);
+        }
+
+        return new ArrayList<>(deduplicatedByClientId.values());
     }
 
     private User resolveUser(String email) {

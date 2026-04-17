@@ -327,6 +327,21 @@
   transform: scale(0.98);
 }
 
+@keyframes dietSlideEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.diet-slide-enter {
+  animation: dietSlideEnter 220ms ease-out;
+}
+
 @media (max-width: 768px) {
   .mobile-page-enter {
     animation-duration: 420ms;

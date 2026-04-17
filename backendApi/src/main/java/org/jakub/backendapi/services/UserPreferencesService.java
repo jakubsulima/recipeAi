@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 @Service
@@ -32,15 +33,28 @@ public class UserPreferencesService {
 
     @Transactional
     public UserPreferencesDto changeDiet(String email, String diet) {
+        List<String> requested = new ArrayList<>();
+        if (diet != null) {
+            requested.add(diet);
+        }
+        return changeDiets(email, requested);
+    }
+
+    @Transactional
+    public UserPreferencesDto changeDiets(String email, List<String> diets) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
 
         UserPreferences preferences = user.getUserPreferences();
+
+        List<Diet> parsedDiets;
         try {
-            preferences.setDiet(Diet.valueOf(diet.toUpperCase()));
+            parsedDiets = parseDiets(diets);
         } catch (IllegalArgumentException e) {
             throw new AppException("Invalid diet value", HttpStatus.BAD_REQUEST);
         }
+
+        preferences.setDiets(parsedDiets);
 
         return userPreferencesMapper.toUserPreferencesDto(preferences);
     }
@@ -81,5 +95,30 @@ public class UserPreferencesService {
 
     public Diet[] getDiets() {
         return Diet.values();
+    }
+
+    private List<Diet> parseDiets(List<String> diets) {
+        if (diets == null || diets.isEmpty()) {
+            return new ArrayList<>(List.of(Diet.NONE));
+        }
+
+        List<Diet> parsed = new ArrayList<>();
+        for (String dietValue : diets) {
+            if (dietValue == null || dietValue.trim().isEmpty()) {
+                continue;
+            }
+            parsed.add(Diet.valueOf(dietValue.trim().toUpperCase()));
+        }
+
+        if (parsed.isEmpty()) {
+            return new ArrayList<>(List.of(Diet.NONE));
+        }
+
+        List<Diet> unique = new ArrayList<>(new LinkedHashSet<>(parsed));
+        if (unique.contains(Diet.NONE) && unique.size() > 1) {
+            return new ArrayList<>(List.of(Diet.NONE));
+        }
+
+        return unique;
     }
 }

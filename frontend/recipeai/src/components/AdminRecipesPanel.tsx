@@ -22,7 +22,9 @@ const AdminRecipesPanel: React.FC = () => {
   const fetchRecipes = async (pageNum = page) => {
     setLoading(true);
     try {
-      const data = await apiClient(`getAllRecipes?page=${pageNum}&size=${PAGE_SIZE}`);
+      const data = await apiClient(
+        `getAllRecipes?page=${pageNum}&size=${PAGE_SIZE}`,
+      );
       setRecipes(data.content || []);
       setTotalPages(data.totalPages ?? 0);
       setError(null);
@@ -30,7 +32,7 @@ const AdminRecipesPanel: React.FC = () => {
       setError(
         err instanceof Error
           ? err.message
-          : "An unknown error occurred while fetching recipes"
+          : "An unknown error occurred while fetching recipes",
       );
       console.error(err);
       setRecipes([]);
@@ -54,7 +56,7 @@ const AdminRecipesPanel: React.FC = () => {
         setError(
           err instanceof Error
             ? err.message
-            : "An unknown error occurred while deleting recipe"
+            : "An unknown error occurred while deleting recipe",
         );
         console.error(err);
       }

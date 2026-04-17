@@ -90,6 +90,7 @@ public class UserService {
         user.setRole(Role.USER);
 
         UserPreferences userPreferences = new UserPreferences();
+        userPreferences.setDiets(List.of(Diet.NONE));
         userPreferences.setUser(user);
         user.setUserPreferences(userPreferences);
         User savedUser = userRepository.save(user);
@@ -99,6 +100,7 @@ public class UserService {
 
     public UserDto getUserById(Long id) {
         UserPreferences userPreferences = new UserPreferences();
+        userPreferences.setDiets(List.of(Diet.NONE));
         userPreferences.setDiet(Diet.NONE);
         User user = userRepository.findById(id).orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
         userPreferences.setDislikedIngredients(List.of());

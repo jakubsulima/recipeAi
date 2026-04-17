@@ -56,6 +56,7 @@ security:
 
 app:
   limits:
+    generate-recipe-requests-per-minute: ${GENERATE_RECIPE_LIMIT_PER_MINUTE:15}
     recipe-requests-per-day:
       free: ${FREE_PLAN_RECIPE_REQUESTS_PER_DAY:${FREE_PLAN_RECIPE_LIMIT:1000}}
       paid: ${PAID_PLAN_RECIPE_REQUESTS_PER_DAY:${PAID_PLAN_RECIPE_LIMIT:-1}}

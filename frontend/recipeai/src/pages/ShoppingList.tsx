@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  createShoppingListItemId,
   fetchShoppingList,
+  getShoppingListFingerprint,
   readShoppingList,
   ShoppingListItem,
   syncShoppingList,
@@ -9,11 +11,11 @@ import {
 import ErrorAlert from "../components/ErrorAlert";
 
 const areItemsEqual = (a: ShoppingListItem[], b: ShoppingListItem[]) =>
-  JSON.stringify(a) === JSON.stringify(b);
+  getShoppingListFingerprint(a) === getShoppingListFingerprint(b);
 
 const hasUnsyncedLocalChanges = (
   localItems: ShoppingListItem[],
-  remoteItems: ShoppingListItem[]
+  remoteItems: ShoppingListItem[],
 ) => {
   if (localItems.length !== remoteItems.length) {
     return true;
@@ -54,77 +56,79 @@ const TrashIcon = ({ className = "h-4 w-4" }: { className?: string }) => (
   </svg>
 );
 
-const CloseIcon = ({ className = "h-4 w-4" }: { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className={className}
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    aria-hidden="true"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M6 18L18 6M6 6l12 12"
-    />
-  </svg>
-);
-
 const ShoppingList = () => {
-  const [items, setItems] = useState<ShoppingListItem[]>(() => readShoppingList());
+  const [items, setItems] = useState<ShoppingListItem[]>(() =>
+    readShoppingList(),
+  );
   const [newItem, setNewItem] = useState("");
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState("");
   const syncTimeoutRef = useRef<number | null>(null);
   const isSyncReadyRef = useRef(false);
+  const syncRequestVersionRef = useRef(0);
+  const lastSyncedFingerprintRef = useRef("");
 
   useEffect(() => {
     let disposed = false;
+    let localItemsSnapshot = readShoppingList();
+
+    setItems(localItemsSnapshot);
+    writeShoppingList(localItemsSnapshot);
 
     const hydrateFromServer = async () => {
       try {
+        setIsSyncing(true);
         setSyncError("");
-        const localItems = readShoppingList();
+        const localItems = localItemsSnapshot;
         const remoteItems = await fetchShoppingList();
         if (disposed) {
           return;
         }
+
+        let resolvedItems = remoteItems;
 
         if (remoteItems.length > 0) {
           if (
             localItems.length > 0 &&
             hasUnsyncedLocalChanges(localItems, remoteItems)
           ) {
-            setItems(localItems);
-            writeShoppingList(localItems);
+            resolvedItems = await syncShoppingList(localItems);
+            if (disposed) {
+              return;
+            }
+          }
 
-            setIsSyncing(true);
-            const synced = await syncShoppingList(localItems);
-            if (disposed) {
-              return;
-            }
-            setItems(synced);
-            writeShoppingList(synced);
-          } else {
-            setItems(remoteItems);
-            writeShoppingList(remoteItems);
-          }
-        } else {
-          if (localItems.length > 0) {
-            setIsSyncing(true);
-            const synced = await syncShoppingList(localItems);
-            if (disposed) {
-              return;
-            }
-            setItems(synced);
-            writeShoppingList(synced);
-          }
+          setItems(resolvedItems);
+          writeShoppingList(resolvedItems);
+          lastSyncedFingerprintRef.current =
+            getShoppingListFingerprint(resolvedItems);
+          return;
         }
+
+        if (localItems.length > 0) {
+          resolvedItems = await syncShoppingList(localItems);
+          if (disposed) {
+            return;
+          }
+
+          setItems(resolvedItems);
+          writeShoppingList(resolvedItems);
+          lastSyncedFingerprintRef.current =
+            getShoppingListFingerprint(resolvedItems);
+          return;
+        }
+
+        setItems([]);
+        writeShoppingList([]);
+        lastSyncedFingerprintRef.current = getShoppingListFingerprint([]);
       } catch {
         if (!disposed) {
-          setSyncError("Could not sync list with server. Using local data for now.");
+          setSyncError(
+            "Could not sync list with server. Using local data for now.",
+          );
+          localItemsSnapshot = readShoppingList();
+          setItems(localItemsSnapshot);
+          writeShoppingList(localItemsSnapshot);
         }
       } finally {
         if (!disposed) {
@@ -151,23 +155,44 @@ const ShoppingList = () => {
       return;
     }
 
+    const currentFingerprint = getShoppingListFingerprint(items);
+    if (currentFingerprint === lastSyncedFingerprintRef.current) {
+      return;
+    }
+
     if (syncTimeoutRef.current) {
       window.clearTimeout(syncTimeoutRef.current);
     }
+
+    const requestVersion = ++syncRequestVersionRef.current;
+    const syncSnapshot = items;
 
     syncTimeoutRef.current = window.setTimeout(async () => {
       try {
         setIsSyncing(true);
         setSyncError("");
-        const syncedItems = await syncShoppingList(items);
+        const syncedItems = await syncShoppingList(syncSnapshot);
+        if (requestVersion !== syncRequestVersionRef.current) {
+          return;
+        }
+
+        lastSyncedFingerprintRef.current =
+          getShoppingListFingerprint(syncedItems);
         setItems((previous) =>
-          areItemsEqual(previous, syncedItems) ? previous : syncedItems
+          areItemsEqual(previous, syncedItems) ? previous : syncedItems,
         );
         writeShoppingList(syncedItems);
       } catch {
-        setSyncError("Could not sync latest changes. They are still saved locally.");
+        if (requestVersion !== syncRequestVersionRef.current) {
+          return;
+        }
+        setSyncError(
+          "Could not sync latest changes. They are still saved locally.",
+        );
       } finally {
-        setIsSyncing(false);
+        if (requestVersion === syncRequestVersionRef.current) {
+          setIsSyncing(false);
+        }
       }
     }, 600);
 
@@ -180,7 +205,7 @@ const ShoppingList = () => {
 
   const remainingCount = useMemo(
     () => items.filter((item) => !item.checked).length,
-    [items]
+    [items],
   );
 
   const addManualItem = () => {
@@ -192,7 +217,7 @@ const ShoppingList = () => {
     setItems((prev) => [
       ...prev,
       {
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        id: createShoppingListItemId(),
         name: trimmed,
         amount: null,
         unit: null,
@@ -206,8 +231,8 @@ const ShoppingList = () => {
   const toggleItem = (id: string) => {
     setItems((prev) =>
       prev.map((item) =>
-        item.id === id ? { ...item, checked: !item.checked } : item
-      )
+        item.id === id ? { ...item, checked: !item.checked } : item,
+      ),
     );
   };
 
@@ -219,12 +244,19 @@ const ShoppingList = () => {
     setItems((prev) => prev.filter((item) => !item.checked));
   };
 
+  const checkAll = () => {
+    setItems((prev) => prev.map((item) => ({ ...item, checked: true })));
+  };
+
   const completedCount = items.length - remainingCount;
+  const allChecked = items.length > 0 && items.every((item) => item.checked);
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-4xl bg-background px-4 py-6 sm:px-6">
       <div className="mb-6 overflow-hidden rounded-3xl border border-accent/35 bg-secondary p-6">
-        <h1 className="text-3xl font-bold text-text sm:text-4xl">Shopping List</h1>
+        <h1 className="text-3xl font-bold text-text sm:text-4xl">
+          Shopping List
+        </h1>
         <p className="mt-2 text-sm text-text/60 sm:text-base">
           Keep your next recipe run organized and check items as you shop.
         </p>
@@ -276,11 +308,38 @@ const ShoppingList = () => {
       <div className="rounded-2xl border border-primary/10 bg-secondary p-4 sm:p-5">
         {items.length === 0 ? (
           <div className="rounded-xl border border-dashed border-accent/35 bg-background px-4 py-8 text-center">
-            <p className="font-medium text-text/80">Your shopping list is empty.</p>
-            <p className="mt-1 text-sm text-text/60">Add items above or generate a list from a recipe.</p>
+            <p className="font-medium text-text/80">
+              Your shopping list is empty.
+            </p>
+            <p className="mt-1 text-sm text-text/60">
+              Add items above or generate a list from a recipe.
+            </p>
           </div>
         ) : (
           <>
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <label className="inline-flex items-center gap-2 text-sm font-medium text-text/80">
+                <input
+                  type="checkbox"
+                  checked={allChecked}
+                  onChange={() => checkAll()}
+                  disabled={allChecked}
+                  aria-label="Check all items"
+                  className="h-4 w-4 rounded border-primary/30 accent-accent focus:ring-2 focus:ring-accent/50 disabled:cursor-not-allowed disabled:opacity-45"
+                />
+                <span>Check all</span>
+              </label>
+
+              <button
+                onClick={clearChecked}
+                disabled={completedCount === 0}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-background transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                Clear Checked
+                <TrashIcon />
+              </button>
+            </div>
+
             <ul className="space-y-2.5">
               {items.map((item) => (
                 <li
@@ -315,16 +374,6 @@ const ShoppingList = () => {
                 </li>
               ))}
             </ul>
-
-            <div className="mt-4 flex flex-wrap justify-start gap-2 border-t border-primary/10 pt-4">
-              <button
-                onClick={clearChecked}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-background transition-colors hover:bg-primary/90"
-              >
-                <CloseIcon />
-                Clear Checked
-              </button>
-            </div>
           </>
         )}
       </div>

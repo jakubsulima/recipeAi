@@ -3,6 +3,7 @@ import { apiClient } from "../lib/hooks";
 
 interface UserPreferences {
   diet: string;
+  diets?: string[];
   dislikedIngredients: string[];
 }
 
@@ -111,8 +112,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             : null
         );
       }
-    } catch (error) {
-      console.error("Failed to fetch user preferences:", error);
+    } catch (error: any) {
+      const isExpectedAuthIssue =
+        error?.status === 400 || error?.status === 401 || Boolean(error?.isContentTypeError);
+
+      if (!isExpectedAuthIssue) {
+        console.error("Failed to fetch user preferences:", error);
+      }
     }
   }, [user]);
 

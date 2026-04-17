@@ -2,6 +2,8 @@ package org.jakub.backendapi.services;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jakub.backendapi.dto.FridgeIngredientDto;
 import org.jakub.backendapi.entities.Enums.Unit;
 import org.jakub.backendapi.exceptions.AppException;
@@ -37,6 +39,8 @@ import java.util.stream.Collectors;
 @Service
 public class GeminiService {
 
+    private static final Logger log = LoggerFactory.getLogger(GeminiService.class);
+
     private static final long MAX_RECEIPT_FILE_SIZE_BYTES = 5L * 1024L * 1024L;
     private static final int MAX_IMAGE_DIMENSION = 6000;
     private static final int MAX_RETRY_ATTEMPTS = 3;
@@ -59,6 +63,9 @@ public class GeminiService {
 
     @Value("${gemini.api.model:gemini-3.1-flash-lite-preview}")
     private String geminiModel;
+
+    @Value("${gemini.api.fallback-model:gemma-4-31b-it}")
+    private String geminiFallbackModel;
 
     private final ObjectMapper objectMapper;
     private final RestTemplate restTemplate;
@@ -169,6 +176,49 @@ public class GeminiService {
     }
 
     private JsonNode invokeGemini(Map<String, Object> payload, String operationLabel) {
+        List<String> modelsToTry = new ArrayList<>();
+        modelsToTry.add(geminiModel);
+
+        if (StringUtils.hasText(geminiFallbackModel)
+                && !geminiModel.equalsIgnoreCase(geminiFallbackModel)) {
+            modelsToTry.add(geminiFallbackModel);
+        }
+
+        for (int modelIndex = 0; modelIndex < modelsToTry.size(); modelIndex++) {
+            String modelToUse = modelsToTry.get(modelIndex);
+            boolean canFallback = modelIndex == 0 && modelIndex + 1 < modelsToTry.size();
+
+            try {
+                return invokeGeminiWithModel(payload, modelToUse);
+            } catch (RestClientResponseException e) {
+                if (canFallback && shouldFallbackToAlternativeModel(e)) {
+                    log.warn(
+                            "Primary Gemini model '{}' failed with status {}. Falling back to '{}'.",
+                            modelToUse,
+                            e.getStatusCode().value(),
+                            modelsToTry.get(modelIndex + 1)
+                    );
+                    continue;
+                }
+                throw mapGeminiResponseException(operationLabel, e);
+            } catch (RestClientException e) {
+                if (canFallback) {
+                    log.warn(
+                            "Primary Gemini model '{}' failed due to transport error. Falling back to '{}'. Cause: {}",
+                            modelToUse,
+                            modelsToTry.get(modelIndex + 1),
+                            e.getMessage()
+                    );
+                    continue;
+                }
+                throw mapGeminiTransportException(operationLabel, e);
+            }
+        }
+
+        throw new AppException(operationLabel + ": all configured AI models failed.", HttpStatus.BAD_GATEWAY);
+    }
+
+    private JsonNode invokeGeminiWithModel(Map<String, Object> payload, String modelToUse) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("x-goog-api-key", geminiApiKey);
@@ -176,7 +226,7 @@ public class GeminiService {
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
         String endpoint = UriComponentsBuilder
                 .fromHttpUrl("https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent")
-                .buildAndExpand(geminiModel)
+                .buildAndExpand(modelToUse)
                 .toUriString();
 
         long backoffMillis = 300L;
@@ -192,26 +242,53 @@ public class GeminiService {
                     backoffMillis *= 2;
                     continue;
                 }
-
-                if (statusCode == 429) {
-                    throw new AppException("AI provider quota/rate limit reached. Please try again in a minute.", HttpStatus.TOO_MANY_REQUESTS);
-                }
-
-                if (e.getStatusCode().is4xxClientError()) {
-                    throw new AppException(operationLabel + ": " + extractGeminiErrorMessage(e), HttpStatus.BAD_REQUEST);
-                }
-
-                throw new AppException(operationLabel + ": " + extractGeminiErrorMessage(e), HttpStatus.BAD_GATEWAY);
+                throw e;
             } catch (RestClientException e) {
                 if (attempt == MAX_RETRY_ATTEMPTS) {
-                    throw new AppException(operationLabel + ": " + e.getMessage(), HttpStatus.BAD_GATEWAY);
+                    throw e;
                 }
                 sleepWithBackoff(backoffMillis);
                 backoffMillis *= 2;
             }
         }
 
-        throw new AppException(operationLabel + ": retry limit exceeded", HttpStatus.BAD_GATEWAY);
+        throw new RestClientException("retry limit exceeded");
+    }
+
+    private boolean shouldFallbackToAlternativeModel(RestClientResponseException e) {
+        int statusCode = e.getStatusCode().value();
+        if (statusCode == 404 || statusCode == 429 || e.getStatusCode().is5xxServerError()) {
+            return true;
+        }
+
+        if (statusCode == 400 || statusCode == 403) {
+            String errorMessage = extractGeminiErrorMessage(e).toLowerCase(Locale.ROOT);
+            return errorMessage.contains("model")
+                    && (errorMessage.contains("not found")
+                    || errorMessage.contains("unsupported")
+                    || errorMessage.contains("unavailable")
+                    || errorMessage.contains("disabled")
+                    || errorMessage.contains("invalid"));
+        }
+
+        return false;
+    }
+
+    private AppException mapGeminiResponseException(String operationLabel, RestClientResponseException e) {
+        int statusCode = e.getStatusCode().value();
+        if (statusCode == 429) {
+            return new AppException("AI provider quota/rate limit reached. Please try again in a minute.", HttpStatus.TOO_MANY_REQUESTS);
+        }
+
+        if (e.getStatusCode().is4xxClientError()) {
+            return new AppException(operationLabel + ": " + extractGeminiErrorMessage(e), HttpStatus.BAD_REQUEST);
+        }
+
+        return new AppException(operationLabel + ": " + extractGeminiErrorMessage(e), HttpStatus.BAD_GATEWAY);
+    }
+
+    private AppException mapGeminiTransportException(String operationLabel, RestClientException e) {
+        return new AppException(operationLabel + ": " + e.getMessage(), HttpStatus.BAD_GATEWAY);
     }
 
     private String extractGeminiErrorMessage(RestClientResponseException e) {

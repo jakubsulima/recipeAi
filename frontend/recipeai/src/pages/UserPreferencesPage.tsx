@@ -1,40 +1,72 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useUser } from "../context/context";
 import { useNavigate, useLocation } from "react-router-dom";
-import OptionsForm from "../components/OptionsForm";
 import { apiClient } from "../lib/hooks";
 import FoodLoadingScreen from "../components/FoodLoadingScreen";
 import ErrorAlert from "../components/ErrorAlert";
+import ProfileSummaryCard from "../components/userPreferences/ProfileSummaryCard";
+import PlanLimitsPanel from "../components/userPreferences/PlanLimitsPanel";
+import DietaryPlanPanel from "../components/userPreferences/DietaryPlanPanel";
+import DislikedIngredientsPanel from "../components/userPreferences/DislikedIngredientsPanel";
+import {
+  getDietLabel,
+  getDietOptionGroups,
+  normalizeDietValue,
+} from "../lib/dietOptions";
+
+const NONE_DIET_VALUE = "NONE";
+
+const sanitizeDietSelection = (
+  values: string[],
+  availableValues: Set<string>,
+): string[] => {
+  const uniqueNormalized = Array.from(
+    new Set(values.map((value) => normalizeDietValue(value)).filter(Boolean)),
+  ).filter((value) => availableValues.has(value));
+
+  if (
+    uniqueNormalized.includes(NONE_DIET_VALUE) &&
+    uniqueNormalized.length > 1
+  ) {
+    return [NONE_DIET_VALUE];
+  }
+
+  return uniqueNormalized;
+};
 
 const MePage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, loading: userLoading, getUserPreferences } = useUser();
+  const { user, loading: userLoading, getUserPreferences, setUser } = useUser();
 
   const [error, setError] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [dietOptions, setDietOptions] = useState<string[]>([]);
-  const [displayDietOptions, setDisplayDietOptions] = useState<string[]>([]); // State for display-friendly options
+  const [selectedDiets, setSelectedDiets] = useState<string[]>([]);
+  const [dietSaving, setDietSaving] = useState<boolean>(false);
   const [newIngredient, setNewIngredient] = useState<string>("");
   const [preferencesLoaded, setPreferencesLoaded] = useState<boolean>(false);
 
-  const navigationState = location.state as { fromRegistration?: boolean } | null;
+  const navigationState = location.state as {
+    fromRegistration?: boolean;
+  } | null;
   const showRegistrationOnboarding = Boolean(navigationState?.fromRegistration);
 
   useEffect(() => {
     const fetchDietOptions = async () => {
       try {
         const response: string[] = await apiClient("user/getDiets");
-        setDietOptions(response); // Store original values
-
-        // Create and store display-friendly values (e.g., capitalized)
-        const formattedForDisplay = response.map(
-          (diet) => diet.charAt(0).toUpperCase() + diet.slice(1).toLowerCase()
-        );
-        setDisplayDietOptions(formattedForDisplay);
+        const normalizedDiets = response
+          .map((diet) => normalizeDietValue(diet))
+          .filter(
+            (diet, index, diets) =>
+              diet.length > 0 && diets.indexOf(diet) === index,
+          );
+        setDietOptions(normalizedDiets);
       } catch (error) {
         console.error("Failed to fetch diet options:", error);
+        setError("Failed to load diet options");
       } finally {
         setLoading(false);
       }
@@ -60,7 +92,7 @@ const MePage = () => {
   const handleUpdatePreferences = async (
     updateFn: () => Promise<any>,
     successMsg: string,
-    errorMessage: string
+    errorMessage: string,
   ) => {
     setError("");
     setSuccessMessage("");
@@ -87,10 +119,10 @@ const MePage = () => {
         apiClient(
           "user/addDislikedIngredient",
           true,
-          newIngredient.trim().toLowerCase()
+          newIngredient.trim().toLowerCase(),
         ),
       "Ingredient added",
-      "Failed to add disliked ingredient"
+      "Failed to add disliked ingredient",
     ).then(() => setNewIngredient(""));
   };
 
@@ -100,19 +132,119 @@ const MePage = () => {
         apiClient(
           "user/removeDislikedIngredient",
           true,
-          ingredientToRemove.toLowerCase()
+          ingredientToRemove.toLowerCase(),
         ),
       "Ingredient removed",
-      "Failed to remove disliked ingredient"
+      "Failed to remove disliked ingredient",
     );
   };
 
-  const handleChangeDiet = (diet: string) => {
-    handleUpdatePreferences(
-      () => apiClient("user/changeDiet", true, diet),
-      "Diet updated",
-      "Failed to change diet"
+  const dietGroups = useMemo(
+    () => getDietOptionGroups(dietOptions),
+    [dietOptions],
+  );
+
+  const availableDietValues = useMemo(
+    () =>
+      new Set(
+        dietGroups.flatMap((group) =>
+          group.options.map((option) => option.value),
+        ),
+      ),
+    [dietGroups],
+  );
+
+  const currentDietValues = useMemo(() => {
+    const serverDiets = user?.preferences?.diets;
+    if (Array.isArray(serverDiets) && serverDiets.length > 0) {
+      return serverDiets.map((diet) => normalizeDietValue(diet));
+    }
+
+    const fallbackDiet = normalizeDietValue(user?.preferences?.diet || "");
+    return fallbackDiet ? [fallbackDiet] : [NONE_DIET_VALUE];
+  }, [user?.preferences?.diets, user?.preferences?.diet]);
+
+  useEffect(() => {
+    if (availableDietValues.size === 0) {
+      return;
+    }
+
+    const sanitized = sanitizeDietSelection(
+      currentDietValues,
+      availableDietValues,
     );
+    if (sanitized.length > 0) {
+      setSelectedDiets(sanitized);
+      return;
+    }
+
+    if (availableDietValues.has(NONE_DIET_VALUE)) {
+      setSelectedDiets([NONE_DIET_VALUE]);
+    }
+  }, [availableDietValues, currentDietValues]);
+
+  const persistSelectedDiets = async (
+    nextSelection: string[],
+    previousSelection: string[],
+  ) => {
+    setDietSaving(true);
+    try {
+      const response = await apiClient("user/changeDiets", true, nextSelection);
+      setUser((previousUser) =>
+        previousUser
+          ? {
+              ...previousUser,
+              preferences: response,
+            }
+          : previousUser,
+      );
+    } catch (err) {
+      setSelectedDiets(previousSelection);
+      setError("Failed to update diet preferences");
+      console.error("Failed to update diets", err);
+    } finally {
+      setDietSaving(false);
+    }
+  };
+
+  const handleToggleDiet = (dietValue: string) => {
+    const normalizedValue = normalizeDietValue(dietValue);
+
+    setSelectedDiets((previous) => {
+      let nextSelection = [...previous];
+      const isSelected = nextSelection.includes(normalizedValue);
+
+      if (normalizedValue === NONE_DIET_VALUE) {
+        nextSelection = isSelected ? [] : [NONE_DIET_VALUE];
+      } else {
+        if (isSelected) {
+          nextSelection = nextSelection.filter(
+            (value) => value !== normalizedValue,
+          );
+        } else {
+          nextSelection = nextSelection
+            .filter((value) => value !== NONE_DIET_VALUE)
+            .concat(normalizedValue);
+        }
+      }
+
+      const sanitized = sanitizeDietSelection(
+        nextSelection,
+        availableDietValues,
+      );
+      const finalSelection =
+        sanitized.length > 0
+          ? sanitized
+          : availableDietValues.has(NONE_DIET_VALUE)
+            ? [NONE_DIET_VALUE]
+            : [];
+
+      const previousSelection =
+        previous.length > 0 ? previous : [NONE_DIET_VALUE];
+      void persistSelectedDiets(finalSelection, previousSelection);
+
+      return finalSelection;
+    });
   };
 
   if (userLoading || loading) {
@@ -130,8 +262,13 @@ const MePage = () => {
   }
 
   const dislikedIngredients = user.preferences?.dislikedIngredients || [];
-  const activeDiet = user.preferences?.diet || "Not set";
-  const currentDiet = user.preferences?.diet || "";
+  const selectedDietLabels = selectedDiets.map((value) => getDietLabel(value));
+  const activeDiet =
+    selectedDietLabels.length === 0
+      ? "Not set"
+      : selectedDietLabels.length <= 2
+        ? selectedDietLabels.join(", ")
+        : `${selectedDietLabels.slice(0, 2).join(", ")} +${selectedDietLabels.length - 2}`;
   const accountPlan = (user.subscriptionPlan || "FREE").toUpperCase();
   const recipesCreated = user.recipesCreated ?? 0;
   const recipeCreationLimit = user.recipeCreationLimit ?? -1;
@@ -144,34 +281,25 @@ const MePage = () => {
   return (
     <div className="mobile-page-enter min-h-screen w-full bg-background">
       <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-        <div className="mobile-card-enter ambient-gradient-card mb-8 overflow-hidden rounded-3xl border border-accent/35 bg-secondary p-6 sm:p-8">
-          <h1 className="text-3xl font-bold text-text sm:text-4xl">My Profile</h1>
-          <p className="mt-2 max-w-2xl text-text/70">
-            One place to tune your diet and ingredient dislikes.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <span className="rounded-full bg-primary px-3 py-1.5 text-sm font-semibold text-background">
-              Plan: {accountPlan}
-            </span>
-            <span className="rounded-full bg-accent px-3 py-1.5 text-sm font-semibold text-text">
-              Diet: {activeDiet}
-            </span>
-            <span className="rounded-full border border-accent/35 bg-background px-3 py-1.5 text-sm text-text/75">
-              Requests: {recipeUsageLabel}
-            </span>
-            <span className="rounded-full border border-accent/35 bg-background px-3 py-1.5 text-sm text-text/75">
-              {dislikedIngredients.length} disliked ingredient{dislikedIngredients.length === 1 ? "" : "s"}
-            </span>
-          </div>
-        </div>
+        <ProfileSummaryCard
+          accountPlan={accountPlan}
+          activeDiet={activeDiet}
+          recipeUsageLabel={recipeUsageLabel}
+          dislikedIngredientsCount={dislikedIngredients.length}
+        />
 
-        <ErrorAlert message={error} className="mb-6" onAutoHide={() => setError("")} />
+        <ErrorAlert
+          message={error}
+          className="mb-6"
+          onAutoHide={() => setError("")}
+        />
 
         {showRegistrationOnboarding && (
           <div className="mb-6 rounded-xl border border-accent/40 bg-accent/15 p-4 text-text">
             <p className="font-semibold">Account created successfully.</p>
             <p className="mt-1 text-sm text-text/80">
-              Choose your diet and disliked ingredients now to get better recipe suggestions from the start.
+              Choose your diet and disliked ingredients now to get better recipe
+              suggestions from the start.
             </p>
           </div>
         )}
@@ -189,98 +317,29 @@ const MePage = () => {
         )}
 
         <div className="mobile-card-enter mobile-card-delay-1 ambient-gradient-card rounded-2xl border border-primary/10 bg-secondary p-5 shadow-sm sm:p-6">
-          <div className="mobile-card-enter mb-6 rounded-xl border border-primary/10 bg-background p-4">
-            <h2 className="mb-1 text-xl font-semibold text-text">Plan and Limits</h2>
-            <p className="mb-3 text-sm text-text/60">
-              Your account plan controls how many recipe save requests you can make per day.
-            </p>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-lg border border-primary/10 bg-secondary p-3">
-                <p className="text-xs uppercase tracking-wide text-text/60">Current plan</p>
-                <p className="mt-1 text-base font-semibold text-text">{accountPlan}</p>
-              </div>
-              <div className="rounded-lg border border-primary/10 bg-secondary p-3">
-                <p className="text-xs uppercase tracking-wide text-text/60">Daily request limit</p>
-                <p className="mt-1 text-base font-semibold text-text">
-                  {hasUnlimitedRecipes ? "Unlimited" : recipeCreationLimit}
-                </p>
-              </div>
-              <div className="rounded-lg border border-primary/10 bg-secondary p-3">
-                <p className="text-xs uppercase tracking-wide text-text/60">Remaining today</p>
-                <p className="mt-1 text-base font-semibold text-text">
-                  {hasUnlimitedRecipes ? "Unlimited" : recipesRemaining ?? 0}
-                </p>
-              </div>
-            </div>
-            {!hasUnlimitedRecipes && user.recipeCreationLimitReached && (
-              <p className="mt-3 rounded-lg border border-accent/45 bg-accent/10 px-3 py-2 text-sm text-text">
-                You reached your daily request limit. Try again tomorrow or upgrade your plan.
-              </p>
-            )}
-          </div>
+          <PlanLimitsPanel
+            accountPlan={accountPlan}
+            hasUnlimitedRecipes={hasUnlimitedRecipes}
+            recipeCreationLimit={recipeCreationLimit}
+            recipesRemaining={recipesRemaining}
+            recipeCreationLimitReached={user.recipeCreationLimitReached}
+          />
 
-          <div className="mobile-card-enter mobile-card-delay-1 mb-6 rounded-xl border border-primary/10 bg-background p-4">
-            <h2 className="mb-1 text-xl font-semibold text-text">Dietary Plan</h2>
-            <p className="mb-3 text-sm text-text/60">Pick one option. It updates immediately.</p>
-            <OptionsForm
-              name="diet"
-              options={dietOptions}
-              displayOptions={displayDietOptions}
-              currentOptions={currentDiet}
-              onChange={(value) => {
-                if (value && value !== currentDiet) {
-                  handleChangeDiet(value);
-                }
-              }}
-              showSubmitButton={false}
-            />
-          </div>
+          <DietaryPlanPanel
+            dietGroups={dietGroups}
+            selectedDiets={selectedDiets}
+            dietSaving={dietSaving}
+            onToggleDiet={handleToggleDiet}
+          />
 
-          <div className="mobile-card-enter mobile-card-delay-2 rounded-xl border border-primary/10 bg-background p-4">
-            <h2 className="mb-1 text-xl font-semibold text-text">Disliked Ingredients</h2>
-            <p className="mb-3 text-sm text-text/60">Keep this list short and specific for better recipe matches.</p>
-
-            <div className="mb-4 flex gap-2">
-              <input
-                type="text"
-                value={newIngredient}
-                onChange={(e) => setNewIngredient(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && addDislikedIngredient()}
-                placeholder="e.g., Olives"
-                className="flex-1 rounded-lg border border-primary/20 bg-background px-3 py-2.5 text-text placeholder:text-text/50 focus:outline-none focus:ring-2 focus:ring-accent"
-              />
-              <button
-                onClick={addDislikedIngredient}
-                className="mobile-soft-press rounded-lg bg-accent px-4 py-2.5 font-semibold text-text transition-colors hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent"
-              >
-                Add
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              {dislikedIngredients.length > 0 ? (
-                dislikedIngredients.map((ingredient, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between rounded-lg border border-primary/10 bg-secondary px-3 py-2.5"
-                  >
-                    <span className="capitalize font-medium text-text">{ingredient}</span>
-                    <button
-                      onClick={() => removeDislikedIngredient(ingredient)}
-                      className="mobile-soft-press rounded-md px-2 py-0.5 text-lg font-bold text-text/45 transition-colors hover:bg-accent/15 hover:text-accent"
-                      title={`Remove ${ingredient}`}
-                    >
-                      &times;
-                    </button>
-                  </div>
-                ))
-              ) : (
-                <p className="rounded-lg border border-dashed border-primary/20 py-4 text-center text-text/70">
-                  {preferencesLoaded ? "No disliked ingredients added." : "Loading..."}
-                </p>
-              )}
-            </div>
-          </div>
+          <DislikedIngredientsPanel
+            newIngredient={newIngredient}
+            onNewIngredientChange={setNewIngredient}
+            onAddIngredient={addDislikedIngredient}
+            dislikedIngredients={dislikedIngredients}
+            preferencesLoaded={preferencesLoaded}
+            onRemoveIngredient={removeDislikedIngredient}
+          />
         </div>
       </div>
     </div>

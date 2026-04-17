@@ -22,19 +22,23 @@ const AdminPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [updatingPlanUserId, setUpdatingPlanUserId] = useState<number | null>(null);
+  const [updatingPlanUserId, setUpdatingPlanUserId] = useState<number | null>(
+    null,
+  );
   const authContext = useContext(AuthContext);
 
   const fetchUsers = async (pageNum: number = currentPage) => {
     setLoading(true);
     try {
-      const data = await apiClient(`admin/users?page=${pageNum}&size=${PAGE_SIZE}`);
+      const data = await apiClient(
+        `admin/users?page=${pageNum}&size=${PAGE_SIZE}`,
+      );
       setUsers(Array.isArray(data?.content) ? data.content : []);
       setTotalPages(typeof data?.totalPages === "number" ? data.totalPages : 1);
       setError(null);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "An unknown error occurred"
+        err instanceof Error ? err.message : "An unknown error occurred",
       );
       console.error(err);
     } finally {
@@ -61,7 +65,7 @@ const AdminPage: React.FC = () => {
         setError(
           err instanceof Error
             ? err.message
-            : "An unknown error occurred while deleting user"
+            : "An unknown error occurred while deleting user",
         );
         console.error(err);
       }
@@ -80,16 +84,17 @@ const AdminPage: React.FC = () => {
           user.id === userId
             ? {
                 ...user,
-                subscriptionPlan: (updatedUser.subscriptionPlan || plan) as SubscriptionPlan,
+                subscriptionPlan: (updatedUser.subscriptionPlan ||
+                  plan) as SubscriptionPlan,
               }
-            : user
-        )
+            : user,
+        ),
       );
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : "An unknown error occurred while updating the user plan"
+          : "An unknown error occurred while updating the user plan",
       );
       console.error(err);
     } finally {
@@ -98,9 +103,16 @@ const AdminPage: React.FC = () => {
   };
 
   if (loading)
-    return <FoodLoadingScreen title="Loading users..." subtitle="Preparing admin dashboard" />;
+    return (
+      <FoodLoadingScreen
+        title="Loading users..."
+        subtitle="Preparing admin dashboard"
+      />
+    );
   if (authContext?.loading)
-    return <FoodLoadingScreen title="Loading..." subtitle="Checking admin access" />;
+    return (
+      <FoodLoadingScreen title="Loading..." subtitle="Checking admin access" />
+    );
   if (!authContext || authContext.user?.role !== "ADMIN") {
     return (
       <div className="container mx-auto p-4 bg-background min-h-screen text-accent">
@@ -112,7 +124,11 @@ const AdminPage: React.FC = () => {
   return (
     <div className="mobile-page-enter container mx-auto p-4 bg-background min-h-screen">
       <h1 className="text-3xl font-bold mb-6 text-text">Admin Dashboard</h1>
-      <ErrorAlert message={error} className="mb-6" onAutoHide={() => setError(null)} />
+      <ErrorAlert
+        message={error}
+        className="mb-6"
+        onAutoHide={() => setError(null)}
+      />
 
       <div className="mb-12">
         <h2 className="text-2xl font-semibold mb-4 text-text">
@@ -145,7 +161,10 @@ const AdminPage: React.FC = () => {
                       <select
                         value={user.subscriptionPlan || "FREE"}
                         onChange={(e) =>
-                          handlePlanChange(user.id, e.target.value as SubscriptionPlan)
+                          handlePlanChange(
+                            user.id,
+                            e.target.value as SubscriptionPlan,
+                          )
                         }
                         className="rounded border border-primary/30 bg-background px-2 py-1 text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent"
                         disabled={updatingPlanUserId === user.id}

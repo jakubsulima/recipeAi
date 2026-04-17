@@ -57,6 +57,7 @@ logging:
 gemini:
   api:
     model: gemini-3.1-flash-lite-preview
+    fallback-model: gemma-4-31b-it
 
 management:
   endpoints:
@@ -85,6 +86,7 @@ security:
 
 app:
   limits:
+    generate-recipe-requests-per-minute: ${GENERATE_RECIPE_LIMIT_PER_MINUTE:15}
     recipe-requests-per-day:
       free: ${FREE_PLAN_RECIPE_REQUESTS_PER_DAY:${FREE_PLAN_RECIPE_LIMIT:75}}
       paid: ${PAID_PLAN_RECIPE_REQUESTS_PER_DAY:${PAID_PLAN_RECIPE_LIMIT:-1}}

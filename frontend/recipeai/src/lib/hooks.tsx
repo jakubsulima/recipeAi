@@ -2,16 +2,16 @@ import axios from "axios";
 import { API_URL, TIMEOUT } from "./constants.tsx";
 
 const formOfPrompt =
-  " Act as a professional culinary database architect and recommendation engine. Return ONLY a single valid JSON object following this exact schema: { \"name\": string, \"description\": string, \"timeToPrepare\": string, \"ingredients\": [{\"name\": string, \"amount\": number, \"unit\": string}], \"instructions\": [string], \"nutrition\": { \"calories\": number, \"protein\": number, \"carbs\": number, \"fats\": number } }. Enforce user filters from the request text (meal type, cuisine, time constraint, and additional notes). Include 8-14 ingredients with realistic amounts for 2 servings. Use strict metric units (g, ml, kg) or whole counts. Provide 6-9 technical instructions with sensory cues and clear time/temperature markers. Avoid vague steps like 'cook until done'. Ensure nutrition values are internally consistent with the listed ingredients. Do not include markdown or conversational text.";
+  ' Act as a professional culinary database architect and recommendation engine. Return ONLY a single valid JSON object following this exact schema: { "name": string, "description": string, "timeToPrepare": string, "ingredients": [{"name": string, "amount": number, "unit": string}], "instructions": [string], "nutrition": { "calories": number, "protein": number, "carbs": number, "fats": number } }. Enforce user filters from the request text (meal type, cuisine, time constraint, and additional notes). Include 8-14 ingredients with realistic amounts for 2 servings. Use strict metric units (g, ml, kg) or whole counts. Provide 6-9 technical instructions with sensory cues and clear time/temperature markers. Avoid vague steps like \'cook until done\'. Ensure nutrition values are internally consistent with the listed ingredients. Do not include markdown or conversational text.';
 const batchFormOfPrompt =
-  " Act as a professional culinary database architect and recommendation engine. Return ONLY a single valid JSON object following this exact schema: { \"recipes\": [{ \"name\": string, \"description\": string, \"timeToPrepare\": string, \"ingredients\": [{\"name\": string, \"amount\": number, \"unit\": string}], \"instructions\": [string], \"nutrition\": { \"calories\": number, \"protein\": number, \"carbs\": number, \"fats\": number } }] }. Enforce user filters from the request text (meal type, cuisine, time constraint, and additional notes). All generated recipes must match those filters. Create meaningful diversity across recipes by varying core protein category, cooking technique, and flavor profile while staying plausible. For EACH recipe: include 8-14 ingredients with realistic amounts for 2 servings, use strict metric units (g, ml, kg) or whole counts, and provide 6-9 technical instructions with sensory cues and clear time/temperature markers. Ensure nutrition values are internally consistent with the listed ingredients. Do not include markdown or conversational text.";
+  ' Act as a professional culinary database architect and recommendation engine. Return ONLY a single valid JSON object following this exact schema: { "recipes": [{ "name": string, "description": string, "timeToPrepare": string, "ingredients": [{"name": string, "amount": number, "unit": string}], "instructions": [string], "nutrition": { "calories": number, "protein": number, "carbs": number, "fats": number } }] }. Enforce user filters from the request text (meal type, cuisine, time constraint, and additional notes). All generated recipes must match those filters. Create meaningful diversity across recipes by varying core protein category, cooking technique, and flavor profile while staying plausible. For EACH recipe: include 8-14 ingredients with realistic amounts for 2 servings, use strict metric units (g, ml, kg) or whole counts, and provide 6-9 technical instructions with sensory cues and clear time/temperature markers. Ensure nutrition values are internally consistent with the listed ingredients. Do not include markdown or conversational text.';
 
 const inFlightRecipeRequests = new Map<string, Promise<any>>();
 
 const buildRecipePrompt = (
   prompt: string,
   productsFridge: string[],
-  requestedCount: number
+  requestedCount: number,
 ) => {
   const promptFormat = requestedCount > 1 ? batchFormOfPrompt : formOfPrompt;
   const countInstruction =
@@ -33,7 +33,7 @@ const requestRecipeGeneration = async (
   prompt: string,
   productsFridge: string[],
   requestedCount: number,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ) => {
   const fullPrompt = buildRecipePrompt(prompt, productsFridge, requestedCount);
   const result = await axios.post(
@@ -42,7 +42,7 @@ const requestRecipeGeneration = async (
       fullPrompt,
       count: requestedCount,
     },
-    { signal }
+    { signal },
   );
 
   return result.data;
@@ -51,14 +51,14 @@ const requestRecipeGeneration = async (
 const buildGenerationKey = (
   prompt: string,
   productsFridge: string[],
-  requestedCount: number
+  requestedCount: number,
 ) => `${requestedCount}::${prompt}::${productsFridge.join("|")}`;
 
 export const generateRecipe = async function (
   prompt: string,
   productsFridge: string[],
   signal?: AbortSignal,
-  count: number = 1
+  count: number = 1,
 ) {
   try {
     const normalizedCount = Math.max(1, Math.min(5, Math.floor(count)));
@@ -70,18 +70,22 @@ export const generateRecipe = async function (
         prompt,
         productsFridge,
         normalizedCount,
-        signal
+        signal,
       );
     }
 
-    const requestKey = buildGenerationKey(prompt, productsFridge, normalizedCount);
+    const requestKey = buildGenerationKey(
+      prompt,
+      productsFridge,
+      normalizedCount,
+    );
 
     if (!inFlightRecipeRequests.has(requestKey)) {
       const requestPromise = requestRecipeGeneration(
         prompt,
         productsFridge,
         normalizedCount,
-        signal
+        signal,
       ).finally(() => {
         inFlightRecipeRequests.delete(requestKey);
       });
@@ -96,12 +100,13 @@ export const generateRecipe = async function (
     }
 
     const message = axios.isAxiosError(error)
-      ? typeof error.response?.data === "string" && error.response.data.trim() !== ""
+      ? typeof error.response?.data === "string" &&
+        error.response.data.trim() !== ""
         ? error.response.data
         : typeof error.response?.data?.message === "string" &&
-          error.response.data.message.trim() !== ""
-        ? error.response.data.message
-        : error.message
+            error.response.data.message.trim() !== ""
+          ? error.response.data.message
+          : error.message
       : error?.message || "Unknown AI error";
     throw new Error(`AI Generation Error: ${message}`);
   }
@@ -113,12 +118,15 @@ export const cleanAiJsonString = (response: any): string => {
       ? response.replace(/```json|```/g, "").trim()
       : JSON.stringify(response);
   jsonString = jsonString.replace(/,\s*([}\]])/g, "$1");
-  jsonString = jsonString.replace(/"timeToPrepare\(string\)"/g, '"timeToPrepare"');
+  jsonString = jsonString.replace(
+    /"timeToPrepare\(string\)"/g,
+    '"timeToPrepare"',
+  );
   return jsonString;
 };
 
 export const lookupProductByBarcode = async (
-  barcode: string
+  barcode: string,
 ): Promise<string | null> => {
   const normalized = barcode.trim();
   if (!normalized) {
@@ -127,11 +135,11 @@ export const lookupProductByBarcode = async (
 
   const response = await axios.get(
     `https://world.openfoodfacts.org/api/v0/product/${encodeURIComponent(
-      normalized
+      normalized,
     )}.json`,
     {
       withCredentials: false,
-    }
+    },
   );
 
   const product = response.data?.product;
@@ -195,23 +203,25 @@ axios.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export const apiClient = async function (
   url: string,
   uploadData: boolean = false,
-  body: any = null
+  body: any = null,
 ) {
   const normalizedUrl = String(url ?? "");
   const authNoiseEndpoints = [
     "me",
     "refresh",
+    "user/getPreferences",
+    "user/getDiets",
     "getFridgeIngredients",
     "shoppingList",
   ];
   const isAuthNoiseEndpoint = authNoiseEndpoints.some((endpoint) =>
-    normalizedUrl.includes(endpoint)
+    normalizedUrl.includes(endpoint),
   );
 
   try {
@@ -231,14 +241,14 @@ export const apiClient = async function (
       new Promise((_, reject) =>
         setTimeout(
           () => reject(new Error(`Request timed out after ${TIMEOUT} seconds`)),
-          TIMEOUT * 1000
-        )
+          TIMEOUT * 1000,
+        ),
       ),
     ]);
     const contentType = res.headers["content-type"];
     if (contentType && contentType.includes("text/html")) {
       const htmlError = new Error(
-        "Received HTML instead of JSON. Backend endpoint may be incorrect or down."
+        "Received HTML instead of JSON. Backend endpoint may be incorrect or down.",
       );
       (htmlError as any).isContentTypeError = true;
       if (isAuthNoiseEndpoint) {
@@ -253,8 +263,8 @@ export const apiClient = async function (
     const status = axios.isAxiosError(error)
       ? error.response?.status
       : typeof error?.status === "number"
-      ? error.status
-      : undefined;
+        ? error.status
+        : undefined;
     const isExpectedAuthNoise =
       ((status === 401 || status === 400) && isAuthNoiseEndpoint) ||
       (Boolean(error?.isContentTypeError) && isAuthNoiseEndpoint);
@@ -264,7 +274,7 @@ export const apiClient = async function (
         "AJAX Error Details:",
         error.response
           ? { status: error.response.status, data: error.response.data }
-          : error.message
+          : error.message,
       );
     }
 
@@ -290,19 +300,19 @@ export const apiClient = async function (
         (finalError as any).status = status;
       } else if (error.request) {
         finalError = new Error(
-          "AJAX Error: No response from server. Check network or server availability."
+          "AJAX Error: No response from server. Check network or server availability.",
         );
         (finalError as any).isNetworkError = true;
       } else {
         finalError = new Error(
-          `AJAX Error: Request setup failed - ${error.message}`
+          `AJAX Error: Request setup failed - ${error.message}`,
         );
       }
     } else if (error instanceof Error) {
       finalError = error;
     } else {
       finalError = new Error(
-        "An unknown AJAX error occurred: " + String(error)
+        "An unknown AJAX error occurred: " + String(error),
       );
     }
     throw finalError;
@@ -318,7 +328,7 @@ export const deleteClient = async function (url: string) {
       "Delete Error:",
       error.response
         ? { status: error.response.status, data: error.response.data }
-        : error.message
+        : error.message,
     );
     if (axios.isAxiosError(error) && error.response) {
       const status = error.response.status;
@@ -345,7 +355,7 @@ export const putClient = async function (url: string, body: any = null) {
       "Put Error:",
       error.response
         ? { status: error.response.status, data: error.response.data }
-        : error.message
+        : error.message,
     );
     if (axios.isAxiosError(error) && error.response) {
       const status = error.response.status;

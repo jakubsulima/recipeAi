@@ -7,6 +7,7 @@ import com.google.api.client.json.gson.GsonFactory;
 import org.jakub.backendapi.dto.UserDto;
 import org.jakub.backendapi.entities.Enums.AuthMethod;
 import org.jakub.backendapi.entities.Enums.Role;
+import org.jakub.backendapi.entities.Enums.Diet;
 import org.jakub.backendapi.entities.User;
 import org.jakub.backendapi.entities.UserPreferences;
 import org.jakub.backendapi.exceptions.AppException;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.Optional;
+import java.util.List;
 
 @Service
 public class OAuthService {
@@ -75,6 +77,7 @@ public class OAuthService {
         user.setAuthMethod(authMethod);
 
         UserPreferences userPreferences = new UserPreferences();
+        userPreferences.setDiets(List.of(Diet.NONE));
         userPreferences.setUser(user);
         user.setUserPreferences(userPreferences);
 

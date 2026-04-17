@@ -16,12 +16,28 @@ interface ShoppingItemInput {
   unit?: string | null;
 }
 
+type RawShoppingListItem = Partial<ShoppingListItem> & {
+  id?: string;
+  name?: string;
+  amount?: string | number | null;
+  unit?: string | null;
+  checked?: boolean;
+  createdAt?: string;
+};
+
 const STORAGE_KEY = "recipeai.shoppingList";
 
 const normalizeName = (value: string) => value.trim().toLowerCase();
 const normalizeUnit = (value: string | null | undefined) =>
   typeof value === "string" && value.trim() ? value.trim().toLowerCase() : null;
 const SHOPPING_LIST_ENDPOINT = `${API_URL}shoppingList`;
+
+export const createShoppingListItemId = (): string => {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+};
 
 const toNumberOrNull = (value: string | number | null | undefined): number | null => {
   if (value === null || value === undefined) {
@@ -40,7 +56,41 @@ const toNumberOrNull = (value: string | number | null | undefined): number | nul
   return Number.isFinite(parsed) ? parsed : null;
 };
 
-const normalizeRemoteItem = (item: any): ShoppingListItem | null => {
+const toRawShoppingListItem = (item: unknown): RawShoppingListItem | null => {
+  if (!item || typeof item !== "object") {
+    return null;
+  }
+
+  const raw = item as Record<string, unknown>;
+  const parsed: RawShoppingListItem = {};
+
+  if (typeof raw.id === "string") {
+    parsed.id = raw.id;
+  }
+  if (typeof raw.name === "string") {
+    parsed.name = raw.name;
+  }
+  if (
+    typeof raw.amount === "string" ||
+    typeof raw.amount === "number" ||
+    raw.amount === null
+  ) {
+    parsed.amount = raw.amount;
+  }
+  if (typeof raw.unit === "string" || raw.unit === null) {
+    parsed.unit = raw.unit;
+  }
+  if (typeof raw.checked === "boolean") {
+    parsed.checked = raw.checked;
+  }
+  if (typeof raw.createdAt === "string") {
+    parsed.createdAt = raw.createdAt;
+  }
+
+  return parsed;
+};
+
+const normalizeRemoteItem = (item: RawShoppingListItem): ShoppingListItem | null => {
   if (!item || typeof item !== "object") {
     return null;
   }
@@ -54,7 +104,7 @@ const normalizeRemoteItem = (item: any): ShoppingListItem | null => {
     id:
       typeof item.id === "string" && item.id.trim()
         ? item.id.trim()
-        : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        : createShoppingListItemId(),
     name,
     amount: toNumberOrNull(item.amount),
     unit: typeof item.unit === "string" && item.unit.trim() ? item.unit.trim() : null,
@@ -65,6 +115,30 @@ const normalizeRemoteItem = (item: any): ShoppingListItem | null => {
         : new Date().toISOString(),
   };
 };
+
+export const normalizeShoppingListItems = (items: unknown): ShoppingListItem[] => {
+  if (!Array.isArray(items)) {
+    return [];
+  }
+
+  return items
+    .map(toRawShoppingListItem)
+    .filter((item): item is RawShoppingListItem => item !== null)
+    .map((item) => normalizeRemoteItem(item))
+    .filter((item): item is ShoppingListItem => item !== null);
+};
+
+export const getShoppingListFingerprint = (items: ShoppingListItem[]): string =>
+  JSON.stringify(
+    items.map((item) => ({
+      id: item.id,
+      name: item.name,
+      amount: toNumberOrNull(item.amount),
+      unit: item.unit ?? null,
+      checked: Boolean(item.checked),
+      createdAt: item.createdAt,
+    }))
+  );
 
 const toSyncPayloadItem = (item: ShoppingListItem) => ({
   id: item.id,
@@ -82,14 +156,14 @@ export const readShoppingList = (): ShoppingListItem[] => {
       return [];
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    return normalizeShoppingListItems(parsed);
   } catch {
     return [];
   }
 };
 
 export const writeShoppingList = (items: ShoppingListItem[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizeShoppingListItems(items)));
 };
 
 export const addShoppingItems = (
@@ -116,7 +190,7 @@ export const addShoppingItems = (
 
     if (sameNameIndexes.length === 0) {
       updated.push({
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        id: createShoppingListItemId(),
         name: incomingName,
         amount: incomingAmount,
         unit: item.unit ?? null,
@@ -133,7 +207,7 @@ export const addShoppingItems = (
 
     if (compatibleIndex === undefined) {
       updated.push({
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        id: createShoppingListItemId(),
         name: incomingName,
         amount: incomingAmount,
         unit: item.unit ?? null,
@@ -170,8 +244,7 @@ export const fetchShoppingList = async (): Promise<ShoppingListItem[]> => {
     withCredentials: true,
   });
 
-  const remoteItems = Array.isArray(response.data) ? response.data : [];
-  return remoteItems.map(normalizeRemoteItem).filter((item): item is ShoppingListItem => item !== null);
+  return normalizeShoppingListItems(response.data);
 };
 
 export const syncShoppingList = async (
@@ -180,13 +253,12 @@ export const syncShoppingList = async (
   const response = await axios.put(
     SHOPPING_LIST_ENDPOINT,
     {
-      items: items.map(toSyncPayloadItem),
+      items: normalizeShoppingListItems(items).map(toSyncPayloadItem),
     },
     {
       withCredentials: true,
     }
   );
 
-  const syncedItems = Array.isArray(response.data) ? response.data : [];
-  return syncedItems.map(normalizeRemoteItem).filter((item): item is ShoppingListItem => item !== null);
+  return normalizeShoppingListItems(response.data);
 };

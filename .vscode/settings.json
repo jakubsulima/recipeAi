@@ -1,4 +1,6 @@
 {
   "liveServer.settings.port": 5502,
-  "java.compile.nullAnalysis.mode": "automatic"
+  "java.compile.nullAnalysis.mode": "automatic",
+  "java.configuration.updateBuildConfiguration": "disabled",
+  "workbench.browser.enableChatTools": true
 }

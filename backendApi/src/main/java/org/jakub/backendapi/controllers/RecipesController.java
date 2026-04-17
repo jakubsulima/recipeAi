@@ -28,13 +28,14 @@ import java.util.stream.Collectors;
 
 @RestController
 public class RecipesController {
-    private static final int GENERATE_RECIPE_LIMIT_PER_MINUTE = 15;
-
     private final RecipeService recipeService;
     private final UserService userService;
     private final UserPreferencesService userPreferencesService;
     private final GeminiService geminiService;
     private final RateLimitService rateLimitService;
+
+    @Value("${app.limits.generate-recipe-requests-per-minute:${GENERATE_RECIPE_LIMIT_PER_MINUTE:15}}")
+    private int generateRecipeLimitPerMinute;
 
     @Value("${security.trusted-proxy-ips:}")
     private String trustedProxyIps;
@@ -133,7 +134,7 @@ public class RecipesController {
         String clientKey = resolveClientKey(request);
         rateLimitService.assertAllowed(
             "generateRecipe:" + clientKey,
-            GENERATE_RECIPE_LIMIT_PER_MINUTE,
+            Math.max(1, generateRecipeLimitPerMinute),
             60_000L,
             "Too many recipe generation requests. Please try again in a minute."
         );
@@ -142,32 +143,42 @@ public class RecipesController {
             userService.consumeDailyRecipeRequestQuota(userEmail);
         }
 
-        try {
-            if (userEmail != null && !userEmail.isEmpty()) {
-                UserDto user = userService.findByEmail(userEmail);
-                if (user != null) {
-                    UserPreferencesDto preferences = userPreferencesService.getPreferences(userEmail);
-                    if (preferences != null) {
-                        recipePrompt = appendPreferencesToPrompt(recipePrompt, preferences);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("Could not retrieve user preferences: " + e.getMessage());
-        }
+        UserPreferencesDto preferences = resolvePromptPreferences(userEmail);
+        recipePrompt = appendPreferencesToPrompt(recipePrompt, preferences);
 
         return ResponseEntity.ok(geminiService.generateRecipes(recipePrompt, recipeCount));
     }
 
     private String appendPreferencesToPrompt(String recipePrompt, UserPreferencesDto preferences) {
-        String diet = StringUtils.hasText(preferences.getDiet()) ? preferences.getDiet() : "none";
-        String dislikedIngredients = formatDislikedIngredients(preferences.getDislikedIngredients());
+        String diets = "none";
+        String dislikedIngredients = "none";
+
+        if (preferences != null) {
+            diets = formatDiets(preferences.getDiets(), preferences.getDiet());
+            dislikedIngredients = formatDislikedIngredients(preferences.getDislikedIngredients());
+        }
 
         return recipePrompt
                 + "\n\nUser Preferences:\n"
-                + "- Diet: " + diet + "\n"
+                + "- Diets: " + diets + "\n"
                 + "- Disliked ingredients: " + dislikedIngredients + "\n"
                 + "- Follow these preferences strictly when creating the recipe.";
+    }
+
+    private UserPreferencesDto resolvePromptPreferences(String userEmail) {
+        UserPreferencesDto fallbackPreferences = new UserPreferencesDto();
+
+        if (!StringUtils.hasText(userEmail)) {
+            return fallbackPreferences;
+        }
+
+        try {
+            UserPreferencesDto preferences = userPreferencesService.getPreferences(userEmail);
+            return preferences != null ? preferences : fallbackPreferences;
+        } catch (Exception e) {
+            System.err.println("Could not retrieve user preferences: " + e.getMessage());
+            return fallbackPreferences;
+        }
     }
 
     private String formatDislikedIngredients(String[] dislikedIngredients) {
@@ -181,6 +192,24 @@ public class RecipesController {
                 .collect(Collectors.joining(", "));
 
         return StringUtils.hasText(formatted) ? formatted : "none";
+    }
+
+    private String formatDiets(String[] diets, String fallbackDiet) {
+        if (diets != null && diets.length > 0) {
+            String formatted = Arrays.stream(diets)
+                    .filter(StringUtils::hasText)
+                    .map(String::trim)
+                    .collect(Collectors.joining(", "));
+            if (StringUtils.hasText(formatted)) {
+                return formatted;
+            }
+        }
+
+        if (StringUtils.hasText(fallbackDiet)) {
+            return fallbackDiet;
+        }
+
+        return "none";
     }
 
     private String resolveClientKey(HttpServletRequest request) {
