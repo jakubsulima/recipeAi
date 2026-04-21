@@ -46,6 +46,8 @@ const MePage = () => {
   const [selectedDiets, setSelectedDiets] = useState<string[]>([]);
   const [dietSaving, setDietSaving] = useState<boolean>(false);
   const [newIngredient, setNewIngredient] = useState<string>("");
+  const [dislikedIngredientError, setDislikedIngredientError] =
+    useState<string>("");
   const [preferencesLoaded, setPreferencesLoaded] = useState<boolean>(false);
 
   const navigationState = location.state as {
@@ -108,22 +110,33 @@ const MePage = () => {
   };
 
   const addDislikedIngredient = () => {
-    if (!newIngredient.trim()) return;
-    const currentDisliked = user?.preferences?.dislikedIngredients || [];
-    if (currentDisliked.includes(newIngredient.trim().toLowerCase())) {
-      setError("This ingredient is already in your disliked list");
+    const normalizedIngredient = newIngredient.trim().toLowerCase();
+    if (!normalizedIngredient) {
+      setDislikedIngredientError("Enter an ingredient to add.");
       return;
     }
+
+    const currentDisliked = user?.preferences?.dislikedIngredients || [];
+    if (
+      currentDisliked.some(
+        (ingredient) => ingredient.toLowerCase() === normalizedIngredient,
+      )
+    ) {
+      setDislikedIngredientError(
+        "This ingredient is already in your disliked list.",
+      );
+      return;
+    }
+
+    setDislikedIngredientError("");
     handleUpdatePreferences(
-      () =>
-        apiClient(
-          "user/addDislikedIngredient",
-          true,
-          newIngredient.trim().toLowerCase(),
-        ),
+      () => apiClient("user/addDislikedIngredient", true, normalizedIngredient),
       "Ingredient added",
       "Failed to add disliked ingredient",
-    ).then(() => setNewIngredient(""));
+    ).then(() => {
+      setNewIngredient("");
+      setDislikedIngredientError("");
+    });
   };
 
   const removeDislikedIngredient = (ingredientToRemove: string) => {
@@ -334,11 +347,17 @@ const MePage = () => {
 
           <DislikedIngredientsPanel
             newIngredient={newIngredient}
-            onNewIngredientChange={setNewIngredient}
+            onNewIngredientChange={(value) => {
+              setNewIngredient(value);
+              if (dislikedIngredientError) {
+                setDislikedIngredientError("");
+              }
+            }}
             onAddIngredient={addDislikedIngredient}
             dislikedIngredients={dislikedIngredients}
             preferencesLoaded={preferencesLoaded}
             onRemoveIngredient={removeDislikedIngredient}
+            validationMessage={dislikedIngredientError}
           />
         </div>
       </div>

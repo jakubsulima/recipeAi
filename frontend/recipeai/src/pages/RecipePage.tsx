@@ -36,6 +36,7 @@ export interface RecipeData {
 }
 
 const GENERATED_RECIPES_REQUEST_COUNT = 3;
+const RECIPE_GENERATION_TIMEOUT_MS = 45000;
 
 const formatMacro = (value: string | number | undefined, suffix: string) => {
   if (value === undefined || value === null || value === "") {
@@ -165,6 +166,7 @@ const RecipePage = () => {
   const [recipeOptions, setRecipeOptions] = useState<RecipeData[]>([]);
   const [selectedRecipeIndex, setSelectedRecipeIndex] = useState(0);
   const [error, setError] = useState<string>("");
+  const [generationRetryKey, setGenerationRetryKey] = useState(0);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [saveStatus, setSaveStatus] = useState<
     "idle" | "saving" | "saved" | "error"
@@ -257,12 +259,31 @@ const RecipePage = () => {
               abortControllerRef.current?.abort();
               const controller = new AbortController();
               abortControllerRef.current = controller;
-              const response = await generateRecipe(
-                search,
-                fridgeIngredients,
-                controller.signal,
-                GENERATED_RECIPES_REQUEST_COUNT,
-              );
+              let timedOut = false;
+              const timeoutId = window.setTimeout(() => {
+                timedOut = true;
+                controller.abort();
+              }, RECIPE_GENERATION_TIMEOUT_MS);
+
+              let response;
+              try {
+                response = await generateRecipe(
+                  search,
+                  fridgeIngredients,
+                  controller.signal,
+                  GENERATED_RECIPES_REQUEST_COUNT,
+                );
+              } catch (generationError: any) {
+                if (generationError?.name === "AbortError" && timedOut) {
+                  throw new Error(
+                    `Recipe generation timed out after ${Math.floor(RECIPE_GENERATION_TIMEOUT_MS / 1000)} seconds. Please retry.`,
+                  );
+                }
+                throw generationError;
+              } finally {
+                window.clearTimeout(timeoutId);
+              }
+
               applyGeneratedRecipeResponse(response, search);
               setIsLoading(false);
             } catch (err: any) {
@@ -297,7 +318,17 @@ const RecipePage = () => {
     recipeId,
     applyGeneratedRecipeResponse,
     getFridgeItemNames,
+    generationRetryKey,
   ]);
+
+  const handleRetryGeneration = () => {
+    currentRecipeIdentifierRef.current = null;
+    setError("");
+    setRecipeData(null);
+    setRecipeOptions([]);
+    setIsLoading(true);
+    setGenerationRetryKey((previous) => previous + 1);
+  };
 
   const handleSelectRecipe = (index: number) => {
     if (index < 0 || index >= recipeOptions.length) {
@@ -391,7 +422,7 @@ const RecipePage = () => {
     try {
       setIsLoading(true);
       await deleteClient(`deleteRecipe/${recipeId}`);
-      navigate("/myRecipes");
+      navigate("/Recipes");
     } catch (err: any) {
       console.error("Error deleting recipe:", err);
       setError(err.message || "Failed to delete recipe.");
@@ -432,6 +463,8 @@ const RecipePage = () => {
   }
 
   if (!recipeData) {
+    const canRetryGeneration = Boolean(search) && !recipeId && !existingRecipe;
+
     return (
       <div className="flex h-screen items-center justify-center bg-background px-4">
         <div className="rounded-2xl border border-primary/15 bg-secondary px-6 py-8 text-center shadow-sm">
@@ -439,8 +472,27 @@ const RecipePage = () => {
             No recipe data available
           </div>
           <p className="mt-1 text-sm text-text/60">
-            Try generating a new recipe from the homepage.
+            {error || "Try generating a new recipe from the homepage."}
           </p>
+
+          {canRetryGeneration && (
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-center">
+              <button
+                type="button"
+                onClick={handleRetryGeneration}
+                className="rounded-lg bg-accent px-4 py-2.5 font-semibold text-text transition-colors hover:bg-accent/90"
+              >
+                Retry Generation
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/")}
+                className="rounded-lg border border-primary/20 bg-background px-4 py-2.5 font-semibold text-text transition-colors hover:border-accent/50"
+              >
+                Back to Home
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );

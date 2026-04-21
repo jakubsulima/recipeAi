@@ -42,6 +42,7 @@ function App() {
       <Route path="/" element={<Layout />} errorElement={<ErrorPage />}>
       <Route index element={withSuspense(<HomePage />)} />
       <Route path="/Recipes" element={withSuspense(<UserRecipes />)} />
+      <Route path="/recipes" element={<Navigate to="/Recipes" replace />} />
       <Route
       path="/Fridge"
       element={withSuspense(
@@ -95,11 +96,7 @@ function App() {
       <Route path="/Recipe/:id" element={withSuspense(<RecipePage />)} />
       <Route
       path="/myRecipes"
-      element={withSuspense(
-        <ProtectedRoute>
-        <UserRecipes />
-        </ProtectedRoute>
-      )}
+      element={<Navigate to="/Recipes" replace />}
       />
       <Route
       path="/admin"
