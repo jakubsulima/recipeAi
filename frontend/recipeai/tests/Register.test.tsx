@@ -28,10 +28,7 @@ vi.mock("../src/context/context", () => ({
 }));
 
 describe("Register Component", () => {
-  let mockSubmit;
-
   beforeEach(() => {
-    mockSubmit = vi.fn();
     vi.clearAllMocks();
     render(<Register />);
   });
@@ -41,7 +38,7 @@ describe("Register Component", () => {
     expect(screen.getByLabelText(/^Password:/i)).toBeInTheDocument(); // Use ^ to be more specific
     expect(screen.getByLabelText(/Confirm Password:/i)).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /Register/i })
+      screen.getByRole("button", { name: /Register/i }),
     ).toBeInTheDocument();
   });
 
@@ -72,10 +69,10 @@ describe("Register Component", () => {
     });
 
     expect(
-      screen.getByText("Password must be at least 8 characters")
+      screen.getByText("Password must be at least 8 characters"),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Confirm Password is required")
+      screen.getByText("Confirm Password is required"),
     ).toBeInTheDocument();
   });
 
@@ -115,7 +112,7 @@ describe("Register Component", () => {
     fireEvent.click(submitButton);
     await waitFor(() => {
       expect(
-        screen.getByText(/Password must be at least 8 characters/i)
+        screen.getByText(/Password must be at least 8 characters/i),
       ).toBeInTheDocument();
     });
 
@@ -127,7 +124,7 @@ describe("Register Component", () => {
     fireEvent.click(submitButton);
     await waitFor(() => {
       expect(
-        screen.getByText(/Password must contain at least one number/i)
+        screen.getByText(/Password must contain at least one number/i),
       ).toBeInTheDocument();
     });
 
@@ -139,7 +136,9 @@ describe("Register Component", () => {
     fireEvent.click(submitButton);
     await waitFor(() => {
       expect(
-        screen.getByText(/Password must contain at least one uppercase letter/i)
+        screen.getByText(
+          /Password must contain at least one uppercase letter/i,
+        ),
       ).toBeInTheDocument();
     });
 
@@ -151,7 +150,9 @@ describe("Register Component", () => {
     fireEvent.click(submitButton);
     await waitFor(() => {
       expect(
-        screen.getByText(/Password must contain at least one lowercase letter/i)
+        screen.getByText(
+          /Password must contain at least one lowercase letter/i,
+        ),
       ).toBeInTheDocument();
     });
 
@@ -164,8 +165,8 @@ describe("Register Component", () => {
     await waitFor(() => {
       expect(
         screen.getByText(
-          /Password must contain at least one special character/i
-        )
+          /Password must contain at least one special character/i,
+        ),
       ).toBeInTheDocument();
     });
 

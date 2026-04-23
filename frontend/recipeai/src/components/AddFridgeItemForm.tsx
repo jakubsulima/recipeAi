@@ -35,7 +35,14 @@ const AddFridgeItemForm: React.FC<AddFridgeItemFormProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
-    if (newItem || newItemDate || amount || unit || showNameError || dateError) {
+    if (
+      newItem ||
+      newItemDate ||
+      amount ||
+      unit ||
+      showNameError ||
+      dateError
+    ) {
       setIsExpanded(true);
     }
   }, [newItem, newItemDate, amount, unit, showNameError, dateError]);
@@ -49,7 +56,9 @@ const AddFridgeItemForm: React.FC<AddFridgeItemFormProps> = ({
         aria-expanded={isExpanded}
       >
         <div>
-          <h2 className="text-xl font-bold text-text sm:text-2xl">Add to Fridge</h2>
+          <h2 className="text-xl font-bold text-text sm:text-2xl">
+            Add to Fridge
+          </h2>
           <p className="text-sm text-text/60">
             Click to {isExpanded ? "hide" : "expand"} the quick add form
           </p>
@@ -61,7 +70,9 @@ const AddFridgeItemForm: React.FC<AddFridgeItemFormProps> = ({
 
       <div
         className={`grid overflow-hidden transition-all duration-300 ease-out ${
-          isExpanded ? "mt-4 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+          isExpanded
+            ? "mt-4 grid-rows-[1fr] opacity-100"
+            : "grid-rows-[0fr] opacity-0"
         }`}
       >
         <div className="min-h-0">
@@ -76,7 +87,9 @@ const AddFridgeItemForm: React.FC<AddFridgeItemFormProps> = ({
                 onChange={(e) => setNewItem(e.target.value)}
                 placeholder="e.g., Tomatoes"
                 className={`w-full appearance-none rounded-lg border bg-background p-2.5 text-text shadow-sm transition-shadow focus:outline-none focus:ring-2 focus:ring-accent ${
-                  showNameError && !newItem.trim() ? "border-accent" : "border-primary/20"
+                  showNameError && !newItem.trim()
+                    ? "border-accent"
+                    : "border-primary/20"
                 }`}
                 style={{ WebkitTapHighlightColor: "transparent" }}
                 disabled={displayLoading}
@@ -86,7 +99,8 @@ const AddFridgeItemForm: React.FC<AddFridgeItemFormProps> = ({
 
             <div className="flex flex-col gap-1">
               <label className="mt-1 block text-sm font-medium text-text">
-                Expiration date <span className="font-normal text-text/50">(optional)</span>
+                Expiration date{" "}
+                <span className="font-normal text-text/50">(optional)</span>
               </label>
               <input
                 type="date"
@@ -98,7 +112,11 @@ const AddFridgeItemForm: React.FC<AddFridgeItemFormProps> = ({
                 style={{ WebkitTapHighlightColor: "transparent" }}
                 disabled={displayLoading}
               />
-              {dateError && <p className="mt-1 text-xs font-medium text-text/75">{dateError}</p>}
+              {dateError && (
+                <p className="mt-1 text-xs font-medium text-text/75">
+                  {dateError}
+                </p>
+              )}
             </div>
 
             <div className="mt-1">
@@ -119,7 +137,8 @@ const AddFridgeItemForm: React.FC<AddFridgeItemFormProps> = ({
             {unit && (
               <div className="amount-slide-in mt-1 flex flex-col gap-1">
                 <label className="block text-sm font-medium text-text">
-                  Amount <span className="font-normal text-text/50">(optional)</span>
+                  Amount{" "}
+                  <span className="font-normal text-text/50">(optional)</span>
                 </label>
                 <input
                   type="text"
@@ -128,7 +147,9 @@ const AddFridgeItemForm: React.FC<AddFridgeItemFormProps> = ({
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder="e.g., 1.5"
                   className={`w-full appearance-none rounded-lg border bg-background p-2.5 text-text shadow-sm transition-shadow focus:outline-none focus:ring-2 focus:ring-accent ${
-                    hasAmountError(amount) ? "border-accent" : "border-primary/20"
+                    hasAmountError(amount)
+                      ? "border-accent"
+                      : "border-primary/20"
                   }`}
                   style={{ WebkitTapHighlightColor: "transparent" }}
                   disabled={displayLoading}

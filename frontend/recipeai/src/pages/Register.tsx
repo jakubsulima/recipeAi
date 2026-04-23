@@ -40,8 +40,19 @@ interface GsiState {
   callback: GoogleCallback | null;
 }
 
+interface RecipeAiWindow extends Window {
+  __recipeAiGsiState?: GsiState;
+}
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (error instanceof Error && error.message.trim() !== "") {
+    return error.message;
+  }
+  return fallback;
+};
+
 const getGsiState = (): GsiState => {
-  const globalWindow = window as any;
+  const globalWindow = window as RecipeAiWindow;
   if (!globalWindow.__recipeAiGsiState) {
     globalWindow.__recipeAiGsiState = {
       initialized: false,
@@ -69,7 +80,7 @@ const Register = () => {
   const handleAuthSuccess = useCallback(
     (userData: { email: string; id: number; role: string }) => {
       localStorage.setItem("isLoggedIn", "true");
-      setUser(userData as any);
+      setUser(userData);
       refreshSession().catch(() => {
         // Route guards will handle unauthenticated fallback if session sync fails.
       });
@@ -78,7 +89,7 @@ const Register = () => {
         state: { fromRegistration: true },
       });
     },
-    [setUser, refreshSession, navigate]
+    [setUser, refreshSession, navigate],
   );
 
   // Google OAuth callback
@@ -91,13 +102,13 @@ const Register = () => {
           idToken: response.credential,
         });
         handleAuthSuccess(userData);
-      } catch (err: any) {
-        setError(err.message || "Google sign-up failed");
+      } catch (err: unknown) {
+        setError(getErrorMessage(err, "Google sign-up failed"));
       } finally {
         setIsSubmitting(false);
       }
     },
-    [handleAuthSuccess]
+    [handleAuthSuccess],
   );
 
   // Initialize Google Sign-In button
@@ -175,8 +186,8 @@ const Register = () => {
     try {
       const userData = await apiClient("register", true, data);
       handleAuthSuccess(userData);
-    } catch (error: any) {
-      setError(error.message || "Registration failed");
+    } catch (error: unknown) {
+      setError(getErrorMessage(error, "Registration failed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -195,7 +206,11 @@ const Register = () => {
 
         {/* Card */}
         <div className="mobile-card-enter ambient-gradient-card w-full bg-secondary rounded-2xl shadow-lg p-8">
-          <ErrorAlert message={error} className="mb-6" onAutoHide={() => setError("")} />
+          <ErrorAlert
+            message={error}
+            className="mb-6"
+            onAutoHide={() => setError("")}
+          />
 
           {/* Google Sign-Up (rendered by Google SDK) */}
           <div

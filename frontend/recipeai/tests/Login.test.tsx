@@ -34,7 +34,7 @@ describe("Login Component", () => {
     render(
       <MemoryRouter>
         <Login />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
   });
 
@@ -43,7 +43,7 @@ describe("Login Component", () => {
     expect(screen.getByLabelText(/Password:/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Login/i })).toBeInTheDocument();
     expect(
-      screen.getByText(/Don't have an account\? Register/i)
+      screen.getByText(/Don't have an account\? Register/i),
     ).toBeInTheDocument();
   });
 

@@ -1,4 +1,11 @@
-import { useCallback, useContext, useState, createContext, useEffect, useMemo } from "react";
+import {
+  useCallback,
+  useContext,
+  useState,
+  createContext,
+  useEffect,
+  useMemo,
+} from "react";
 import { apiClient } from "../lib/hooks";
 
 interface UserPreferences {
@@ -28,6 +35,28 @@ interface AuthContextType {
   refreshSession: () => Promise<boolean>;
   logout: () => Promise<void>;
 }
+
+const getErrorStatus = (error: unknown): number | undefined => {
+  if (
+    error &&
+    typeof error === "object" &&
+    "status" in error &&
+    typeof (error as { status?: unknown }).status === "number"
+  ) {
+    return (error as { status: number }).status;
+  }
+
+  return undefined;
+};
+
+const hasContentTypeError = (error: unknown): boolean => {
+  return Boolean(
+    error &&
+      typeof error === "object" &&
+      "isContentTypeError" in error &&
+      (error as { isContentTypeError?: unknown }).isContentTypeError,
+  );
+};
 
 const defaultAuthContext: AuthContextType = {
   user: null,
@@ -66,8 +95,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(userData);
       localStorage.setItem("isLoggedIn", "true");
       return true;
-    } catch (error: any) {
-      if (error?.status === 401) {
+    } catch (error: unknown) {
+      if (getErrorStatus(error) === 401) {
         try {
           await apiClient("refresh", true);
           const userData = await apiClient("me");
@@ -100,7 +129,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const response: UserPreferences = await apiClient(
         "user/getPreferences",
-        false
+        false,
       );
       if (response) {
         setUser((prevUser) =>
@@ -109,12 +138,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 ...prevUser,
                 preferences: response,
               }
-            : null
+            : null,
         );
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       const isExpectedAuthIssue =
-        error?.status === 400 || error?.status === 401 || Boolean(error?.isContentTypeError);
+        getErrorStatus(error) === 400 ||
+        getErrorStatus(error) === 401 ||
+        hasContentTypeError(error);
 
       if (!isExpectedAuthIssue) {
         console.error("Failed to fetch user preferences:", error);
@@ -126,7 +157,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     let isMounted = true;
 
     const initializeSession = async () => {
-      const shouldAttemptSession = localStorage.getItem("isLoggedIn") === "true";
+      const shouldAttemptSession =
+        localStorage.getItem("isLoggedIn") === "true";
       if (!shouldAttemptSession) {
         if (isMounted) {
           setLoading(false);
@@ -161,7 +193,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       refreshSession,
       logout,
     }),
-    [user, loading, isAdmin, getUserPreferences, refreshSession, logout]
+    [user, loading, isAdmin, getUserPreferences, refreshSession, logout],
   );
 
   return (

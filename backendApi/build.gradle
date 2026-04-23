@@ -60,8 +60,8 @@ tasks.withType(Checkstyle).configureEach {
 
 spotbugs {
     toolVersion = '4.8.6'
-    effort = com.github.spotbugs.snom.Effort.MAX
-    reportLevel = com.github.spotbugs.snom.Confidence.MEDIUM
+    effort = 'max'
+    reportLevel = 'medium'
     ignoreFailures = true
 }
 

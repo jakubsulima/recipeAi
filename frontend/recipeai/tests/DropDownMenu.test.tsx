@@ -9,7 +9,7 @@ describe("DropDownMenu", () => {
 
   it("renders the dropdown menu with correct items", () => {
     render(
-      <DropDownMenu dropdownItems={mockItems} className={mockClassName} />
+      <DropDownMenu dropdownItems={mockItems} className={mockClassName} />,
     );
 
     // Check that all items are rendered
@@ -20,7 +20,7 @@ describe("DropDownMenu", () => {
 
   it("applies the provided className to the container", () => {
     const { container } = render(
-      <DropDownMenu dropdownItems={mockItems} className={mockClassName} />
+      <DropDownMenu dropdownItems={mockItems} className={mockClassName} />,
     );
 
     // Check that the className is applied
@@ -30,7 +30,7 @@ describe("DropDownMenu", () => {
 
   it("renders the correct number of dropdown items", () => {
     render(
-      <DropDownMenu dropdownItems={mockItems} className={mockClassName} />
+      <DropDownMenu dropdownItems={mockItems} className={mockClassName} />,
     );
 
     // Check that there are 3 dropdown items
@@ -40,7 +40,7 @@ describe("DropDownMenu", () => {
 
   it("renders empty when no items are provided", () => {
     const { container } = render(
-      <DropDownMenu dropdownItems={[]} className={mockClassName} />
+      <DropDownMenu dropdownItems={[]} className={mockClassName} />,
     );
 
     // Check that the menu is rendered but has no children

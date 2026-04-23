@@ -37,6 +37,40 @@ export interface RecipeData {
 
 const GENERATED_RECIPES_REQUEST_COUNT = 3;
 const RECIPE_GENERATION_TIMEOUT_MS = 45000;
+type ApiRecord = Record<string, unknown>;
+
+const asRecord = (value: unknown): ApiRecord | null => {
+  if (value && typeof value === "object") {
+    return value as ApiRecord;
+  }
+  return null;
+};
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (error instanceof Error && error.message.trim() !== "") {
+    return error.message;
+  }
+  return fallback;
+};
+
+const getErrorStatus = (error: unknown): number | undefined => {
+  if (
+    error &&
+    typeof error === "object" &&
+    "status" in error &&
+    typeof (error as { status?: unknown }).status === "number"
+  ) {
+    return (error as { status: number }).status;
+  }
+  return undefined;
+};
+
+const isAbortError = (error: unknown): boolean => {
+  return (
+    (error instanceof DOMException && error.name === "AbortError") ||
+    (error instanceof Error && error.name === "AbortError")
+  );
+};
 
 const formatMacro = (value: string | number | undefined, suffix: string) => {
   if (value === undefined || value === null || value === "") {
@@ -51,18 +85,21 @@ const formatMacro = (value: string | number | undefined, suffix: string) => {
   return trimmed ? `${trimmed}${suffix}` : "-";
 };
 
-const normalizeGeneratedRecipes = (raw: any): RecipeData[] => {
-  const candidates: any[] = Array.isArray(raw)
+const normalizeGeneratedRecipes = (raw: unknown): RecipeData[] => {
+  const rawRecord = asRecord(raw);
+  const rawRecipes = rawRecord?.recipes;
+  const candidates: unknown[] = Array.isArray(raw)
     ? raw
-    : Array.isArray(raw?.recipes)
-      ? raw.recipes
-      : raw && typeof raw === "object"
-        ? [raw]
+    : Array.isArray(rawRecipes)
+      ? rawRecipes
+      : rawRecord
+        ? [rawRecord]
         : [];
 
   return candidates
-    .map((candidate: any, index: number) => {
-      if (!candidate || typeof candidate !== "object") {
+    .map((candidateValue, index: number) => {
+      const candidate = asRecord(candidateValue);
+      if (!candidate) {
         return null;
       }
 
@@ -73,8 +110,9 @@ const normalizeGeneratedRecipes = (raw: any): RecipeData[] => {
 
       const ingredients = Array.isArray(candidate.ingredients)
         ? candidate.ingredients
-            .map((ingredient: any) => {
-              if (!ingredient || typeof ingredient !== "object") {
+            .map((ingredientValue) => {
+              const ingredient = asRecord(ingredientValue);
+              if (!ingredient) {
                 return null;
               }
 
@@ -107,11 +145,13 @@ const normalizeGeneratedRecipes = (raw: any): RecipeData[] => {
 
       const instructions = Array.isArray(candidate.instructions)
         ? candidate.instructions
-            .map((instruction: any) =>
+            .map((instruction) =>
               typeof instruction === "string" ? instruction.trim() : "",
             )
             .filter((instruction: string) => instruction.length > 0)
         : [];
+
+      const nutritionData = asRecord(candidate.nutrition);
 
       if (!ingredients.length || !instructions.length) {
         return null;
@@ -119,7 +159,12 @@ const normalizeGeneratedRecipes = (raw: any): RecipeData[] => {
 
       return {
         title: name,
-        id: candidate.id,
+        id:
+          typeof candidate.id === "string"
+            ? candidate.id
+            : typeof candidate.id === "number"
+              ? String(candidate.id)
+              : undefined,
         name,
         description:
           typeof candidate.description === "string"
@@ -132,15 +177,30 @@ const normalizeGeneratedRecipes = (raw: any): RecipeData[] => {
           candidate.timeToPrepare.trim()
             ? candidate.timeToPrepare.trim()
             : "",
-        nutrition:
-          candidate.nutrition && typeof candidate.nutrition === "object"
-            ? {
-                calories: candidate.nutrition.calories,
-                protein: candidate.nutrition.protein,
-                carbs: candidate.nutrition.carbs,
-                fats: candidate.nutrition.fats,
-              }
-            : undefined,
+        nutrition: nutritionData
+          ? {
+              calories:
+                typeof nutritionData.calories === "string" ||
+                typeof nutritionData.calories === "number"
+                  ? nutritionData.calories
+                  : undefined,
+              protein:
+                typeof nutritionData.protein === "string" ||
+                typeof nutritionData.protein === "number"
+                  ? nutritionData.protein
+                  : undefined,
+              carbs:
+                typeof nutritionData.carbs === "string" ||
+                typeof nutritionData.carbs === "number"
+                  ? nutritionData.carbs
+                  : undefined,
+              fats:
+                typeof nutritionData.fats === "string" ||
+                typeof nutritionData.fats === "number"
+                  ? nutritionData.fats
+                  : undefined,
+            }
+          : undefined,
       } as RecipeData;
     })
     .filter(
@@ -176,7 +236,7 @@ const RecipePage = () => {
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const applyGeneratedRecipeResponse = useCallback(
-    (response: any, identifier: string) => {
+    (response: unknown, identifier: string) => {
       const jsonString = cleanAiJsonString(response);
       const parsedData = JSON.parse(jsonString);
       const generatedRecipes = normalizeGeneratedRecipes(parsedData);
@@ -236,7 +296,7 @@ const RecipePage = () => {
             setSaveStatus("idle");
             setRecipeData(response);
             currentRecipeIdentifierRef.current = recipeId;
-          } catch (err: any) {
+          } catch (err: unknown) {
             console.error("Error fetching recipe:", err);
             setError("Failed to load recipe. Please try again.");
             currentRecipeIdentifierRef.current = null;
@@ -265,7 +325,7 @@ const RecipePage = () => {
                 controller.abort();
               }, RECIPE_GENERATION_TIMEOUT_MS);
 
-              let response;
+              let response: unknown;
               try {
                 response = await generateRecipe(
                   search,
@@ -273,8 +333,8 @@ const RecipePage = () => {
                   controller.signal,
                   GENERATED_RECIPES_REQUEST_COUNT,
                 );
-              } catch (generationError: any) {
-                if (generationError?.name === "AbortError" && timedOut) {
+              } catch (generationError: unknown) {
+                if (isAbortError(generationError) && timedOut) {
                   throw new Error(
                     `Recipe generation timed out after ${Math.floor(RECIPE_GENERATION_TIMEOUT_MS / 1000)} seconds. Please retry.`,
                   );
@@ -286,8 +346,8 @@ const RecipePage = () => {
 
               applyGeneratedRecipeResponse(response, search);
               setIsLoading(false);
-            } catch (err: any) {
-              if (err.name === "AbortError") return; // new request owns loading state
+            } catch (err: unknown) {
+              if (isAbortError(err)) return; // new request owns loading state
               console.error("Error generating recipe:", err);
               setError(resolveGenerationErrorMessage(err));
               setRecipeOptions([]);
@@ -361,18 +421,21 @@ const RecipePage = () => {
         instructions: recipeData.instructions,
       });
       setSaveStatus("saved");
-    } catch (error: any) {
+    } catch (error: unknown) {
       setSaveStatus("error");
-      if (error.status === 401) {
+      const status = getErrorStatus(error);
+      if (status === 401) {
         setError("You must be logged in to save a recipe.");
-      } else if (error.status === 409) {
+      } else if (status === 409) {
         setError("This recipe is already saved in your collection.");
-      } else if (error.status === 403) {
+      } else if (status === 403) {
         setError(
           "You reached your current recipe limit. Remove one saved recipe or switch to a paid plan.",
         );
       } else {
-        setError(error.message || "Failed to save recipe. Please try again.");
+        setError(
+          getErrorMessage(error, "Failed to save recipe. Please try again."),
+        );
       }
     } finally {
       setIsLoading(false);
@@ -423,9 +486,9 @@ const RecipePage = () => {
       setIsLoading(true);
       await deleteClient(`deleteRecipe/${recipeId}`);
       navigate("/Recipes");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error deleting recipe:", err);
-      setError(err.message || "Failed to delete recipe.");
+      setError(getErrorMessage(err, "Failed to delete recipe."));
     } finally {
       setIsLoading(false);
       setConfirmDelete(false);

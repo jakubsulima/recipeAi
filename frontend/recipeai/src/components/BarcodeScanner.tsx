@@ -111,8 +111,13 @@ const BarcodeScanner = ({
       }
 
       try {
-        const [{ BrowserMultiFormatReader }, { BarcodeFormat, DecodeHintType }] =
-          await Promise.all([import("@zxing/browser"), import("@zxing/library")]);
+        const [
+          { BrowserMultiFormatReader },
+          { BarcodeFormat, DecodeHintType },
+        ] = await Promise.all([
+          import("@zxing/browser"),
+          import("@zxing/library"),
+        ]);
 
         const scannerHints = new Map<DecodeHintType, unknown>([
           [
@@ -142,9 +147,9 @@ const BarcodeScanner = ({
               constraints,
               videoRef.current ?? undefined,
               (
-                  result: Result | undefined,
+                result: Result | undefined,
                 scanError: unknown,
-                activeControls: ScannerControls
+                activeControls: ScannerControls,
               ) => {
                 if (hasDetectedRef.current) {
                   return;
@@ -165,12 +170,13 @@ const BarcodeScanner = ({
                 }
 
                 if (scanError && !isRecoverableScanError(scanError)) {
-                  setError((currentError) =>
-                    currentError ||
-                    "Scanner is active but cannot read this barcode yet. Try better lighting or enter the code manually."
+                  setError(
+                    (currentError) =>
+                      currentError ||
+                      "Scanner is active but cannot read this barcode yet. Try better lighting or enter the code manually.",
                   );
                 }
-              }
+              },
             );
             break;
           } catch (caughtError) {

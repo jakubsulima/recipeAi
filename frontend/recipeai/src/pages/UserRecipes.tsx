@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { RecipeData } from "./RecipePage";
 import { apiClient } from "../lib/hooks";
 import { useUser } from "../context/context";
@@ -22,7 +22,7 @@ const Recipes = () => {
   const GUEST_RECIPES_LIMIT = 10;
   const isGuest = !user;
 
-  const fetchAllRecipes = async () => {
+  const fetchAllRecipes = useCallback(async () => {
     try {
       setIsLoading(true);
       setError("");
@@ -30,42 +30,57 @@ const Recipes = () => {
         ? `getAllRecipes?page=0&size=${GUEST_RECIPES_LIMIT}&sort=id,desc`
         : `getAllRecipes?page=${currentPage}&size=${RECIPES_PER_PAGE}`;
       const response = await apiClient(endpoint, false);
-      setRecipes(response.content);
-      setTotalPages(response.totalPages);
+      const paged =
+        response && typeof response === "object"
+          ? (response as { content?: RecipeData[]; totalPages?: number })
+          : undefined;
+      setRecipes(Array.isArray(paged?.content) ? paged.content : []);
+      setTotalPages(
+        typeof paged?.totalPages === "number" ? paged.totalPages : 1,
+      );
     } catch (error) {
       setError("Error fetching recipes");
       console.error("Error fetching recipes:", error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [GUEST_RECIPES_LIMIT, RECIPES_PER_PAGE, currentPage, isGuest]);
 
-  const searchRecipes = async (term: string) => {
-    if (!term.trim()) {
-      setIsSearching(false);
-      setCurrentPage(0);
-      return;
-    }
+  const searchRecipes = useCallback(
+    async (term: string) => {
+      if (!term.trim()) {
+        setIsSearching(false);
+        setCurrentPage(0);
+        return;
+      }
 
-    try {
-      setIsLoading(true);
-      setError("");
-      const response = await apiClient(
-        `searchRecipes/${encodeURIComponent(
-          term
-        )}?page=${currentPage}&size=${RECIPES_PER_PAGE}`,
-        false
-      );
-      setRecipes(response.content);
-      setTotalPages(response.totalPages);
-      setIsSearching(true);
-    } catch (error) {
-      setError("Error searching recipes");
-      console.error("Error searching recipes:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      try {
+        setIsLoading(true);
+        setError("");
+        const response = await apiClient(
+          `searchRecipes/${encodeURIComponent(
+            term,
+          )}?page=${currentPage}&size=${RECIPES_PER_PAGE}`,
+          false,
+        );
+        const paged =
+          response && typeof response === "object"
+            ? (response as { content?: RecipeData[]; totalPages?: number })
+            : undefined;
+        setRecipes(Array.isArray(paged?.content) ? paged.content : []);
+        setTotalPages(
+          typeof paged?.totalPages === "number" ? paged.totalPages : 1,
+        );
+        setIsSearching(true);
+      } catch (error) {
+        setError("Error searching recipes");
+        console.error("Error searching recipes:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [RECIPES_PER_PAGE, currentPage],
+  );
 
   const handleSearch = () => {
     if (isGuest) {
@@ -100,7 +115,7 @@ const Recipes = () => {
           setError("");
           const response = await apiClient(
             `getUserRecipes/${user.id}?page=${currentPage}&size=${RECIPES_PER_PAGE}`,
-            false
+            false,
           );
           setRecipes(response.content);
           setTotalPages(response.totalPages);
@@ -115,7 +130,15 @@ const Recipes = () => {
       }
     };
     fetchUserRecipes();
-  }, [user, userLoading, currentPage, isSearching]);
+  }, [
+    user,
+    userLoading,
+    currentPage,
+    isSearching,
+    searchTerm,
+    fetchAllRecipes,
+    searchRecipes,
+  ]);
 
   if (isLoading || userLoading) {
     return (
@@ -219,8 +242,8 @@ const Recipes = () => {
           {isGuest && (
             <div className="mb-6 rounded-2xl border border-accent/35 bg-secondary p-4 text-center">
               <p className="text-sm text-text/75">
-                You are browsing as a guest. Create an account to generate AI recipes, save favorites,
-                and unlock your Virtual Fridge.
+                You are browsing as a guest. Create an account to generate AI
+                recipes, save favorites, and unlock your Virtual Fridge.
               </p>
               <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
                 <Link
@@ -239,7 +262,11 @@ const Recipes = () => {
             </div>
           )}
 
-          <ErrorAlert message={error} className="mb-6" onAutoHide={() => setError("")} />
+          <ErrorAlert
+            message={error}
+            className="mb-6"
+            onAutoHide={() => setError("")}
+          />
 
           {recipes && recipes.length > 0 ? (
             <div className="space-y-3 md:space-y-4">
@@ -288,15 +315,15 @@ const Recipes = () => {
                   {isSearching
                     ? `No recipes found for "${searchTerm}"`
                     : isGuest
-                    ? "No public recipes available yet."
-                    : "No recipes found."}
+                      ? "No public recipes available yet."
+                      : "No recipes found."}
                 </p>
                 <p className="text-sm md:text-base mt-2">
                   {isSearching
                     ? "Try searching with different keywords"
                     : isGuest
-                    ? "Sign in to generate your own recipes and start saving favorites."
-                    : "Start creating your first recipe!"}
+                      ? "Sign in to generate your own recipes and start saving favorites."
+                      : "Start creating your first recipe!"}
                 </p>
                 {isSearching && (
                   <button

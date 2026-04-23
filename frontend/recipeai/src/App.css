@@ -75,8 +75,7 @@
 
 @keyframes orbitFloat {
   0% {
-    transform: translate(-50%, -50%) rotate(0deg) translateX(74px)
-      rotate(0deg);
+    transform: translate(-50%, -50%) rotate(0deg) translateX(74px) rotate(0deg);
   }
   100% {
     transform: translate(-50%, -50%) rotate(360deg) translateX(74px)
@@ -320,7 +319,10 @@
 }
 
 .mobile-soft-press {
-  transition: transform 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    opacity 180ms ease;
 }
 
 .mobile-soft-press:active {

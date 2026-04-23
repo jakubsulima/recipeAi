@@ -1,5 +1,3 @@
-import * as yup from "yup";
-
 interface PreferencesFormProps {
   dietOptions: string[];
   onSavePreferences: (preferences: {
@@ -7,22 +5,6 @@ interface PreferencesFormProps {
     dislikedIngredients: string[];
   }) => void;
 }
-
-const schema = yup.object().shape({
-  diet: yup.string().required("Diet preference is required"),
-  dislikedIngredients: yup
-    .string()
-    .required("Disliked ingredients are required")
-    .test(
-      "no-duplicates",
-      "Disliked ingredients must not contain duplicates",
-      (value) => {
-        if (!value) return true;
-        const ingredients = value.split(",").map((i) => i.trim());
-        return new Set(ingredients).size === ingredients.length;
-      }
-    ),
-});
 
 const PreferencesForm = ({
   dietOptions,

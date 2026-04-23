@@ -41,7 +41,10 @@ const UNIT_ALIASES: Record<string, SupportedUnit> = {
   PIECES: "pcs",
 };
 
-const UNIT_CONVERSION: Record<SupportedUnit, { base: BaseUnit; factor: number }> = {
+const UNIT_CONVERSION: Record<
+  SupportedUnit,
+  { base: BaseUnit; factor: number }
+> = {
   g: { base: "g", factor: 1 },
   kg: { base: "g", factor: 1000 },
   ml: { base: "ml", factor: 1 },
@@ -49,9 +52,12 @@ const UNIT_CONVERSION: Record<SupportedUnit, { base: BaseUnit; factor: number }>
   pcs: { base: "pcs", factor: 1 },
 };
 
-const normalizeIngredientName = (name: string): string => name.trim().toLowerCase();
+const normalizeIngredientName = (name: string): string =>
+  name.trim().toLowerCase();
 
-const normalizeUnit = (unit: string | null | undefined): SupportedUnit | null => {
+const normalizeUnit = (
+  unit: string | null | undefined,
+): SupportedUnit | null => {
   if (!unit) {
     return null;
   }
@@ -61,10 +67,14 @@ const normalizeUnit = (unit: string | null | undefined): SupportedUnit | null =>
     return null;
   }
 
-  return UNIT_ALIASES[normalized] ?? UNIT_ALIASES[normalized.toLowerCase()] ?? null;
+  return (
+    UNIT_ALIASES[normalized] ?? UNIT_ALIASES[normalized.toLowerCase()] ?? null
+  );
 };
 
-const parseAmountValue = (amount: string | number | null | undefined): number | null => {
+const parseAmountValue = (
+  amount: string | number | null | undefined,
+): number | null => {
   if (amount === null || amount === undefined) {
     return null;
   }
@@ -113,7 +123,7 @@ const roundAmount = (amount: number): number => Math.round(amount * 100) / 100;
 
 export const getMissingIngredients = <T extends IngredientQuantity>(
   recipeIngredients: T[],
-  fridgeItems: FridgeItemQuantity[]
+  fridgeItems: FridgeItemQuantity[],
 ): T[] => {
   const fridgeItemsByName = new Map<string, FridgeItemQuantity[]>();
 
@@ -176,7 +186,7 @@ export const getMissingIngredients = <T extends IngredientQuantity>(
 
     if (hasCompatibleMeasuredItem && availableBaseAmount < requiredBaseAmount) {
       const missingAmount = roundAmount(
-        fromBaseAmount(requiredBaseAmount - availableBaseAmount, requiredUnit)
+        fromBaseAmount(requiredBaseAmount - availableBaseAmount, requiredUnit),
       );
 
       missingIngredients.push({

@@ -123,10 +123,10 @@ export const getDietGroup = (value: string): DietGroupId => {
 };
 
 export const getDietOptionDescriptors = (
-  values: string[]
+  values: string[],
 ): DietOptionDescriptor[] => {
   const unique = values.filter(
-    (value, index, arr) => arr.indexOf(value) === index
+    (value, index, arr) => arr.indexOf(value) === index,
   );
 
   return unique.map((value) => {
@@ -140,16 +140,14 @@ export const getDietOptionDescriptors = (
   });
 };
 
-export const getDietOptionGroups = (
-  values: string[]
-): DietOptionGroup[] => {
+export const getDietOptionGroups = (values: string[]): DietOptionGroup[] => {
   const options = getDietOptionDescriptors(values);
   const grouped = options.reduce<Record<DietGroupId, DietOptionDescriptor[]>>(
     (acc, option) => {
       acc[option.group].push(option);
       return acc;
     },
-    { general: [], restrictions: [], goals: [] }
+    { general: [], restrictions: [], goals: [] },
   );
 
   return (Object.keys(GROUP_META) as DietGroupId[])

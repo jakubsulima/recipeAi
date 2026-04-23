@@ -20,8 +20,19 @@ interface GsiState {
   callback: GoogleCallback | null;
 }
 
+interface RecipeAiWindow extends Window {
+  __recipeAiGsiState?: GsiState;
+}
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (error instanceof Error && error.message.trim() !== "") {
+    return error.message;
+  }
+  return fallback;
+};
+
 const getGsiState = (): GsiState => {
-  const globalWindow = window as any;
+  const globalWindow = window as RecipeAiWindow;
   if (!globalWindow.__recipeAiGsiState) {
     globalWindow.__recipeAiGsiState = {
       initialized: false,
@@ -54,13 +65,13 @@ const Login = () => {
   const handleAuthSuccess = useCallback(
     (userData: { email: string; id: number; role: string }) => {
       localStorage.setItem("isLoggedIn", "true");
-      setUser(userData as any);
+      setUser(userData);
       refreshSession().catch(() => {
         // Route guards will handle unauthenticated fallback if session sync fails.
       });
       navigate("/", { replace: true });
     },
-    [setUser, refreshSession, navigate]
+    [setUser, refreshSession, navigate],
   );
 
   // Google OAuth callback
@@ -73,13 +84,13 @@ const Login = () => {
           idToken: response.credential,
         });
         handleAuthSuccess(userData);
-      } catch (err: any) {
-        setError(err.message || "Google sign-in failed");
+      } catch (err: unknown) {
+        setError(getErrorMessage(err, "Google sign-in failed"));
       } finally {
         setIsSubmitting(false);
       }
     },
-    [handleAuthSuccess]
+    [handleAuthSuccess],
   );
 
   // Initialize Google Sign-In button
@@ -113,7 +124,7 @@ const Login = () => {
         window.google.accounts.id.renderButton(googleBtnRef.current, {
           type: "standard",
           theme: "outline",
-          size:  "large",
+          size: "large",
           text: "signin_with",
           shape: "rectangular",
           logo_alignment: "left",
@@ -157,8 +168,8 @@ const Login = () => {
     try {
       const userData = await apiClient("login", true, data);
       handleAuthSuccess(userData);
-    } catch (error: any) {
-      setError(error.message || "Login failed");
+    } catch (error: unknown) {
+      setError(getErrorMessage(error, "Login failed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -170,14 +181,16 @@ const Login = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-text">Welcome back</h1>
-          <p className="text-text/50 mt-2">
-            Sign in to your Recipe.ai account
-          </p>
+          <p className="text-text/50 mt-2">Sign in to your Recipe.ai account</p>
         </div>
 
         {/* Card */}
         <div className="mobile-card-enter ambient-gradient-card w-full bg-secondary rounded-2xl shadow-lg p-8">
-          <ErrorAlert message={error} className="mb-6" onAutoHide={() => setError("")} />
+          <ErrorAlert
+            message={error}
+            className="mb-6"
+            onAutoHide={() => setError("")}
+          />
 
           {/* Google Sign-In (rendered by Google SDK) */}
           <div

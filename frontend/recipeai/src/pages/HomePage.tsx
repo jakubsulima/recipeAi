@@ -71,7 +71,8 @@ const HomePage = () => {
               Welcome to AI Kitchen! &#127869; &#129302;
             </h1>
             <p className="mb-5 text-sm text-text/70 md:text-base">
-              Turn your ingredients and cravings into quick, tailored meal ideas.
+              Turn your ingredients and cravings into quick, tailored meal
+              ideas.
             </p>
             <article className="relative w-full">
               <input
@@ -148,22 +149,28 @@ const HomePage = () => {
                     </span>
                     <span>Generating...</span>
                   </>
+                ) : user ? (
+                  "Generate Recipe"
                 ) : (
-                  user ? "Generate Recipe" : "Log in to Generate Recipes"
+                  "Log in to Generate Recipes"
                 )}
               </button>
 
               {!user && (
                 <div className="mt-6 rounded-2xl border border-primary/15 bg-secondary/40 p-4 text-left text-sm text-text/80 backdrop-blur-sm">
-                  <p className="font-semibold text-text">Guest mode: what you can do now</p>
+                  <p className="font-semibold text-text">
+                    Guest mode: what you can do now
+                  </p>
                   <ul className="mt-2 space-y-1.5 text-text/75">
                     <li>Browse the 10 latest public recipes.</li>
-                    <li>Open full recipe details with ingredients and steps.</li>
+                    <li>
+                      Open full recipe details with ingredients and steps.
+                    </li>
                     <li>Try the app UI before creating an account.</li>
                   </ul>
                   <p className="mt-3 text-text/70">
-                    After sign up you unlock AI recipe generation, saving recipes, the Virtual Fridge,
-                    and personal diet preferences.
+                    After sign up you unlock AI recipe generation, saving
+                    recipes, the Virtual Fridge, and personal diet preferences.
                   </p>
                   <button
                     onClick={handleBrowseLatest}

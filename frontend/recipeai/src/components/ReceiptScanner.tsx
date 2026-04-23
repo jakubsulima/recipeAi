@@ -28,6 +28,13 @@ interface EditableReceiptItem {
   unit: unitType;
 }
 
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (error instanceof Error && error.message.trim() !== "") {
+    return error.message;
+  }
+  return fallback;
+};
+
 const toUnitType = (value?: string | null): unitType => {
   if (!value) {
     return "";
@@ -49,7 +56,11 @@ const toUnitType = (value?: string | null): unitType => {
   return enumToAbbreviation[normalized] ?? "";
 };
 
-const ReceiptScanner = ({ isOpen, onClose, onConfirm }: ReceiptScannerProps) => {
+const ReceiptScanner = ({
+  isOpen,
+  onClose,
+  onConfirm,
+}: ReceiptScannerProps) => {
   const [file, setFile] = useState<File | null>(null);
   const [items, setItems] = useState<EditableReceiptItem[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -71,11 +82,15 @@ const ReceiptScanner = ({ isOpen, onClose, onConfirm }: ReceiptScannerProps) => 
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await axios.post(`${API_URL}scanFridgeReceipt`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
+      const response = await axios.post(
+        `${API_URL}scanFridgeReceipt`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         },
-      });
+      );
 
       const detectedItems = Array.isArray(response.data)
         ? (response.data as DetectedReceiptItem[])
@@ -96,13 +111,20 @@ const ReceiptScanner = ({ isOpen, onClose, onConfirm }: ReceiptScannerProps) => 
 
       if (editableItems.length === 0) {
         setError(
-          "No food ingredients were detected on this receipt. Try another photo with better lighting."
+          "No food ingredients were detected on this receipt. Try another photo with better lighting.",
         );
       }
 
       setItems(editableItems);
-    } catch (err: any) {
-      setError(err?.response?.data?.message || "Failed to scan receipt image.");
+    } catch (err: unknown) {
+      if (
+        axios.isAxiosError(err) &&
+        typeof err.response?.data?.message === "string"
+      ) {
+        setError(err.response.data.message);
+      } else {
+        setError(getErrorMessage(err, "Failed to scan receipt image."));
+      }
     } finally {
       setIsUploading(false);
     }
@@ -110,10 +132,10 @@ const ReceiptScanner = ({ isOpen, onClose, onConfirm }: ReceiptScannerProps) => 
 
   const updateItem = (
     id: string,
-    updates: Partial<Omit<EditableReceiptItem, "id">>
+    updates: Partial<Omit<EditableReceiptItem, "id">>,
   ) => {
     setItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, ...updates } : item))
+      prev.map((item) => (item.id === id ? { ...item, ...updates } : item)),
     );
   };
 
@@ -133,7 +155,9 @@ const ReceiptScanner = ({ isOpen, onClose, onConfirm }: ReceiptScannerProps) => 
     });
 
     if (invalidAmountItem) {
-      setError(`Invalid amount for \"${invalidAmountItem.name}\". Use a positive number.`);
+      setError(
+        `Invalid amount for "${invalidAmountItem.name}". Use a positive number.`,
+      );
       return;
     }
 
@@ -159,8 +183,8 @@ const ReceiptScanner = ({ isOpen, onClose, onConfirm }: ReceiptScannerProps) => 
       setFile(null);
       setItems([]);
       onClose();
-    } catch (err: any) {
-      setError(err?.message || "Could not add scanned items.");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Could not add scanned items."));
     }
   };
 
@@ -239,7 +263,9 @@ const ReceiptScanner = ({ isOpen, onClose, onConfirm }: ReceiptScannerProps) => 
                             type="checkbox"
                             checked={item.selected}
                             onChange={(e) =>
-                              updateItem(item.id, { selected: e.target.checked })
+                              updateItem(item.id, {
+                                selected: e.target.checked,
+                              })
                             }
                             className="h-4 w-4 rounded border-primary/30 text-accent focus:ring-accent"
                           />

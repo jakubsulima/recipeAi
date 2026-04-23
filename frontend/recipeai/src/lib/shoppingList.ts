@@ -33,13 +33,18 @@ const normalizeUnit = (value: string | null | undefined) =>
 const SHOPPING_LIST_ENDPOINT = `${API_URL}shoppingList`;
 
 export const createShoppingListItemId = (): string => {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
     return crypto.randomUUID();
   }
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 };
 
-const toNumberOrNull = (value: string | number | null | undefined): number | null => {
+const toNumberOrNull = (
+  value: string | number | null | undefined,
+): number | null => {
   if (value === null || value === undefined) {
     return null;
   }
@@ -90,7 +95,9 @@ const toRawShoppingListItem = (item: unknown): RawShoppingListItem | null => {
   return parsed;
 };
 
-const normalizeRemoteItem = (item: RawShoppingListItem): ShoppingListItem | null => {
+const normalizeRemoteItem = (
+  item: RawShoppingListItem,
+): ShoppingListItem | null => {
   if (!item || typeof item !== "object") {
     return null;
   }
@@ -107,7 +114,10 @@ const normalizeRemoteItem = (item: RawShoppingListItem): ShoppingListItem | null
         : createShoppingListItemId(),
     name,
     amount: toNumberOrNull(item.amount),
-    unit: typeof item.unit === "string" && item.unit.trim() ? item.unit.trim() : null,
+    unit:
+      typeof item.unit === "string" && item.unit.trim()
+        ? item.unit.trim()
+        : null,
     checked: Boolean(item.checked),
     createdAt:
       typeof item.createdAt === "string" && item.createdAt.trim()
@@ -116,7 +126,9 @@ const normalizeRemoteItem = (item: RawShoppingListItem): ShoppingListItem | null
   };
 };
 
-export const normalizeShoppingListItems = (items: unknown): ShoppingListItem[] => {
+export const normalizeShoppingListItems = (
+  items: unknown,
+): ShoppingListItem[] => {
   if (!Array.isArray(items)) {
     return [];
   }
@@ -137,7 +149,7 @@ export const getShoppingListFingerprint = (items: ShoppingListItem[]): string =>
       unit: item.unit ?? null,
       checked: Boolean(item.checked),
       createdAt: item.createdAt,
-    }))
+    })),
   );
 
 const toSyncPayloadItem = (item: ShoppingListItem) => ({
@@ -163,11 +175,14 @@ export const readShoppingList = (): ShoppingListItem[] => {
 };
 
 export const writeShoppingList = (items: ShoppingListItem[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizeShoppingListItems(items)));
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify(normalizeShoppingListItems(items)),
+  );
 };
 
 export const addShoppingItems = (
-  newItems: ShoppingItemInput[]
+  newItems: ShoppingItemInput[],
 ): ShoppingListItem[] => {
   const existing = readShoppingList();
   const updated = [...existing];
@@ -184,7 +199,7 @@ export const addShoppingItems = (
 
     const sameNameIndexes = updated
       .map((existingItem, index) =>
-        normalizeName(existingItem.name) === incomingNameKey ? index : -1
+        normalizeName(existingItem.name) === incomingNameKey ? index : -1,
       )
       .filter((index) => index !== -1);
 
@@ -202,7 +217,11 @@ export const addShoppingItems = (
 
     const compatibleIndex = sameNameIndexes.find((index) => {
       const existingUnit = normalizeUnit(updated[index].unit);
-      return existingUnit === incomingUnit || existingUnit === null || incomingUnit === null;
+      return (
+        existingUnit === incomingUnit ||
+        existingUnit === null ||
+        incomingUnit === null
+      );
     });
 
     if (compatibleIndex === undefined) {
@@ -222,7 +241,9 @@ export const addShoppingItems = (
 
     if (incomingAmount !== null) {
       if (existingAmount !== null) {
-        existingItem.amount = Number((existingAmount + incomingAmount).toFixed(2));
+        existingItem.amount = Number(
+          (existingAmount + incomingAmount).toFixed(2),
+        );
       } else {
         existingItem.amount = incomingAmount;
       }
@@ -248,7 +269,7 @@ export const fetchShoppingList = async (): Promise<ShoppingListItem[]> => {
 };
 
 export const syncShoppingList = async (
-  items: ShoppingListItem[]
+  items: ShoppingListItem[],
 ): Promise<ShoppingListItem[]> => {
   const response = await axios.put(
     SHOPPING_LIST_ENDPOINT,
@@ -257,7 +278,7 @@ export const syncShoppingList = async (
     },
     {
       withCredentials: true,
-    }
+    },
   );
 
   return normalizeShoppingListItems(response.data);

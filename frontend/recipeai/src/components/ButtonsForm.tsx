@@ -14,7 +14,9 @@ const ButtonsForm = ({
 
   return (
     <section className="flex w-full flex-col items-center">
-      <h2 className="mb-2 text-sm font-medium text-text/60 md:text-base">{title}</h2>
+      <h2 className="mb-2 text-sm font-medium text-text/60 md:text-base">
+        {title}
+      </h2>
       <article className="relative flex w-full flex-row justify-between overflow-hidden rounded-[2rem] border border-primary/5 bg-secondary/50 p-1.5 shadow-inner backdrop-blur-sm">
         {/* Sliding Background */}
         <div className="absolute inset-y-1.5 left-1.5 right-1.5 pointer-events-none z-0">

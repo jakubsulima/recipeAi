@@ -16,11 +16,13 @@ const FoodLoadingScreen = ({
   const wrapperClasses = fullScreen
     ? "min-h-screen bg-background"
     : compact
-    ? "min-h-[16rem]"
-    : "min-h-[24rem]";
+      ? "min-h-[16rem]"
+      : "min-h-[24rem]";
 
   return (
-    <div className={`w-full ${wrapperClasses} flex items-center justify-center px-4 py-8`}>
+    <div
+      className={`w-full ${wrapperClasses} flex items-center justify-center px-4 py-8`}
+    >
       <div className="relative flex flex-col items-center justify-start text-center max-w-md pt-12">
         {/* Main visual anchor so animations orbit correctly */}
         <div className="relative flex h-36 w-36 items-center justify-center mb-8">
@@ -44,13 +46,22 @@ const FoodLoadingScreen = ({
             </svg>
           </div>
 
-          <span className="food-loader-orbit food-loader-orbit-1" aria-hidden="true">
+          <span
+            className="food-loader-orbit food-loader-orbit-1"
+            aria-hidden="true"
+          >
             <span className="food-loader-orbit-dot" />
           </span>
-          <span className="food-loader-orbit food-loader-orbit-2" aria-hidden="true">
+          <span
+            className="food-loader-orbit food-loader-orbit-2"
+            aria-hidden="true"
+          >
             <span className="food-loader-orbit-dot" />
           </span>
-          <span className="food-loader-orbit food-loader-orbit-3" aria-hidden="true">
+          <span
+            className="food-loader-orbit food-loader-orbit-3"
+            aria-hidden="true"
+          >
             <span className="food-loader-orbit-dot" />
           </span>
         </div>

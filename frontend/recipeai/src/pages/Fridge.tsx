@@ -17,6 +17,13 @@ const parseBackendDate = (dateString: string) => {
   return new Date(`${year}-${month}-${day}`);
 };
 
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (error instanceof Error && error.message.trim() !== "") {
+    return error.message;
+  }
+  return fallback;
+};
+
 export const Fridge = () => {
   const navigate = useNavigate();
   const {
@@ -110,7 +117,9 @@ export const Fridge = () => {
 
     setIsLoading(true);
     try {
-      const formattedDate = newItemDate ? formatDateForBackend(newItemDate) : null;
+      const formattedDate = newItemDate
+        ? formatDateForBackend(newItemDate)
+        : null;
 
       await addFridgeItem({
         name: newItem.trim(),
@@ -125,8 +134,8 @@ export const Fridge = () => {
       setUnit("");
       setDateError("");
       setShowNameError(false);
-    } catch (err: any) {
-      setError(err?.message || "Failed to add item");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Failed to add item"));
     } finally {
       setIsLoading(false);
     }
@@ -138,8 +147,8 @@ export const Fridge = () => {
     try {
       await removeFridgeItem(id);
       setError("Ingredient deleted.");
-    } catch (err: any) {
-      setError(err?.message || "Failed to remove item");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Failed to remove item"));
     } finally {
       setIsLoading(false);
     }
@@ -149,8 +158,8 @@ export const Fridge = () => {
     setError("");
     try {
       await updateFridgeItem(id, newAmount);
-    } catch (err: any) {
-      setError(err?.message || "Failed to update item amount");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Failed to update item amount"));
       throw err;
     }
   };
@@ -176,15 +185,22 @@ export const Fridge = () => {
         unit: "",
         amount: "",
       });
-    } catch (err: any) {
-      setError(err?.message || "Could not fetch product details for this barcode.");
+    } catch (err: unknown) {
+      setError(
+        getErrorMessage(
+          err,
+          "Could not fetch product details for this barcode.",
+        ),
+      );
     } finally {
       setIsLoading(false);
       isBarcodeAddInFlight.current = false;
     }
   };
 
-  const handleScannedReceiptItems = async (items: AddFridgeIngredientInput[]) => {
+  const handleScannedReceiptItems = async (
+    items: AddFridgeIngredientInput[],
+  ) => {
     if (items.length === 0) {
       return;
     }
@@ -193,8 +209,8 @@ export const Fridge = () => {
     setIsLoading(true);
     try {
       await addFridgeItemsBatch(items);
-    } catch (err: any) {
-      setError(err?.message || "Could not add scanned receipt items.");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Could not add scanned receipt items."));
       throw err;
     } finally {
       setIsLoading(false);
@@ -208,7 +224,7 @@ export const Fridge = () => {
     }
 
     const prompt = `Create a zero-waste recipe that uses these ingredients first: ${expiringSoonNames.join(
-      ", "
+      ", ",
     )}.`;
 
     navigate("/Recipe", {
@@ -229,32 +245,48 @@ export const Fridge = () => {
 
           <div className="ambient-gradient-card rounded-2xl border border-accent/30 bg-accent/10 p-3 sm:p-3.5">
             <div className="mb-2.5 px-1">
-              <h2 className="text-sm font-semibold text-text/75">Quick Add Options</h2>
-              <p className="text-xs text-text/55">Choose how you want to add products to your fridge.</p>
+              <h2 className="text-sm font-semibold text-text/75">
+                Quick Add Options
+              </h2>
+              <p className="text-xs text-text/55">
+                Choose how you want to add products to your fridge.
+              </p>
             </div>
 
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-            <button
-              onClick={() => setIsBarcodeScannerOpen(true)}
-              className="mobile-soft-press flex min-h-16 flex-col items-center justify-center rounded-xl border border-accent/35 bg-background px-3 py-2 text-center transition-colors hover:bg-accent/20"
-            >
-              <span className="text-sm font-semibold text-text">Scan Barcode</span>
-              <span className="mt-0.5 text-[11px] text-text/60">Use your camera</span>
-            </button>
-            <button
-              onClick={() => setIsReceiptScannerOpen(true)}
-              className="mobile-soft-press flex min-h-16 flex-col items-center justify-center rounded-xl border border-accent/35 bg-background px-3 py-2 text-center transition-colors hover:bg-accent/20"
-            >
-              <span className="text-sm font-semibold text-text">Scan Receipt</span>
-              <span className="mt-0.5 text-[11px] text-text/60">Import multiple items</span>
-            </button>
-            <button
-              onClick={generateZeroWasteRecipe}
-              className="mobile-soft-press flex min-h-16 flex-col items-center justify-center rounded-xl bg-accent px-3 py-2 text-center shadow-[0_8px_18px_rgba(255,212,60,0.3)] transition-colors hover:bg-accent/90"
-            >
-              <span className="text-sm font-semibold text-text">Use Expiring Soon</span>
-              <span className="mt-0.5 text-[11px] text-text/70">Generate zero-waste recipe</span>
-            </button>
+              <button
+                onClick={() => setIsBarcodeScannerOpen(true)}
+                className="mobile-soft-press flex min-h-16 flex-col items-center justify-center rounded-xl border border-accent/35 bg-background px-3 py-2 text-center transition-colors hover:bg-accent/20"
+              >
+                <span className="text-sm font-semibold text-text">
+                  Scan Barcode
+                </span>
+                <span className="mt-0.5 text-[11px] text-text/60">
+                  Use your camera
+                </span>
+              </button>
+              <button
+                onClick={() => setIsReceiptScannerOpen(true)}
+                className="mobile-soft-press flex min-h-16 flex-col items-center justify-center rounded-xl border border-accent/35 bg-background px-3 py-2 text-center transition-colors hover:bg-accent/20"
+              >
+                <span className="text-sm font-semibold text-text">
+                  Scan Receipt
+                </span>
+                <span className="mt-0.5 text-[11px] text-text/60">
+                  Import multiple items
+                </span>
+              </button>
+              <button
+                onClick={generateZeroWasteRecipe}
+                className="mobile-soft-press flex min-h-16 flex-col items-center justify-center rounded-xl bg-accent px-3 py-2 text-center shadow-[0_8px_18px_rgba(255,212,60,0.3)] transition-colors hover:bg-accent/90"
+              >
+                <span className="text-sm font-semibold text-text">
+                  Use Expiring Soon
+                </span>
+                <span className="mt-0.5 text-[11px] text-text/70">
+                  Generate zero-waste recipe
+                </span>
+              </button>
             </div>
           </div>
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useCallback, useEffect, useState, useContext } from "react";
 import { AuthContext } from "../context/context";
 import { apiClient, deleteClient, putClient } from "../lib/hooks";
 import AdminRecipesPanel from "../components/AdminRecipesPanel";
@@ -27,30 +27,39 @@ const AdminPage: React.FC = () => {
   );
   const authContext = useContext(AuthContext);
 
-  const fetchUsers = async (pageNum: number = currentPage) => {
-    setLoading(true);
-    try {
-      const data = await apiClient(
-        `admin/users?page=${pageNum}&size=${PAGE_SIZE}`,
-      );
-      setUsers(Array.isArray(data?.content) ? data.content : []);
-      setTotalPages(typeof data?.totalPages === "number" ? data.totalPages : 1);
-      setError(null);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "An unknown error occurred",
-      );
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const fetchUsers = useCallback(
+    async (pageNum: number = currentPage) => {
+      setLoading(true);
+      try {
+        const data = await apiClient(
+          `admin/users?page=${pageNum}&size=${PAGE_SIZE}`,
+        );
+        const pagedData =
+          data && typeof data === "object"
+            ? (data as { content?: User[]; totalPages?: number })
+            : undefined;
+        setUsers(Array.isArray(pagedData?.content) ? pagedData.content : []);
+        setTotalPages(
+          typeof pagedData?.totalPages === "number" ? pagedData.totalPages : 1,
+        );
+        setError(null);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "An unknown error occurred",
+        );
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [currentPage],
+  );
 
   useEffect(() => {
     if (authContext?.user?.role === "ADMIN") {
       fetchUsers(currentPage);
     }
-  }, [authContext?.user?.role, currentPage]);
+  }, [authContext?.user?.role, currentPage, fetchUsers]);
 
   const handleDeleteUser = async (userId: number) => {
     if (window.confirm("Are you sure you want to delete this user?")) {

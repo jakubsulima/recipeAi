@@ -1,4 +1,4 @@
-const fridgeCategories = [
+export const fridgeCategories = [
   "FRIDGE",
   "FREEZER",
   "FRUITS_VEGETABLES",

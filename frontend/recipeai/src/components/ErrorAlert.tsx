@@ -71,7 +71,9 @@ const ErrorAlert = ({
     ? "gap-2 rounded-lg px-3 py-2 text-sm"
     : "gap-2 rounded-xl px-4 py-3 text-sm";
   const iconSizeClasses = compact ? "h-4 w-4 text-[10px]" : "h-5 w-5 text-xs";
-  const stateAnimationClass = isExiting ? "error-alert-exit" : "error-alert-enter";
+  const stateAnimationClass = isExiting
+    ? "error-alert-exit"
+    : "error-alert-enter";
 
   return (
     <div

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState, useContext, useCallback } from "react";
 import { AuthContext } from "../context/context";
 import { apiClient, deleteClient } from "../lib/hooks";
 import FoodLoadingScreen from "./FoodLoadingScreen";
@@ -19,33 +19,42 @@ const AdminRecipesPanel: React.FC = () => {
   const PAGE_SIZE = 20;
   const authContext = useContext(AuthContext);
 
-  const fetchRecipes = async (pageNum = page) => {
-    setLoading(true);
-    try {
-      const data = await apiClient(
-        `getAllRecipes?page=${pageNum}&size=${PAGE_SIZE}`,
-      );
-      setRecipes(data.content || []);
-      setTotalPages(data.totalPages ?? 0);
-      setError(null);
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "An unknown error occurred while fetching recipes",
-      );
-      console.error(err);
-      setRecipes([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const fetchRecipes = useCallback(
+    async (pageNum = page) => {
+      setLoading(true);
+      try {
+        const data = await apiClient(
+          `getAllRecipes?page=${pageNum}&size=${PAGE_SIZE}`,
+        );
+        const pagedData =
+          data && typeof data === "object"
+            ? (data as { content?: Recipe[]; totalPages?: number })
+            : undefined;
+        setRecipes(Array.isArray(pagedData?.content) ? pagedData.content : []);
+        setTotalPages(
+          typeof pagedData?.totalPages === "number" ? pagedData.totalPages : 0,
+        );
+        setError(null);
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "An unknown error occurred while fetching recipes",
+        );
+        console.error(err);
+        setRecipes([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [page],
+  );
 
   useEffect(() => {
     if (authContext?.user?.role === "ADMIN") {
       fetchRecipes(page);
     }
-  }, [authContext?.user?.role, page]);
+  }, [authContext?.user?.role, page, fetchRecipes]);
 
   const handleDeleteRecipe = async (recipeId: number) => {
     if (window.confirm("Are you sure you want to delete this recipe?")) {

@@ -1,4 +1,11 @@
-import { createContext, useCallback, useContext, useState, useEffect, useMemo } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useState,
+  useEffect,
+  useMemo,
+} from "react";
 import { apiClient, deleteClient } from "../lib/hooks";
 import { useUser } from "./context";
 
@@ -45,6 +52,13 @@ export const UNIT_OPTIONS: unitType[] = Object.keys(UNITS) as unitType[];
 export const UNIT_VALUES = Object.values(UNITS);
 const BATCH_ADD_CONCURRENCY = 4;
 
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (error instanceof Error && error.message.trim() !== "") {
+    return error.message;
+  }
+  return fallback;
+};
+
 const FridgeContext = createContext<FridgeContextType>(null!);
 
 export const useFridge = () => {
@@ -60,12 +74,17 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
   const [expirationNotificationShown, setExpirationNotificationShown] =
-    useState(() => localStorage.getItem("expirationNotificationShown") === "true");
+    useState(
+      () => localStorage.getItem("expirationNotificationShown") === "true",
+    );
   const { user, loading: userLoading } = useUser();
 
   const handleSetExpirationNotificationShown = useCallback((value: boolean) => {
     setExpirationNotificationShown(value);
-    localStorage.setItem("expirationNotificationShown", value ? "true" : "false");
+    localStorage.setItem(
+      "expirationNotificationShown",
+      value ? "true" : "false",
+    );
   }, []);
 
   const refreshFridgeItems = useCallback(async () => {
@@ -91,82 +110,91 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
           alert(
             `Warning: You have expired products: ${expiredItems
               .map((item: FridgeIngredient) => item.name)
-              .join(", ")}`
+              .join(", ")}`,
           );
           handleSetExpirationNotificationShown(true);
         }
       }
-    } catch (err: any) {
-      setError(err.message || "Failed to fetch fridge items");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Failed to fetch fridge items"));
     } finally {
       setLoading(false);
     }
   }, [expirationNotificationShown, handleSetExpirationNotificationShown]);
 
-  const addFridgeItem = useCallback(async (item: AddFridgeIngredientInput) => {
-    try {
-      await apiClient("addFridgeIngredient", true, {
-        name: item.name,
-        expirationDate: item.expirationDate,
-        amount: item.amount,
-        unit: UNITS[item.unit],
-      });
+  const addFridgeItem = useCallback(
+    async (item: AddFridgeIngredientInput) => {
+      try {
+        await apiClient("addFridgeIngredient", true, {
+          name: item.name,
+          expirationDate: item.expirationDate,
+          amount: item.amount,
+          unit: UNITS[item.unit],
+        });
 
-      await refreshFridgeItems();
-    } catch (err: any) {
-      throw new Error("Failed to add fridge item");
-    }
-  }, [refreshFridgeItems]);
+        await refreshFridgeItems();
+      } catch {
+        throw new Error("Failed to add fridge item");
+      }
+    },
+    [refreshFridgeItems],
+  );
 
-  const addFridgeItemsBatch = useCallback(async (items: AddFridgeIngredientInput[]) => {
-    if (items.length === 0) {
-      return;
-    }
-
-    try {
-      for (let i = 0; i < items.length; i += BATCH_ADD_CONCURRENCY) {
-        const chunk = items.slice(i, i + BATCH_ADD_CONCURRENCY);
-        await Promise.all(
-          chunk.map((item) =>
-          apiClient("addFridgeIngredient", true, {
-            name: item.name,
-            expirationDate: item.expirationDate,
-            amount: item.amount,
-            unit: UNITS[item.unit],
-          })
-          )
-        );
+  const addFridgeItemsBatch = useCallback(
+    async (items: AddFridgeIngredientInput[]) => {
+      if (items.length === 0) {
+        return;
       }
 
-      await refreshFridgeItems();
-    } catch (err: any) {
-      throw new Error("Failed to add scanned items");
-    }
-  }, [refreshFridgeItems]);
+      try {
+        for (let i = 0; i < items.length; i += BATCH_ADD_CONCURRENCY) {
+          const chunk = items.slice(i, i + BATCH_ADD_CONCURRENCY);
+          await Promise.all(
+            chunk.map((item) =>
+              apiClient("addFridgeIngredient", true, {
+                name: item.name,
+                expirationDate: item.expirationDate,
+                amount: item.amount,
+                unit: UNITS[item.unit],
+              }),
+            ),
+          );
+        }
+
+        await refreshFridgeItems();
+      } catch {
+        throw new Error("Failed to add scanned items");
+      }
+    },
+    [refreshFridgeItems],
+  );
 
   const removeFridgeItem = useCallback(async (id: number) => {
     try {
       await deleteClient(`deleteFridgeIngredient/${id}`);
       setFridgeItems((prev) => prev.filter((item) => item.id !== id));
-    } catch (err: any) {
+    } catch {
       throw new Error("Failed to remove fridge item");
     }
   }, []);
 
-  const updateFridgeItem = useCallback(async (id: number, newAmount: string) => {
-    try {
-      await apiClient(`updateFridgeIngredient/${id}`, true, {
-        amount: newAmount,
-      });
-      setFridgeItems((prev) =>
-        prev.map((item) =>
-          item.id === id ? { ...item, amount: newAmount } : item
-        )
-      );
-    } catch (err: any) {
-      throw new Error("Failed to update fridge item");
-    }
-  }, []);
+  const updateFridgeItem = useCallback(
+    async (id: number, newAmount: string) => {
+      try {
+        await apiClient(`updateFridgeIngredient/${id}`, true, {
+          amount: newAmount,
+        });
+        setFridgeItems((prev) =>
+          prev.map((item) =>
+            item.id === id ? { ...item, amount: newAmount } : item,
+          ),
+        );
+      } catch {
+        throw new Error("Failed to update fridge item");
+      }
+    },
+    [],
+  );
 
   const getFridgeItemNames = useCallback(() => {
     return fridgeItems.map((item) => item.name);
@@ -210,7 +238,7 @@ export const FridgeProvider = ({ children }: { children: React.ReactNode }) => {
       updateFridgeItem,
       refreshFridgeItems,
       getFridgeItemNames,
-    ]
+    ],
   );
 
   return (

@@ -55,7 +55,9 @@ const Navbar = () => {
         <ul className="flex w-full text-background justify-between items-center">
           {/* --- Left Side: Logo --- */}
           <li className="list-none text-lg font-bold transition-colors hover:text-accent">
-            <Link to="/" onClick={handleLogoClick}>Recipe.ai</Link>
+            <Link to="/" onClick={handleLogoClick}>
+              Recipe.ai
+            </Link>
           </li>
 
           {/* --- Right Side: Controls (Desktop) / Burger (Mobile) --- */}
@@ -66,7 +68,10 @@ const Navbar = () => {
                 // Skeleton pills during auth loading — prevents Login→items flash
                 <>
                   {["w-16", "w-20", "w-24"].map((w, i) => (
-                    <div key={i} className={`${w} h-8 rounded-full bg-background/20 animate-pulse`} />
+                    <div
+                      key={i}
+                      className={`${w} h-8 rounded-full bg-background/20 animate-pulse`}
+                    />
                   ))}
                 </>
               ) : (
@@ -120,10 +125,10 @@ const Navbar = () => {
               loading
                 ? navItems
                 : user
-                ? [...navItems, "Logout"].filter(
-                    (item): item is string => !!item
-                  )
-                : navItems
+                  ? [...navItems, "Logout"].filter(
+                      (item): item is string => !!item,
+                    )
+                  : navItems
             }
             handleLogout={handleLogout}
             onItemClick={() => setIsOpen(false)}

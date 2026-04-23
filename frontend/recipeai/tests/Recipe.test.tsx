@@ -37,14 +37,14 @@ const mockAPIClient = vi.mocked(apiClient);
 const mockGenerateRecipe = vi.mocked(generateRecipe);
 
 interface SetupMocksArgs {
-  fridgeItems?: any[]; // Adjust type as per FridgeIngredient[] if available
+  fridgeItems?: unknown[];
   loadingFridge?: boolean;
   fridgeError?: string;
   getFridgeItemNames?: () => string[];
   params?: { recipeName?: string };
-  locationState?: { recipe?: any } | null; // Allow null
-  ajaxResponse?: any;
-  generateRecipeResponse?: any;
+  locationState?: { recipe?: unknown } | null;
+  ajaxResponse?: unknown;
+  generateRecipeResponse?: unknown;
 }
 
 function setupMocks({
@@ -63,14 +63,14 @@ function setupMocks({
   },
 }: SetupMocksArgs = {}) {
   // Added type for the destructured argument
-  mockUseParams.mockReturnValue(params as any); // Cast to any if type is complex
+  mockUseParams.mockReturnValue(params as ReturnType<typeof useParams>);
   mockUseLocation.mockReturnValue({
     state: locationState,
     pathname: `/recipe/${params.recipeName || "default"}`,
     search: "",
     hash: "",
     key: "test-key",
-  } as any); // Cast to any for simplicity or define a proper Location type
+  } as ReturnType<typeof useLocation>);
 
   mockUseFridge.mockReturnValue({
     fridgeItems,
@@ -112,7 +112,7 @@ describe("RecipePage", () => {
         <AuthProvider>
           <RecipePage />
         </AuthProvider>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
     expect(screen.getByText("Loading...")).toBeInTheDocument();
   });
@@ -124,10 +124,10 @@ describe("RecipePage", () => {
         <AuthProvider>
           <RecipePage />
         </AuthProvider>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
     expect(
-      screen.getByText("Error: Failed to load fridge")
+      screen.getByText("Error: Failed to load fridge"),
     ).toBeInTheDocument();
   });
 
@@ -145,7 +145,7 @@ describe("RecipePage", () => {
         <AuthProvider>
           <RecipePage />
         </AuthProvider>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     await waitFor(() => {
@@ -174,7 +174,7 @@ describe("RecipePage", () => {
         <AuthProvider>
           <RecipePage />
         </AuthProvider>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     await waitFor(() => {
@@ -184,7 +184,7 @@ describe("RecipePage", () => {
       expect(screen.getByText("Generated Recipe")).toBeInTheDocument();
     });
     expect(
-      screen.getByText("Generated Ingredient - 3 units")
+      screen.getByText("Generated Ingredient - 3 units"),
     ).toBeInTheDocument();
     expect(screen.getByText("Generated Step 1")).toBeInTheDocument();
     expect(screen.getByText("Time to prepare: 1 hour")).toBeInTheDocument();
@@ -196,7 +196,8 @@ describe("RecipePage", () => {
       locationState: null,
       params: { recipeName: undefined }, // No recipe name in URL
       // Mock AJAX for getRecipeByName to return nothing or an error
-      ajaxResponse: async (url: string) => {
+      ajaxResponse: async (...args: unknown[]) => {
+        const url = String(args[0] ?? "");
         if (url.startsWith("getRecipeByName/")) {
           return Promise.resolve(null); // Or reject to simulate not found
         }
@@ -209,14 +210,14 @@ describe("RecipePage", () => {
         <AuthProvider>
           <RecipePage />
         </AuthProvider>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     await waitFor(() => {
       expect(
         screen.getByText(
-          "No recipe data found. Add items to your fridge to generate one or check out your saved recipes."
-        )
+          "No recipe data found. Add items to your fridge to generate one or check out your saved recipes.",
+        ),
       ).toBeInTheDocument();
     });
   });
@@ -233,12 +234,12 @@ describe("RecipePage", () => {
         <AuthProvider>
           <RecipePage />
         </AuthProvider>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     await waitFor(() => {
       expect(
-        screen.getByText("Error generating recipe: AI failed")
+        screen.getByText("Error generating recipe: AI failed"),
       ).toBeInTheDocument();
     });
   });
@@ -260,7 +261,7 @@ describe("RecipePage", () => {
         <AuthProvider>
           <RecipePage />
         </AuthProvider>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     await waitFor(() => {
@@ -273,7 +274,7 @@ describe("RecipePage", () => {
       expect(mockAPIClient).toHaveBeenCalledWith(
         "addRecipe",
         true,
-        expect.objectContaining({ name: recipeToSave.recipeName })
+        expect.objectContaining({ name: recipeToSave.recipeName }),
       );
     });
     // await waitFor(() => expect(screen.getByText("Recipe saved successfully!")).toBeInTheDocument());
@@ -296,7 +297,7 @@ describe("RecipePage", () => {
         <AuthProvider>
           <RecipePage />
         </AuthProvider>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     await waitFor(() => {
@@ -309,12 +310,12 @@ describe("RecipePage", () => {
       expect(mockAPIClient).toHaveBeenCalledWith(
         "addRecipe",
         true,
-        expect.objectContaining({ name: recipeToSave.recipeName })
+        expect.objectContaining({ name: recipeToSave.recipeName }),
       );
     });
     await waitFor(() => {
       expect(
-        screen.getByText("Error saving recipe: DB error")
+        screen.getByText("Error saving recipe: DB error"),
       ).toBeInTheDocument();
     });
   });
@@ -332,11 +333,8 @@ describe("RecipePage", () => {
       params: { recipeName: recipeNameFromUrl },
       locationState: null,
       getFridgeItemNames: () => [],
-      ajaxResponse: async (
-        url: string,
-        _isProtected?: boolean,
-        _body?: any
-      ) => {
+      ajaxResponse: async (...args: unknown[]) => {
+        const url = String(args[0] ?? "");
         if (url === `getRecipeByName/${recipeNameFromUrl}`) {
           return Promise.resolve(recipeFromDB);
         }
@@ -349,13 +347,13 @@ describe("RecipePage", () => {
         <AuthProvider>
           <RecipePage />
         </AuthProvider>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     await waitFor(() => {
       expect(mockAPIClient).toHaveBeenCalledWith(
         `getRecipeByName/${recipeNameFromUrl}`,
-        false
+        false,
       );
     });
 

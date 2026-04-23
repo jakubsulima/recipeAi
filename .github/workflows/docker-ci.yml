@@ -40,10 +40,9 @@ jobs:
         run: npm run lint
 
   frontend-prettier:
-    name: Frontend Prettier Check (Advisory)
+    name: Frontend Prettier Check
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    continue-on-error: true
 
     steps:
       - name: Checkout

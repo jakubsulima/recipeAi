@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosResponse } from "axios";
 import { API_URL, TIMEOUT } from "./constants.tsx";
 
 const formOfPrompt =
@@ -6,7 +6,50 @@ const formOfPrompt =
 const batchFormOfPrompt =
   ' Act as a professional culinary database architect and recommendation engine. Return ONLY a single valid JSON object following this exact schema: { "recipes": [{ "name": string, "description": string, "timeToPrepare": string, "ingredients": [{"name": string, "amount": number, "unit": string}], "instructions": [string], "nutrition": { "calories": number, "protein": number, "carbs": number, "fats": number } }] }. Enforce user filters from the request text (meal type, cuisine, time constraint, and additional notes). All generated recipes must match those filters. Create meaningful diversity across recipes by varying core protein category, cooking technique, and flavor profile while staying plausible. For EACH recipe: include 8-14 ingredients with realistic amounts for 2 servings, use strict metric units (g, ml, kg) or whole counts, and provide 6-9 technical instructions with sensory cues and clear time/temperature markers. Ensure nutrition values are internally consistent with the listed ingredients. Do not include markdown or conversational text.';
 
-const inFlightRecipeRequests = new Map<string, Promise<any>>();
+type ApiRecord = Record<string, unknown>;
+
+interface AppError extends Error {
+  status?: number;
+  isNetworkError?: boolean;
+  isContentTypeError?: boolean;
+}
+
+const asRecord = (value: unknown): ApiRecord | null => {
+  if (value && typeof value === "object") {
+    return value as ApiRecord;
+  }
+  return null;
+};
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (error instanceof Error && error.message.trim() !== "") {
+    return error.message;
+  }
+  return fallback;
+};
+
+const getErrorStatus = (error: unknown): number | undefined => {
+  if (
+    error &&
+    typeof error === "object" &&
+    "status" in error &&
+    typeof (error as { status?: unknown }).status === "number"
+  ) {
+    return (error as { status: number }).status;
+  }
+  return undefined;
+};
+
+const hasContentTypeError = (error: unknown): boolean => {
+  return Boolean(
+    error &&
+      typeof error === "object" &&
+      "isContentTypeError" in error &&
+      (error as { isContentTypeError?: unknown }).isContentTypeError,
+  );
+};
+
+const inFlightRecipeRequests = new Map<string, Promise<unknown>>();
 
 const buildRecipePrompt = (
   prompt: string,
@@ -34,7 +77,7 @@ const requestRecipeGeneration = async (
   productsFridge: string[],
   requestedCount: number,
   signal?: AbortSignal,
-) => {
+): Promise<unknown> => {
   const fullPrompt = buildRecipePrompt(prompt, productsFridge, requestedCount);
   const result = await axios.post(
     `${API_URL}generateRecipe`,
@@ -94,7 +137,7 @@ export const generateRecipe = async function (
     }
 
     return await inFlightRecipeRequests.get(requestKey)!;
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (axios.isCancel(error)) {
       throw new DOMException("Recipe generation cancelled", "AbortError");
     }
@@ -103,16 +146,23 @@ export const generateRecipe = async function (
       ? typeof error.response?.data === "string" &&
         error.response.data.trim() !== ""
         ? error.response.data
-        : typeof error.response?.data?.message === "string" &&
-            error.response.data.message.trim() !== ""
-          ? error.response.data.message
-          : error.message
-      : error?.message || "Unknown AI error";
+        : (() => {
+            const data = asRecord(error.response?.data);
+            const nestedMessage = data?.message;
+            return typeof nestedMessage === "string" &&
+              nestedMessage.trim() !== ""
+              ? nestedMessage
+              : error.message;
+          })()
+      : error instanceof Error
+        ? error.message
+        : "Unknown AI error";
+
     throw new Error(`AI Generation Error: ${message}`);
   }
 };
 
-export const cleanAiJsonString = (response: any): string => {
+export const cleanAiJsonString = (response: unknown): string => {
   let jsonString =
     typeof response === "string"
       ? response.replace(/```json|```/g, "").trim()
@@ -142,11 +192,16 @@ export const lookupProductByBarcode = async (
     },
   );
 
-  const product = response.data?.product;
+  const responseData = asRecord(response.data);
+  const product = asRecord(responseData?.product);
+  const productName = product?.product_name;
+  const productNameEn = product?.product_name_en;
+  const genericName = product?.generic_name;
+
   const name =
-    product?.product_name?.trim() ||
-    product?.product_name_en?.trim() ||
-    product?.generic_name?.trim() ||
+    (typeof productName === "string" ? productName.trim() : "") ||
+    (typeof productNameEn === "string" ? productNameEn.trim() : "") ||
+    (typeof genericName === "string" ? genericName.trim() : "") ||
     null;
 
   return name;
@@ -195,7 +250,7 @@ axios.interceptors.response.use(
 
         // Retry the original request with new token
         return axios(originalRequest);
-      } catch (refreshError: any) {
+      } catch (refreshError: unknown) {
         localStorage.removeItem("isLoggedIn");
         window.dispatchEvent(new Event("auth:session-expired"));
         return Promise.reject(refreshError);
@@ -209,7 +264,7 @@ axios.interceptors.response.use(
 export const apiClient = async function (
   url: string,
   uploadData: boolean = false,
-  body: any = null,
+  body: unknown = null,
 ) {
   const normalizedUrl = String(url ?? "");
   const authNoiseEndpoints = [
@@ -226,7 +281,7 @@ export const apiClient = async function (
 
   try {
     const isPlainString = typeof body === "string";
-    const fetchOperation = uploadData
+    const fetchOperation: Promise<AxiosResponse<unknown>> = uploadData
       ? axios.post(API_URL + url, body, {
           headers: isPlainString
             ? { "Content-Type": "text/plain" }
@@ -236,85 +291,94 @@ export const apiClient = async function (
           timeout: TIMEOUT * 1000,
         });
 
-    const res: any = await Promise.race([
+    const res = (await Promise.race([
       fetchOperation,
-      new Promise((_, reject) =>
+      new Promise<never>((_, reject) =>
         setTimeout(
           () => reject(new Error(`Request timed out after ${TIMEOUT} seconds`)),
           TIMEOUT * 1000,
         ),
       ),
-    ]);
-    const contentType = res.headers["content-type"];
-    if (contentType && contentType.includes("text/html")) {
+    ])) as AxiosResponse<unknown>;
+
+    const contentType = String(res.headers["content-type"] ?? "");
+    if (contentType.includes("text/html")) {
       const htmlError = new Error(
         "Received HTML instead of JSON. Backend endpoint may be incorrect or down.",
-      );
-      (htmlError as any).isContentTypeError = true;
+      ) as AppError;
+      htmlError.isContentTypeError = true;
       if (isAuthNoiseEndpoint) {
-        (htmlError as any).status = 401;
+        htmlError.status = 401;
       }
       throw htmlError;
     }
 
-    const data = await res.data;
-    return data;
-  } catch (error: any) {
+    return res.data;
+  } catch (error: unknown) {
     const status = axios.isAxiosError(error)
       ? error.response?.status
-      : typeof error?.status === "number"
-        ? error.status
-        : undefined;
+      : getErrorStatus(error);
     const isExpectedAuthNoise =
       ((status === 401 || status === 400) && isAuthNoiseEndpoint) ||
-      (Boolean(error?.isContentTypeError) && isAuthNoiseEndpoint);
+      (hasContentTypeError(error) && isAuthNoiseEndpoint);
 
     if (!isExpectedAuthNoise) {
-      console.error(
-        "AJAX Error Details:",
-        error.response
-          ? { status: error.response.status, data: error.response.data }
-          : error.message,
-      );
+      if (axios.isAxiosError(error)) {
+        console.error(
+          "AJAX Error Details:",
+          error.response
+            ? { status: error.response.status, data: error.response.data }
+            : error.message,
+        );
+      } else {
+        console.error(
+          "AJAX Error Details:",
+          getErrorMessage(error, "Unknown error"),
+        );
+      }
     }
 
-    let finalError: Error;
+    let finalError: AppError;
 
     if (axios.isAxiosError(error)) {
       if (error.response) {
-        const status = error.response.status;
-        let message = `Server error with status ${status}`;
-        if (
-          error.response.data &&
-          typeof error.response.data.message === "string" &&
-          error.response.data.message.trim() !== ""
-        ) {
-          message = error.response.data.message;
-        } else if (
-          typeof error.response.data === "string" &&
-          error.response.data.trim() !== ""
-        ) {
-          message = error.response.data;
+        const responseStatus = error.response.status;
+        let message = `Server error with status ${responseStatus}`;
+        const responseData = error.response.data;
+
+        if (typeof responseData === "string" && responseData.trim() !== "") {
+          message = responseData;
+        } else {
+          const data = asRecord(responseData);
+          const nestedMessage = data?.message;
+          if (
+            typeof nestedMessage === "string" &&
+            nestedMessage.trim() !== ""
+          ) {
+            message = nestedMessage;
+          }
         }
-        finalError = new Error(`AJAX Error (${status}): ${message}`);
-        (finalError as any).status = status;
+
+        finalError = new Error(`AJAX Error (${responseStatus}): ${message}`);
+        finalError.status = responseStatus;
       } else if (error.request) {
         finalError = new Error(
           "AJAX Error: No response from server. Check network or server availability.",
         );
-        (finalError as any).isNetworkError = true;
+        finalError.isNetworkError = true;
       } else {
         finalError = new Error(
           `AJAX Error: Request setup failed - ${error.message}`,
         );
       }
     } else if (error instanceof Error) {
-      finalError = error;
+      finalError = error as AppError;
     } else {
       finalError = new Error(
         "An unknown AJAX error occurred: " + String(error),
       );
     }
+
     throw finalError;
   }
 };
@@ -323,51 +387,67 @@ export const deleteClient = async function (url: string) {
   try {
     const res = await axios.delete(API_URL + url);
     return res.data;
-  } catch (error: any) {
-    console.error(
-      "Delete Error:",
-      error.response
-        ? { status: error.response.status, data: error.response.data }
-        : error.message,
-    );
-    if (axios.isAxiosError(error) && error.response) {
-      const status = error.response.status;
-      const message =
-        typeof error.response.data?.message === "string"
-          ? error.response.data.message
-          : `Server error with status ${status}`;
-      const finalError = new Error(`AJAX Error (${status}): ${message}`);
-      (finalError as any).status = status;
-      throw finalError;
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error)) {
+      console.error(
+        "Delete Error:",
+        error.response
+          ? { status: error.response.status, data: error.response.data }
+          : error.message,
+      );
+
+      if (error.response) {
+        const status = error.response.status;
+        const data = asRecord(error.response.data);
+        const nestedMessage = data?.message;
+        const message =
+          typeof nestedMessage === "string"
+            ? nestedMessage
+            : `Server error with status ${status}`;
+        const finalError = new Error(
+          `AJAX Error (${status}): ${message}`,
+        ) as AppError;
+        finalError.status = status;
+        throw finalError;
+      }
     }
-    throw new Error(error.message || "Unknown delete error");
+
+    throw new Error(getErrorMessage(error, "Unknown delete error"));
   }
 };
 
-export const putClient = async function (url: string, body: any = null) {
+export const putClient = async function (url: string, body: unknown = null) {
   try {
     const res = await axios.put(API_URL + url, body, {
       headers: { "Content-Type": "application/json" },
     });
     return res.data;
-  } catch (error: any) {
-    console.error(
-      "Put Error:",
-      error.response
-        ? { status: error.response.status, data: error.response.data }
-        : error.message,
-    );
-    if (axios.isAxiosError(error) && error.response) {
-      const status = error.response.status;
-      const message =
-        typeof error.response.data?.message === "string"
-          ? error.response.data.message
-          : `Server error with status ${status}`;
-      const finalError = new Error(`AJAX Error (${status}): ${message}`);
-      (finalError as any).status = status;
-      throw finalError;
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error)) {
+      console.error(
+        "Put Error:",
+        error.response
+          ? { status: error.response.status, data: error.response.data }
+          : error.message,
+      );
+
+      if (error.response) {
+        const status = error.response.status;
+        const data = asRecord(error.response.data);
+        const nestedMessage = data?.message;
+        const message =
+          typeof nestedMessage === "string"
+            ? nestedMessage
+            : `Server error with status ${status}`;
+        const finalError = new Error(
+          `AJAX Error (${status}): ${message}`,
+        ) as AppError;
+        finalError.status = status;
+        throw finalError;
+      }
     }
-    throw new Error(error.message || "Unknown put error");
+
+    throw new Error(getErrorMessage(error, "Unknown put error"));
   }
 };
 

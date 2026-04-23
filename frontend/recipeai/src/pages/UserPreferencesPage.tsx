@@ -92,7 +92,7 @@ const MePage = () => {
   }, [fetchUserPreferences]);
 
   const handleUpdatePreferences = async (
-    updateFn: () => Promise<any>,
+    updateFn: () => Promise<unknown>,
     successMsg: string,
     errorMessage: string,
   ) => {
