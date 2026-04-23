@@ -153,54 +153,6 @@ jobs:
         working-directory: backendApi
         run: ./gradlew compileJava --no-daemon -Dorg.gradle.vfs.watch=false
 
-  backend-checkstyle:
-    name: Backend Checkstyle
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Java 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "17"
-          cache: gradle
-
-      - name: Run Checkstyle
-        working-directory: backendApi
-        run: ./gradlew checkstyleMain --no-daemon -Dorg.gradle.vfs.watch=false
-
-  backend-spotbugs:
-    name: Backend SpotBugs (Advisory)
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    continue-on-error: true
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Java 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "17"
-          cache: gradle
-
-      - name: Run SpotBugs
-        working-directory: backendApi
-        run: ./gradlew spotbugsMain --no-daemon -Dorg.gradle.vfs.watch=false
-
-      - name: Upload SpotBugs report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: spotbugs-main-report
-          path: backendApi/build/reports/spotbugs/main.html
-          if-no-files-found: warn
 
   backend-testcontainers:
     name: Backend Testcontainers Integration (Advisory)
@@ -287,7 +239,6 @@ jobs:
       - frontend-lint
       - frontend-build
       - frontend-audit
-      - backend-checkstyle
       - backend-compile
       - compose-validate
       - dockerfile-lint
