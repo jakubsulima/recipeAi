@@ -52,6 +52,7 @@ Minimum required:
 - BACKEND_IMAGE
 - FRONTEND_IMAGE
 - DB_IMAGE
+- APP_DOMAIN
 - POSTGRES_DB
 - POSTGRES_USER
 - POSTGRES_PASSWORD
@@ -68,6 +69,9 @@ Recommended:
 - PAID_PLAN_RECIPE_LIMIT=-1
 - FRONTEND_PORT=80
 - SPRING_PROFILES_ACTIVE=prod
+
+Notes:
+- APP_DOMAIN should be hostname only (for example: app.example.com, without https://).
 
 Frontend build-time variables are configured in GitHub Actions repository variables (not Dokploy runtime env):
 - `VITE_API_URL` (default `/api/`)

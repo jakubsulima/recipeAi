@@ -53,6 +53,12 @@ services:
     # No public ports: expose through Dokploy or an edge proxy.
     environment:
       PORT: "${FRONTEND_PORT:-8080}"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.recipeai-front.rule=Host(`${APP_DOMAIN}`)"
+      - "traefik.http.routers.recipeai-front.entrypoints=websecure"
+      - "traefik.http.routers.recipeai-front.tls=true"
+      - "traefik.http.routers.recipeai-front.tls.certresolver=letsencrypt"
     depends_on:
       backend:
         condition: service_healthy
