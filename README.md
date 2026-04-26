@@ -5,6 +5,7 @@ A full-stack web application that helps users discover and manage recipes using 
 ## 🌟 Features
 
 ### Core Functionality
+
 - **AI Recipe Generation**: Generate custom recipes using Google's Gemini AI based on available ingredients and preferences
 - **Virtual Fridge Management**: Track your ingredients with expiration dates, quantities, and categories
 - **Smart Recipe Search**: Find recipes by name, ingredients, cuisine type, meal type, and preparation time
@@ -13,6 +14,7 @@ A full-stack web application that helps users discover and manage recipes using 
 - **Admin Panel**: Administrative dashboard for user and recipe management
 
 ### User Features
+
 - Browse and search through recipe database
 - Generate recipes based on fridge contents
 - Filter by cuisine (Italian, Mexican, Indian, Chinese)
@@ -24,6 +26,7 @@ A full-stack web application that helps users discover and manage recipes using 
 ## 🛠️ Technology Stack
 
 ### Frontend
+
 - **React 19** with TypeScript
 - **React Router 7** for navigation
 - **Tailwind CSS 4** for styling
@@ -33,6 +36,7 @@ A full-stack web application that helps users discover and manage recipes using 
 - **Vitest + Testing Library** for testing
 
 ### Backend
+
 - **Spring Boot 3.1** (Java 17)
 - **Spring Security** with JWT authentication
 - **Spring Data JPA** with Hibernate
@@ -43,6 +47,7 @@ A full-stack web application that helps users discover and manage recipes using 
 - **Google Gemini AI** integration
 
 ### DevOps & Infrastructure
+
 - **Docker** & **Docker Compose** for containerization
 - **Dokploy** as the primary production deployment platform
 - **GitHub Actions** Docker CI workflow for image validation/build
@@ -103,6 +108,7 @@ recipeAi/
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - **Docker** and **Docker Compose** installed
 - **Java 17** (for local backend development)
 - **Node.js 18+** and **npm** (for local frontend development)
@@ -150,47 +156,56 @@ FRONTEND_PORT=80
 ### Quick Start (Dokploy)
 
 1. **Clone the repository**
+
    ```bash
    git clone <your-repo-url>
    cd recipeAi
    ```
 
 2. **Set up environment variables**
+
    ```bash
    cp .env.example .env
    # Edit .env with your actual values
    ```
 
 3. **Create application in Dokploy**
-  - Deployment type: Docker Compose
-  - Compose file: `docker-compose.yml`
+
+- Deployment type: Docker Compose
+- Compose file: `docker-compose.yml`
 
 4. **Set environment variables in Dokploy UI**
-  - Use `.env.example` as source of required keys
-  - Set `BACKEND_IMAGE`, `FRONTEND_IMAGE`, `DB_IMAGE` to images published by CI (GHCR)
+
+- Use `.env.example` as source of required keys
+- Set `BACKEND_IMAGE`, `FRONTEND_IMAGE`, `DB_IMAGE` to images published by CI (GHCR)
 
 5. **Deploy and validate**
-  - Check service logs (`frontend`, `backend`, `db`)
-  - Verify auth and recipe endpoints from the UI
+
+- Check service logs (`frontend`, `backend`, `db`)
+- Verify auth and recipe endpoints from the UI
 
 ### Production with Dokploy (Recommended)
 
 1. **Create app in Dokploy from this repository**
-  - Deployment type: Docker Compose
-  - Compose file: `docker-compose.yml`
+
+- Deployment type: Docker Compose
+- Compose file: `docker-compose.yml`
 
 2. **Set environment variables in Dokploy UI**
-  - Use values from `.env.example`
-  - Required minimum: `BACKEND_IMAGE`, `FRONTEND_IMAGE`, `DB_IMAGE`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `GEMINI_API_KEY`, `ALLOWED_ORIGINS`, `JWT_SECRET_KEY`
-  - For deterministic deploys, use image tags `sha-<commit>` instead of `latest`
+
+- Use values from `.env.example`
+- Required minimum: `BACKEND_IMAGE`, `FRONTEND_IMAGE`, `DB_IMAGE`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `GEMINI_API_KEY`, `ALLOWED_ORIGINS`, `JWT_SECRET_KEY`
+- For deterministic deploys, use image tags `sha-<commit>` instead of `latest`
 
 3. **Expose services in Dokploy**
-  - Option A: expose frontend only + configure Dokploy path routing `/api/*` to backend (port 8080)
-  - Option B: expose frontend (port 80) and backend (port 8080) on separate domain
+
+- Option A: expose frontend only + configure Dokploy path routing `/api/*` to backend (port 8080)
+- Option B: expose frontend (port 80) and backend (port 8080) on separate domain
 
 4. **Deploy and validate**
-  - Check logs for `frontend`, `backend`, `db`
-  - Verify login/refresh flow and browser CORS
+
+- Check logs for `frontend`, `backend`, `db`
+- Verify login/refresh flow and browser CORS
 
 Detailed checklist: `docs/DOKPLOY_DEPLOYMENT.md`
 
@@ -244,22 +259,27 @@ The frontend will be available at http://localhost:5173
 ### Main Entities
 
 - **User**: User accounts with authentication
+
   - Fields: id, email, password, role (USER/ADMIN)
   - Relationships: UserPreferences, Recipes, FridgeIngredients
 
 - **Recipe**: Recipe information
+
   - Fields: id, name, description, instructions, timeToPrepare
   - Relationships: RecipeIngredients, User
 
 - **FridgeIngredient**: User's fridge inventory
+
   - Fields: id, name, amount, unit, category, expirationDate
   - Relationships: User
 
 - **UserPreferences**: Dietary preferences
+
   - Fields: id, diet (VEGAN, VEGETARIAN, etc.), dislikedIngredients
   - Relationships: User
 
 - **RecipeIngredient**: Ingredients in recipes with quantities
+
   - Relationships: Recipe, Ingredient
 
 - **Ingredient**: Master ingredient list
@@ -267,10 +287,12 @@ The frontend will be available at http://localhost:5173
 ## 🔌 API Endpoints
 
 ### Authentication
+
 - `POST /auth/login` - User login
 - `POST /auth/register` - User registration
 
 ### Recipes
+
 - `GET /recipes/getAllRecipes` - Get all recipes (paginated)
 - `GET /recipes/getRecipe/{id}` - Get recipe by ID
 - `GET /recipes/searchRecipes/{searchTerm}` - Search recipes
@@ -281,12 +303,14 @@ The frontend will be available at http://localhost:5173
 - `GET /recipes/getUserRecipes/{userId}` - Get user's recipes
 
 ### Fridge Management
+
 - `GET /fridge/getFridgeIngredients` - Get user's fridge items
 - `POST /fridge/addFridgeIngredient` - Add ingredient to fridge
 - `POST /fridge/updateFridgeIngredient/{id}` - Update ingredient
 - `POST /fridge/deleteFridgeIngredient/{id}` - Remove ingredient
 
 ### User Preferences
+
 - `GET /preferences/user/getPreferences` - Get user preferences
 - `POST /preferences/user/changeDiet` - Update diet preference
 - `POST /preferences/user/addDislikedIngredient` - Add disliked ingredient
@@ -294,6 +318,7 @@ The frontend will be available at http://localhost:5173
 - `GET /preferences/user/getDiets` - Get available diets
 
 ### Admin
+
 - `GET /admin/users` - Get all users
 - `GET /admin/users/{id}` - Get user by ID
 - `PUT /admin/users/{id}/role` - Update user role
@@ -327,11 +352,13 @@ docker compose -f docker-compose.yml up -d
 ```
 
 Dokploy-specific runbook:
+
 - `docs/DOKPLOY_DEPLOYMENT.md`
 
 ## 🧪 Testing
 
 ### Backend Tests
+
 ```bash
 cd backendApi
 ./gradlew test
@@ -345,6 +372,7 @@ cd backendApi
 ```
 
 ### Frontend Tests
+
 ```bash
 cd frontend/recipeai
 npm run test              # Run tests once
