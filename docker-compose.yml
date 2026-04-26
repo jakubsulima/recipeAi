@@ -59,6 +59,12 @@ services:
       - "traefik.http.routers.recipeai-front.entrypoints=websecure"
       - "traefik.http.routers.recipeai-front.tls=true"
       - "traefik.http.routers.recipeai-front.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.recipeai-front-http.rule=Host(`${APP_DOMAIN}`)"
+      - "traefik.http.routers.recipeai-front-http.entrypoints=web"
+      - "traefik.http.routers.recipeai-front-http.middlewares=recipeai-redirect-to-https"
+      - "traefik.http.middlewares.recipeai-redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.recipeai-redirect-to-https.redirectscheme.permanent=true"
+      - "traefik.http.services.recipeai-front.loadbalancer.server.port=${FRONTEND_PORT:-8080}"
     depends_on:
       backend:
         condition: service_healthy
