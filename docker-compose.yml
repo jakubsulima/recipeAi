@@ -65,6 +65,7 @@ services:
       - "traefik.http.middlewares.recipeai-redirect-to-https.redirectscheme.scheme=https"
       - "traefik.http.middlewares.recipeai-redirect-to-https.redirectscheme.permanent=true"
       - "traefik.http.services.recipeai-front.loadbalancer.server.port=${FRONTEND_PORT:-8080}"
+      - "traefik.docker.network=dokploy-network"
     depends_on:
       backend:
         condition: service_healthy
@@ -76,6 +77,7 @@ services:
       start_period: 10s
     networks:
       - recipe-net
+      - dokploy-network
 
   db:
     image: "${DB_IMAGE:-ghcr.io/change-me/recipeai-db:latest}"
@@ -105,3 +107,5 @@ volumes:
 networks:
   recipe-net:
     driver: bridge
+  dokploy-network:
+    external: true
