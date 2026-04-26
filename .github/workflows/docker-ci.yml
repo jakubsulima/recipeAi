@@ -392,3 +392,6 @@ jobs:
           build-args: ${{ matrix.build_args }}
           cache-from: type=gha,scope=${{ matrix.image_name }}
           cache-to: type=gha,scope=${{ matrix.image_name }},mode=max
+      - name: Trigger Dokploy Deployment
+        if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
+        run: curl -X POST ${{ secrets.DOKPLOY_WEBHOOK }}
