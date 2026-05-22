@@ -10,13 +10,13 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class ShoppingListIngredientMatcherTest {
+class ShoppingListCoverageServiceTest {
 
-    private final ShoppingListIngredientMatcher matcher = new ShoppingListIngredientMatcher();
+    private final ShoppingListCoverageService shoppingListCoverageService = new ShoppingListCoverageService();
 
     @Test
-    void findDeterministicMissingIngredients_shouldSkipExactMatch() {
-        List<ShoppingListGenerationItemDto> result = matcher.findDeterministicMissingIngredients(
+    void findMissingItems_shouldSkipExactMatch() {
+        List<ShoppingListGenerationItemDto> result = shoppingListCoverageService.findMissingItems(
                 List.of(recipe("Milk", 1, "l")),
                 List.of(fridge("milk", 1d, "LITERS"))
         );
@@ -25,8 +25,8 @@ class ShoppingListIngredientMatcherTest {
     }
 
     @Test
-    void findDeterministicMissingIngredients_shouldReturnPartialShortage() {
-        List<ShoppingListGenerationItemDto> result = matcher.findDeterministicMissingIngredients(
+    void findMissingItems_shouldReturnPartialShortage() {
+        List<ShoppingListGenerationItemDto> result = shoppingListCoverageService.findMissingItems(
                 List.of(recipe("Rice", 500, "g")),
                 List.of(fridge("rice", 200d, "GRAMS"))
         );
@@ -35,8 +35,8 @@ class ShoppingListIngredientMatcherTest {
     }
 
     @Test
-    void findDeterministicMissingIngredients_shouldConvertCompatibleUnits() {
-        List<ShoppingListGenerationItemDto> result = matcher.findDeterministicMissingIngredients(
+    void findMissingItems_shouldConvertCompatibleUnits() {
+        List<ShoppingListGenerationItemDto> result = shoppingListCoverageService.findMissingItems(
                 List.of(recipe("Broth", 750, "ml")),
                 List.of(fridge("broth", 0.5d, "LITERS"))
         );
@@ -45,8 +45,8 @@ class ShoppingListIngredientMatcherTest {
     }
 
     @Test
-    void findDeterministicMissingIngredients_shouldTreatUnknownFridgeQuantityAsCovered() {
-        List<ShoppingListGenerationItemDto> result = matcher.findDeterministicMissingIngredients(
+    void findMissingItems_shouldTreatUnknownFridgeQuantityAsCovered() {
+        List<ShoppingListGenerationItemDto> result = shoppingListCoverageService.findMissingItems(
                 List.of(recipe("Eggs", 2, "pcs")),
                 List.of(fridge("eggs", null, null))
         );

@@ -16,6 +16,37 @@ test("public recipe detail page renders ingredients, steps, and nutrition", asyn
   await expect(page.getByText("520 kcal")).toBeVisible();
 });
 
+test("guest is prompted to log in before generating a shopping list from a public recipe", async ({
+  page,
+}) => {
+  await mockGuestApi(page);
+  await page.goto("/Recipe/101");
+
+  await page
+    .getByRole("button", { name: "Log In to Generate Shopping List" })
+    .click();
+
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(
+    page.getByRole("heading", { name: "Welcome back" }),
+  ).toBeVisible();
+});
+
+test("authenticated user can generate a shopping list from a recipe", async ({
+  page,
+}) => {
+  await mockAuthenticatedRecipesApi(page);
+  await page.goto("/Recipe/101");
+
+  await page.getByRole("button", { name: "Generate Shopping List" }).click();
+
+  await expect(page).toHaveURL(/\/ShoppingList$/);
+  await expect(
+    page.getByRole("heading", { name: "Shopping List" }),
+  ).toBeVisible();
+  await expect(page.getByText("Pasta - 180 g")).toBeVisible();
+});
+
 test("authenticated user can search their saved recipes", async ({ page }) => {
   await mockAuthenticatedRecipesApi(page);
   await page.goto("/Recipes");

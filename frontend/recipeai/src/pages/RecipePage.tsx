@@ -13,10 +13,8 @@ import { RecipePageSkeleton } from "../components/Skeleton";
 import {
   addShoppingItems,
   generateShoppingListFromRecipe,
-  ShoppingListGenerationItem,
 } from "../lib/shoppingList";
 import ErrorAlert from "../components/ErrorAlert";
-import { getMissingIngredients } from "../lib/ingredientMatching";
 import { applySeo } from "../lib/seo";
 
 export interface RecipeIngredient {
@@ -238,7 +236,6 @@ const RecipePage = () => {
   const params = useParams();
   const recipeId = params.id;
   const {
-    fridgeItems,
     getFridgeItemNames,
     loading: fridgeLoading,
   } = useFridge();
@@ -252,6 +249,8 @@ const RecipePage = () => {
   const [error, setError] = useState<string>("");
   const [generationRetryKey, setGenerationRetryKey] = useState(0);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isGeneratingShoppingList, setIsGeneratingShoppingList] =
+    useState(false);
   const [saveStatus, setSaveStatus] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
@@ -496,6 +495,23 @@ const RecipePage = () => {
       return;
     }
 
+    if (isGeneratingShoppingList) {
+      return;
+    }
+
+    if (!user?.id) {
+      navigate("/login", {
+        state: {
+          from: {
+            pathname: location.pathname,
+            search: location.search,
+            state: location.state ?? null,
+          },
+        },
+      });
+      return;
+    }
+
     setError("");
 
     const recipeIngredientsPayload = recipeData.ingredients.map((ingredient) => ({
@@ -504,34 +520,45 @@ const RecipePage = () => {
       unit: ingredient.unit,
     }));
 
-    let sourceIngredients: ShoppingListGenerationItem[];
-
     try {
-      if (user?.id) {
-        sourceIngredients =
-          await generateShoppingListFromRecipe(recipeIngredientsPayload);
-      } else {
-        throw new Error("Smart shopping list generation requires login.");
-      }
-    } catch {
-      const missingIngredients = getMissingIngredients(
-        recipeData.ingredients,
-        fridgeItems,
+      setIsGeneratingShoppingList(true);
+      const sourceIngredients =
+        await generateShoppingListFromRecipe(recipeIngredientsPayload);
+
+      addShoppingItems(
+        sourceIngredients.map((ingredient) => ({
+          name: ingredient.name,
+          amount: ingredient.amount,
+          unit: ingredient.unit,
+        })),
       );
 
-      sourceIngredients = missingIngredients;
+      navigate("/ShoppingList");
+    } catch (error: unknown) {
+      setError(
+        getErrorMessage(
+          error,
+          "Failed to generate shopping list. Please try again.",
+        ),
+      );
+    } finally {
+      setIsGeneratingShoppingList(false);
     }
-
-    addShoppingItems(
-      sourceIngredients.map((ingredient) => ({
-        name: ingredient.name,
-        amount: ingredient.amount,
-        unit: ingredient.unit,
-      })),
-    );
-
-    navigate("/ShoppingList");
   };
+
+  const shoppingListButtonLabel = isGeneratingShoppingList
+    ? "Generating Shopping List"
+    : user
+      ? "Generate Shopping List"
+      : "Log In to Generate Shopping List";
+
+  const shoppingListButtonClassName = user
+    ? `mobile-soft-press inline-flex w-full items-center justify-center rounded-xl px-4 py-3 font-semibold text-black transition-all ${
+        isGeneratingShoppingList
+          ? "cursor-wait bg-yellow-300 shadow-[0_0_0_1px_rgba(255,212,60,0.18),0_16px_38px_rgba(255,212,60,0.32)]"
+          : "bg-yellow-400 hover:bg-yellow-300"
+      }`
+    : "mobile-soft-press inline-flex w-full items-center justify-center rounded-xl border border-yellow-400 bg-yellow-50 px-4 py-3 font-semibold text-yellow-950 transition-colors hover:bg-yellow-100";
 
   const handleDelete = async () => {
     if (!recipeId) return;
@@ -783,10 +810,29 @@ const RecipePage = () => {
         <div className="mobile-card-enter mobile-card-delay-2 mt-8 rounded-2xl border border-primary/10 bg-secondary p-4 sm:p-5">
           <div className="grid gap-3 sm:grid-cols-2">
             <button
-              className="mobile-soft-press inline-flex w-full items-center justify-center rounded-xl bg-yellow-400 px-4 py-3 font-semibold text-black transition-colors hover:bg-yellow-300"
+              className={shoppingListButtonClassName}
               onClick={handleGenerateShoppingList}
+              disabled={isGeneratingShoppingList}
             >
-              Generate Shopping List
+              <span className="inline-flex items-center gap-2">
+                {isGeneratingShoppingList && (
+                  <span
+                    className="shopping-list-loader"
+                    aria-hidden="true"
+                  />
+                )}
+                <span>{shoppingListButtonLabel}</span>
+                {isGeneratingShoppingList && (
+                  <span
+                    className="shopping-list-loader-dots"
+                    aria-hidden="true"
+                  >
+                    <span>.</span>
+                    <span>.</span>
+                    <span>.</span>
+                  </span>
+                )}
+              </span>
             </button>
 
             {!recipeId && user && (

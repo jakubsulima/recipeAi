@@ -22,18 +22,18 @@ public class ShoppingListGenerationService {
     private final UserRepository userRepository;
     private final FridgeIngredientRepository fridgeIngredientRepository;
     private final GeminiService geminiService;
-    private final ShoppingListIngredientMatcher shoppingListIngredientMatcher;
+    private final ShoppingListCoverageService shoppingListCoverageService;
 
     public ShoppingListGenerationService(
             UserRepository userRepository,
             FridgeIngredientRepository fridgeIngredientRepository,
             GeminiService geminiService,
-            ShoppingListIngredientMatcher shoppingListIngredientMatcher
+            ShoppingListCoverageService shoppingListCoverageService
     ) {
         this.userRepository = userRepository;
         this.fridgeIngredientRepository = fridgeIngredientRepository;
         this.geminiService = geminiService;
-        this.shoppingListIngredientMatcher = shoppingListIngredientMatcher;
+        this.shoppingListCoverageService = shoppingListCoverageService;
     }
 
     @Transactional(readOnly = true)
@@ -45,7 +45,7 @@ public class ShoppingListGenerationService {
                 .toList();
 
         List<ShoppingListGenerationItemDto> deterministicMissingIngredients =
-                shoppingListIngredientMatcher.findDeterministicMissingIngredients(safeRecipeIngredients, fridgeItems);
+                shoppingListCoverageService.findMissingItems(safeRecipeIngredients, fridgeItems);
 
         if (deterministicMissingIngredients.isEmpty()) {
             return List.of();

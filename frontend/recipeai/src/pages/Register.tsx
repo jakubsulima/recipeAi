@@ -3,7 +3,7 @@ import { apiClient } from "../lib/hooks";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useUser, type UserProps } from "../context/context";
 import ErrorAlert from "../components/ErrorAlert";
 import { getGoogleClientId } from "../lib/runtimeConfig";
@@ -45,6 +45,37 @@ interface RecipeAiWindow extends Window {
   __recipeAiGsiState?: GsiState;
 }
 
+interface AuthRedirectTarget {
+  pathname: string;
+  search?: string;
+  state?: unknown;
+}
+
+const resolveAuthRedirectTarget = (value: unknown): AuthRedirectTarget | null => {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const from = (value as { from?: unknown }).from;
+  if (!from || typeof from !== "object") {
+    return null;
+  }
+
+  const pathname = (from as { pathname?: unknown }).pathname;
+  if (typeof pathname !== "string" || pathname.trim() === "") {
+    return null;
+  }
+
+  const search = (from as { search?: unknown }).search;
+  const state = (from as { state?: unknown }).state;
+
+  return {
+    pathname,
+    search: typeof search === "string" ? search : "",
+    state,
+  };
+};
+
 const getErrorMessage = (error: unknown, fallback: string) => {
   if (error instanceof Error && error.message.trim() !== "") {
     return error.message;
@@ -70,6 +101,7 @@ const Register = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, loading: authLoading, setUser, refreshSession } = useUser();
   const googleBtnRef = useRef<HTMLDivElement>(null);
 
@@ -82,17 +114,29 @@ const Register = () => {
 
   const handleAuthSuccess = useCallback(
     (userData: UserProps) => {
+      const redirectTarget = resolveAuthRedirectTarget(location.state);
       localStorage.setItem("isLoggedIn", "true");
       setUser(userData);
       refreshSession().catch(() => {
         // Route guards will handle unauthenticated fallback if session sync fails.
       });
+      if (redirectTarget) {
+        navigate(
+          {
+            pathname: redirectTarget.pathname,
+            search: redirectTarget.search,
+          },
+          { replace: true, state: redirectTarget.state },
+        );
+        return;
+      }
+
       navigate("/My Profile", {
         replace: true,
         state: { fromRegistration: true },
       });
     },
-    [setUser, refreshSession, navigate],
+    [location.state, setUser, refreshSession, navigate],
   );
 
   // Google OAuth callback
@@ -307,7 +351,7 @@ const Register = () => {
         <p className="text-text/50 text-sm mt-6">
           Already have an account?{" "}
           <button
-            onClick={() => navigate("/login")}
+            onClick={() => navigate("/login", { state: location.state })}
             className="mobile-soft-press text-accent font-semibold hover:underline cursor-pointer"
           >
             Sign in

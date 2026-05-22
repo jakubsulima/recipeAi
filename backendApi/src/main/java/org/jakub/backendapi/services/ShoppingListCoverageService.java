@@ -13,7 +13,7 @@ import java.util.Locale;
 import java.util.Map;
 
 @Component
-public class ShoppingListIngredientMatcher {
+public class ShoppingListCoverageService {
 
     private enum SupportedUnit {
         G("g", "g", 1d),
@@ -33,7 +33,7 @@ public class ShoppingListIngredientMatcher {
         }
     }
 
-    public List<ShoppingListGenerationItemDto> findDeterministicMissingIngredients(
+    public List<ShoppingListGenerationItemDto> findMissingItems(
             List<RecipeIngredientDto> recipeIngredients,
             List<FridgeIngredientDto> fridgeItems
     ) {

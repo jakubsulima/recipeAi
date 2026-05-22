@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -80,6 +81,18 @@ class ShoppingListGenerationServiceTest {
         assertEquals(List.of(new ShoppingListGenerationItemDto("Green onion", 2d, "pcs")), result);
     }
 
+    @Test
+    void generateMissingItems_shouldRejectUnauthenticatedRequests() {
+        ShoppingListGenerationService shoppingListGenerationService = createService(new GeminiService(new ObjectMapper()));
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> shoppingListGenerationService.generateMissingItems(null, List.of())
+        );
+
+        assertEquals(HttpStatus.UNAUTHORIZED, exception.getCode());
+    }
+
     private User user(Long id) {
         User user = new User();
         user.setId(id);
@@ -92,7 +105,7 @@ class ShoppingListGenerationServiceTest {
                 userRepository,
                 fridgeIngredientRepository,
                 geminiService,
-                new ShoppingListIngredientMatcher()
+                new ShoppingListCoverageService()
         );
     }
 
