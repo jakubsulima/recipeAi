@@ -483,18 +483,18 @@ export const mockPromoJourneyApi = async (page: Page) => {
     dislikedIngredients: ["anchovies"],
   };
 
-  let fridgeItems: FridgeItem[] = [
+  const fridgeItems: FridgeItem[] = [
     {
       id: 1,
       name: "Spinach",
-      expirationDate: "19-05-2026",
+      expirationDate: null,
       amount: "1",
       unit: "bag",
     },
     {
       id: 2,
       name: "Chicken breast",
-      expirationDate: "20-05-2026",
+      expirationDate: null,
       amount: "2",
       unit: "pcs",
     },

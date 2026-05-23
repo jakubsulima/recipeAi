@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import Register from "../src/pages/Register";
 import { apiClient } from "../src/lib/hooks";
@@ -91,7 +91,7 @@ describe("Register Component", () => {
       role: "USER",
     });
 
-    render(<Register />);
+    renderWithRouter(<Register />);
 
     fireEvent.change(screen.getByLabelText("Email"), {
       target: { value: "test@example.com" },

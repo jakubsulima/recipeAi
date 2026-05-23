@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
   "scripts": {
     "dev": "vite",
     "dev:chrome": "open -a 'Google Chrome' http://localhost:5173 && vite",
@@ -12,7 +15,9 @@
     "duplicates": "jscpd --config ../../.jscpd.json --output ../../reports/jscpd src tests e2e ../../backendApi/src/main/java --noTips",
     "preview": "vite preview",
     "promo:build": "npm run promo:capture && npm run promo:render",
+    "promo:build:tiktok": "npm run promo:capture:clips && npm run promo:render:tiktok",
     "promo:capture": "PROMO_CAPTURE=1 playwright test e2e/promo-capture.spec.ts",
+    "promo:capture:clips": "PROMO_CAPTURE_VIDEO=1 playwright test e2e/promo-video-capture.spec.ts",
     "promo:render": "remotion render src/remotion/index.ts HomepagePromo public/promo/recipeai-homepage-promo.mp4 --codec=h264 --overwrite",
     "promo:render:all-edits": "npm run promo:render:tiktok && npm run promo:render:landing && npm run promo:render:loop",
     "promo:render:landing": "remotion render src/remotion/index.ts DishGenieLandingHeroDemo public/promo/dishgenie_landing_hero_demo.mp4 --codec=h264 --overwrite",
