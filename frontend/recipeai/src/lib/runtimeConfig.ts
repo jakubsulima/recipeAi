@@ -48,7 +48,7 @@ export const getGoogleClientId = (): string =>
     import.meta.env.VITE_GOOGLE_CLIENT_ID,
   );
 
-export const isPostHogEnabled = (): boolean =>
+const isPostHogEnabled = (): boolean =>
   readBoolean(getRuntimeConfig().posthogEnabled) ??
   readBoolean(import.meta.env.VITE_POSTHOG_ENABLED) ??
   false;

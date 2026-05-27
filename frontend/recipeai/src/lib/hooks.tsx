@@ -30,11 +30,13 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 
 const isSensitiveAiErrorMessage = (message: string): boolean => {
   const normalizedMessage = message.toLowerCase();
+  const sensitiveGoogleApiHostPattern =
+    /\b(?:https?:\/\/)?(?:[\w-]+\.)*(?:generativelanguage\.googleapis\.com|googleapis\.com)(?::\d+)?(?:\/|\b)/i;
+
   return (
     normalizedMessage.includes("api key not valid") ||
     normalizedMessage.includes("api_key_invalid") ||
-    normalizedMessage.includes("generativelanguage.googleapis.com") ||
-    normalizedMessage.includes("googleapis.com") ||
+    sensitiveGoogleApiHostPattern.test(normalizedMessage) ||
     normalizedMessage.includes("error creating recipe") ||
     normalizedMessage.includes("invalid_argument")
   );

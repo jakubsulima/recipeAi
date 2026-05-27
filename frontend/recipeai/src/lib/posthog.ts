@@ -7,7 +7,7 @@ import {
   isPostHogConfigured,
 } from "./runtimeConfig";
 
-export type AnalyticsEventName =
+type AnalyticsEventName =
   | "$pageview"
   | "marketing_cta_click"
   | "auth_login_success"

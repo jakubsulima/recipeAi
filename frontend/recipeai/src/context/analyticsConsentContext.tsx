@@ -11,7 +11,7 @@ import { isPostHogConfigured } from "../lib/runtimeConfig";
 
 /* eslint-disable react-refresh/only-export-components */
 
-export type AnalyticsConsentStatus = "granted" | "denied" | "unset";
+type AnalyticsConsentStatus = "granted" | "denied" | "unset";
 
 interface AnalyticsConsentContextValue {
   isAnalyticsAvailable: boolean;
