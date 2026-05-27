@@ -26,6 +26,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -78,6 +79,47 @@ class RecipeServiceTest {
 
         assertEquals("Recipe not found", exception.getMessage());
         assertEquals(HttpStatus.NOT_FOUND, exception.getCode());
+    }
+
+    @Test
+    void getRecipeByIdentifier_shouldUseIdLookupForNumericIdentifier() {
+        Recipe recipe = new Recipe();
+        recipe.setId(42L);
+        recipe.setName("Numeric Recipe");
+
+        RecipeDto recipeDto = new RecipeDto();
+        recipeDto.setId(42L);
+        recipeDto.setName("Numeric Recipe");
+
+        when(recipeRepository.findByIdWithIngredients(42L)).thenReturn(Optional.of(recipe));
+        when(recipeMapper.toRecipeDto(recipe)).thenReturn(recipeDto);
+
+        RecipeDto result = recipeService.getRecipeByIdentifier("42");
+
+        assertEquals("Numeric Recipe", result.getName());
+        verify(recipeRepository).findByIdWithIngredients(42L);
+        verify(recipeRepository, never()).findBySlugWithIngredients("42");
+    }
+
+    @Test
+    void getRecipeByIdentifier_shouldResolveSlugWithoutParsingItAsNumber() {
+        Recipe recipe = new Recipe();
+        recipe.setId(9L);
+        recipe.setName("Berry Bliss Cottage Bowl");
+
+        RecipeDto recipeDto = new RecipeDto();
+        recipeDto.setId(9L);
+        recipeDto.setName("Berry Bliss Cottage Bowl");
+
+        when(recipeRepository.findBySlugWithIngredients("berry-bliss-cottage-bowl"))
+                .thenReturn(Optional.of(recipe));
+        when(recipeMapper.toRecipeDto(recipe)).thenReturn(recipeDto);
+
+        RecipeDto result = recipeService.getRecipeByIdentifier("berry-bliss-cottage-bowl");
+
+        assertEquals("Berry Bliss Cottage Bowl", result.getName());
+        verify(recipeRepository).findBySlugWithIngredients("berry-bliss-cottage-bowl");
+        verify(recipeRepository, never()).findByIdWithIngredients(9L);
     }
 
     @Test

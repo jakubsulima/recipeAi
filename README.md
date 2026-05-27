@@ -134,7 +134,15 @@ POSTGRES_PORT=5432
 
 # Backend Configuration
 GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_API_MODEL=gemini-2.5-flash-lite
+GEMINI_API_FALLBACK_MODEL=gemini-2.5-flash
 GOOGLE_OAUTH_CLIENT_ID=
+POSTHOG_ENABLED=true
+POSTHOG_KEY=
+POSTHOG_API_HOST=https://metrics.dishgenie.app
+POSTHOG_UI_HOST=https://eu.posthog.com
+POSTHOG_PROJECT_KEY=
+POSTHOG_HOST=https://eu.i.posthog.com
 ALLOWED_ORIGINS=https://dishgenie.app,https://www.dishgenie.app
 SPRING_PROFILES_ACTIVE=prod
 JWT_SECRET_KEY=your_super_long_jwt_secret_min_32_chars
@@ -152,6 +160,7 @@ FRONTEND_PORT=80
 # Frontend configuration:
 # - VITE_API_URL is build-time and comes from GitHub Actions Variables (default /api/)
 # - GOOGLE_OAUTH_CLIENT_ID is runtime and comes from compose/Dokploy
+# - POSTHOG_* values are runtime and enable consent-gated analytics
 # - PUBLIC_SITE_URL is optional runtime input for canonical SEO files; otherwise the frontend falls back to https://$APP_DOMAIN
 ```
 

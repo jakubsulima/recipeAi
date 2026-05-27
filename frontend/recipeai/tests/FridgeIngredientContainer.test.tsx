@@ -109,9 +109,27 @@ describe("FridgeIngredientContainer", () => {
     const fieldRow = amountInput.closest(".grid");
 
     expect(fieldRow).toHaveClass(
-      "grid-cols-[minmax(0,0.95fr)_4.25rem_minmax(0,1.2fr)]",
+      "grid-cols-[5rem_3.5rem_minmax(0,1fr)]",
     );
     expect(screen.getByRole("button", { name: "Unit l" })).toBeInTheDocument();
     expect(screen.getByLabelText("Expiration")).toBeInTheDocument();
+  });
+
+  test("shows separate edit action at the end of the card", () => {
+    render(
+      <FridgeIngredientContainer
+        id={7}
+        name="Milk"
+        expirationDate="20-05-2026"
+        amount={1}
+        unit="l"
+        remove={vi.fn()}
+        onUpdateItem={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("1 l")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /edit milk/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /remove milk/i })).toBeInTheDocument();
   });
 });

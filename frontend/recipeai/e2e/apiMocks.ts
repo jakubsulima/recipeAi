@@ -282,6 +282,17 @@ export const mockRegisterApi = async (page: Page) => {
 };
 
 export const mockAuthenticatedRecipesApi = async (page: Page) => {
+  let shoppingItems = [
+    {
+      id: "generated-1",
+      name: "Pasta",
+      amount: 180,
+      unit: "g",
+      checked: false,
+      createdAt: "2026-05-17T09:00:00.000Z",
+    },
+  ];
+
   await page.route("**/api/**", async (route) => {
     const endpoint = getEndpoint(route);
     const method = route.request().method();
@@ -310,6 +321,27 @@ export const mockAuthenticatedRecipesApi = async (page: Page) => {
 
     if (method === "GET" && endpoint.startsWith("getRecipe/101")) {
       await fulfillJson(route, detailedRecipe);
+      return;
+    }
+
+    if (method === "POST" && endpoint === "shoppingList/generate-from-recipe") {
+      await fulfillJson(route, [
+        { name: "Pasta", amount: 180, unit: "g" },
+      ]);
+      return;
+    }
+
+    if (method === "GET" && endpoint === "shoppingList") {
+      await fulfillJson(route, shoppingItems);
+      return;
+    }
+
+    if (method === "PUT" && endpoint === "shoppingList") {
+      const payload = route.request().postDataJSON() as {
+        items?: typeof shoppingItems;
+      };
+      shoppingItems = Array.isArray(payload.items) ? payload.items : [];
+      await fulfillJson(route, shoppingItems);
       return;
     }
 
@@ -437,6 +469,158 @@ export const mockProfileApi = async (page: Page) => {
     if (
       await fulfillAuthenticatedCommonEndpoint(route, endpoint, method)
     ) {
+      return;
+    }
+
+    await fulfillJson(route, { message: `Unhandled endpoint: ${endpoint}` }, 404);
+  });
+};
+
+export const mockPromoJourneyApi = async (page: Page) => {
+  preferences = {
+    diet: "NONE",
+    diets: ["NONE"],
+    dislikedIngredients: ["anchovies"],
+  };
+
+  const fridgeItems: FridgeItem[] = [
+    {
+      id: 1,
+      name: "Spinach",
+      expirationDate: null,
+      amount: "1",
+      unit: "bag",
+    },
+    {
+      id: 2,
+      name: "Chicken breast",
+      expirationDate: null,
+      amount: "2",
+      unit: "pcs",
+    },
+    {
+      id: 3,
+      name: "Coconut milk",
+      expirationDate: null,
+      amount: "400",
+      unit: "ml",
+    },
+    {
+      id: 4,
+      name: "Rice",
+      expirationDate: null,
+      amount: "500",
+      unit: "g",
+    },
+  ];
+
+  const generatedRecipe = {
+    name: "Creamy Coconut Chicken Bowl",
+    description:
+      "A quick high-protein dinner with coconut sauce, greens, and rice.",
+    timeToPrepare: "28 min",
+    ingredients: [
+      { name: "Chicken breast", amount: 320, unit: "g" },
+      { name: "Spinach", amount: 120, unit: "g" },
+      { name: "Coconut milk", amount: 240, unit: "ml" },
+      { name: "Rice", amount: 180, unit: "g" },
+      { name: "Garlic", amount: 12, unit: "g" },
+      { name: "Lime", amount: 1, unit: "pcs" },
+    ],
+    instructions: [
+      "Cook rice until tender and fluffy.",
+      "Sear chicken until golden and cooked through.",
+      "Simmer garlic with coconut milk and reduce slightly.",
+      "Fold spinach into the sauce until just wilted.",
+      "Finish with lime and serve over rice.",
+    ],
+    nutrition: {
+      calories: 610,
+      protein: 41,
+      carbs: 54,
+      fats: 24,
+    },
+  };
+
+  let shoppingItems = [
+    {
+      id: "promo-shopping-1",
+      name: "Chicken breast",
+      amount: 320,
+      unit: "g",
+      checked: false,
+      createdAt: "2026-05-17T09:00:00.000Z",
+    },
+    {
+      id: "promo-shopping-2",
+      name: "Spinach",
+      amount: 120,
+      unit: "g",
+      checked: false,
+      createdAt: "2026-05-17T09:01:00.000Z",
+    },
+    {
+      id: "promo-shopping-3",
+      name: "Coconut milk",
+      amount: 240,
+      unit: "ml",
+      checked: false,
+      createdAt: "2026-05-17T09:02:00.000Z",
+    },
+  ];
+
+  const savedRecipes = [{ ...generatedRecipe, id: "501", title: generatedRecipe.name }];
+
+  await page.route("**/api/**", async (route) => {
+    const endpoint = getEndpoint(route);
+    const method = route.request().method();
+
+    if (await fulfillAuthenticatedCommonEndpoint(route, endpoint, method)) {
+      return;
+    }
+
+    if (method === "GET" && endpoint === "getFridgeIngredients") {
+      await fulfillJson(route, fridgeItems);
+      return;
+    }
+
+    if (method === "POST" && endpoint === "generateRecipe") {
+      await fulfillJson(route, generatedRecipe);
+      return;
+    }
+
+    if (method === "POST" && endpoint === "addRecipe") {
+      await fulfillJson(route, { id: "501", message: "Recipe saved" });
+      return;
+    }
+
+    if (method === "GET" && endpoint.startsWith("getUserRecipes/7")) {
+      await fulfillJson(route, {
+        content: savedRecipes,
+        totalPages: 1,
+      });
+      return;
+    }
+
+    if (method === "POST" && endpoint === "shoppingList/generate-from-recipe") {
+      await fulfillJson(
+        route,
+        shoppingItems.map(({ name, amount, unit }) => ({ name, amount, unit })),
+      );
+      return;
+    }
+
+    if (method === "GET" && endpoint === "shoppingList") {
+      await fulfillJson(route, shoppingItems);
+      return;
+    }
+
+    if (method === "PUT" && endpoint === "shoppingList") {
+      const payload = route.request().postDataJSON() as {
+        items?: typeof shoppingItems;
+      };
+      shoppingItems = Array.isArray(payload.items) ? payload.items : [];
+      await fulfillJson(route, shoppingItems);
       return;
     }
 

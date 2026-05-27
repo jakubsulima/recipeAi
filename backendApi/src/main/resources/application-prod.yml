@@ -56,11 +56,6 @@ logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
 
-gemini:
-  api:
-    model: gemini-3.1-flash-lite-preview
-    fallback-model: gemma-4-31b-it
-
 management:
   endpoints:
     web:
@@ -92,3 +87,10 @@ app:
     recipe-requests-per-day:
       free: ${FREE_PLAN_RECIPE_REQUESTS_PER_DAY:${FREE_PLAN_RECIPE_LIMIT:75}}
       paid: ${PAID_PLAN_RECIPE_REQUESTS_PER_DAY:${PAID_PLAN_RECIPE_LIMIT:-1}}
+
+posthog:
+  enabled: ${POSTHOG_ENABLED:false}
+  host: ${POSTHOG_HOST:https://eu.i.posthog.com}
+  project-key: ${POSTHOG_PROJECT_KEY:}
+  connect-timeout-ms: ${POSTHOG_CONNECT_TIMEOUT_MS:2000}
+  read-timeout-ms: ${POSTHOG_READ_TIMEOUT_MS:5000}

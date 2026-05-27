@@ -151,30 +151,9 @@ const FridgeIngredientContainer = ({
               {name}
             </h1>
             <div className="flex flex-wrap text-[11px] text-text/70 items-center gap-1.5 mt-1">
-              <button
-                onClick={() => setIsEditing(true)}
-                className="hover:text-accent transition-colors flex items-center gap-1"
-                aria-label={`Edit ${name}`}
-                title="Edit item"
-              >
-                <span className="px-2 py-0.5 rounded-full bg-secondary border border-primary/10 hover:bg-primary/5 hover:border-primary/20 transition-all font-medium flex items-center cursor-pointer">
-                  {amountLabel}
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-3 w-3 ml-1 opacity-70"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                    />
-                  </svg>
-                </span>
-              </button>
+              <span className="px-2 py-0.5 rounded-full bg-secondary border border-primary/10 font-medium">
+                {amountLabel}
+              </span>
               {shortExpirationDate && (
                 <span className="px-2 py-0.5 rounded-full bg-secondary border border-primary/10">
                   Exp: {shortExpirationDate}
@@ -183,27 +162,51 @@ const FridgeIngredientContainer = ({
             </div>
           </div>
 
-          <button
-            className="text-text/30 hover:text-error text-lg leading-none transition-colors p-1.5 rounded-md hover:bg-error/10 flex-shrink-0"
-            onClick={remove}
-            aria-label={`Remove ${name}`}
-            title="Remove item"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <button
+              className="text-text/35 hover:text-accent transition-colors p-1.5 rounded-md hover:bg-accent/10"
+              onClick={() => setIsEditing(true)}
+              aria-label={`Edit ${name}`}
+              title="Edit item"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-              />
-            </svg>
-          </button>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4.5 w-4.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                />
+              </svg>
+            </button>
+
+            <button
+              className="text-text/30 hover:text-error text-lg leading-none transition-colors p-1.5 rounded-md hover:bg-error/10"
+              onClick={remove}
+              aria-label={`Remove ${name}`}
+              title="Remove item"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
@@ -228,7 +231,7 @@ const FridgeIngredientContainer = ({
               />
             </label>
 
-            <div className="grid grid-cols-[minmax(0,0.95fr)_4.25rem_minmax(0,1.2fr)] items-end gap-2">
+            <div className="grid grid-cols-[5rem_3.5rem_minmax(0,1fr)] items-end gap-2">
               <label className="flex flex-col gap-1 text-xs font-semibold text-text/70">
                 Amount
                 <input
@@ -262,7 +265,7 @@ const FridgeIngredientContainer = ({
                   {editUnit || "-"}
                 </button>
                 {isUnitPickerOpen && (
-                  <div className="absolute left-1/2 top-full z-20 mt-1 grid w-28 -translate-x-1/2 grid-cols-2 gap-1 rounded-lg border border-primary/15 bg-background p-1.5 shadow-lg">
+                  <div className="absolute left-1/2 top-full z-20 mt-1 grid w-24 -translate-x-1/2 grid-cols-2 gap-1 rounded-lg border border-primary/15 bg-background p-1.5 shadow-lg">
                     {UNIT_OPTIONS.map((option) => (
                       <button
                         key={option || "none"}

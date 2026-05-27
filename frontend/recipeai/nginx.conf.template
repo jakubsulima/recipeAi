@@ -38,6 +38,11 @@ server {
         add_header Cache-Control "no-cache, no-store, must-revalidate";
     }
 
+    # Block common secret/config probing before the SPA fallback can serve index.html.
+    location ~* ^/(?:.*(?:\.env(?:$|[._-])|\.tfstate(?:\.backup)?$|\.tfvars$|\.(?:log|sql|bak|backup)$)|(?:.*/)?(?:wp-content(?:/.*|$)|wp-json(?:/.*|$)|wp-config\.php$|xmlrpc\.php$|serverless\.ya?ml|vercel\.json|netlify\.toml|docker-compose\.ya?ml|amplify\.ya?ml|stripe\.env|stripe(?:-keys|-credentials)?\.json|sendgrid\.env)$) {
+        return 404;
+    }
+
     location ~* \.(?:js|css|svg|png|jpg|jpeg|gif|webp|ico|woff2?)$ {
         root /usr/share/nginx/html;
         expires 7d;
@@ -46,7 +51,6 @@ server {
         access_log off;
     }
 
-    # This first location block handles serving your React App
     location / {
         root   /usr/share/nginx/html;
         index  index.html index.htm;

@@ -60,3 +60,16 @@ app:
     recipe-requests-per-day:
       free: ${FREE_PLAN_RECIPE_REQUESTS_PER_DAY:${FREE_PLAN_RECIPE_LIMIT:1000}}
       paid: ${PAID_PLAN_RECIPE_REQUESTS_PER_DAY:${PAID_PLAN_RECIPE_LIMIT:-1}}
+
+gemini:
+  api:
+    key: ${GEMINI_API_KEY:}
+    model: ${GEMINI_API_MODEL:gemini-2.5-flash-lite}
+    fallback-model: ${GEMINI_API_FALLBACK_MODEL:gemini-2.5-flash}
+
+posthog:
+  enabled: ${POSTHOG_ENABLED:false}
+  host: ${POSTHOG_HOST:https://eu.i.posthog.com}
+  project-key: ${POSTHOG_PROJECT_KEY:}
+  connect-timeout-ms: ${POSTHOG_CONNECT_TIMEOUT_MS:2000}
+  read-timeout-ms: ${POSTHOG_READ_TIMEOUT_MS:5000}

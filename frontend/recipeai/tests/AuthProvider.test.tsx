@@ -1,10 +1,11 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { AuthProvider, useUser } from "../src/context/context";
-import { apiClient } from "../src/lib/hooks";
+import { apiClient, ensureCsrfToken } from "../src/lib/hooks";
 
 vi.mock("../src/lib/hooks", () => ({
   apiClient: vi.fn(),
+  ensureCsrfToken: vi.fn().mockResolvedValue(undefined),
 }));
 
 const AuthProbe = () => {
@@ -21,6 +22,7 @@ const AuthProbe = () => {
 describe("AuthProvider", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(ensureCsrfToken).mockResolvedValue(undefined);
   });
 
   test("probes the current session on mount even without the local storage hint", async () => {
@@ -37,6 +39,9 @@ describe("AuthProvider", () => {
       </AuthProvider>,
     );
 
+    await waitFor(() => {
+      expect(ensureCsrfToken).toHaveBeenCalled();
+    });
     await waitFor(() => {
       expect(apiClient).toHaveBeenCalledWith("me");
     });

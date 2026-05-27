@@ -21,6 +21,10 @@ echo "--> Generating Nginx configuration..."
 cat > /usr/share/nginx/html/runtime-config.js <<EOF
 window.__RECIPE_AI_RUNTIME_CONFIG__ = {
 	googleClientId: "${GOOGLE_OAUTH_CLIENT_ID:-}",
+	posthogEnabled: "${POSTHOG_ENABLED:-false}",
+	posthogKey: "${POSTHOG_KEY:-}",
+	posthogApiHost: "${POSTHOG_API_HOST:-}",
+	posthogUiHost: "${POSTHOG_UI_HOST:-}",
 };
 EOF
 

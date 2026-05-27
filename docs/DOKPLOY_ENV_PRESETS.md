@@ -17,7 +17,15 @@ Set in Dokploy:
 - POSTGRES_HOST=db
 - POSTGRES_PORT=5432
 - GEMINI_API_KEY=change_me
+- GEMINI_API_MODEL=gemini-2.5-flash-lite
+- GEMINI_API_FALLBACK_MODEL=gemini-2.5-flash
 - GOOGLE_OAUTH_CLIENT_ID=
+- POSTHOG_ENABLED=true
+- POSTHOG_KEY=
+- POSTHOG_API_HOST=https://metrics.dishgenie.app
+- POSTHOG_UI_HOST=https://eu.posthog.com
+- POSTHOG_PROJECT_KEY=
+- POSTHOG_HOST=https://eu.i.posthog.com
 - APP_DOMAIN=dishgenie.app
 - PUBLIC_SITE_URL=https://dishgenie.app
 - ALLOWED_ORIGINS=https://dishgenie.app
@@ -50,7 +58,15 @@ Set in Dokploy:
 - POSTGRES_HOST=db
 - POSTGRES_PORT=5432
 - GEMINI_API_KEY=change_me
+- GEMINI_API_MODEL=gemini-2.5-flash-lite
+- GEMINI_API_FALLBACK_MODEL=gemini-2.5-flash
 - GOOGLE_OAUTH_CLIENT_ID=
+- POSTHOG_ENABLED=true
+- POSTHOG_KEY=
+- POSTHOG_API_HOST=https://metrics.dishgenie.app
+- POSTHOG_UI_HOST=https://eu.posthog.com
+- POSTHOG_PROJECT_KEY=
+- POSTHOG_HOST=https://eu.i.posthog.com
 - APP_DOMAIN=dishgenie.app
 - PUBLIC_SITE_URL=https://dishgenie.app
 - ALLOWED_ORIGINS=https://dishgenie.app
@@ -76,6 +92,9 @@ Dokploy exposure:
 - If you use both root and www frontend domains, add both to ALLOWED_ORIGINS as comma-separated values.
 - Frontend build-time variables are configured in GitHub Actions repository variables: `VITE_API_URL`.
 - Google login on the frontend is configured at runtime through `GOOGLE_OAUTH_CLIENT_ID` in compose/Dokploy.
+- PostHog browser analytics is configured at runtime through `POSTHOG_ENABLED`, `POSTHOG_KEY`, `POSTHOG_API_HOST`, and `POSTHOG_UI_HOST`.
+- Backend PostHog capture is configured through `POSTHOG_PROJECT_KEY` and `POSTHOG_HOST`.
 - The frontend runtime uses `PUBLIC_SITE_URL` when provided, otherwise it falls back to `https://$APP_DOMAIN`, to generate canonical crawl files like `robots.txt` and `sitemap.xml`.
+- For Gemini, paste the exact API model code available to your key. The label shown in Google AI Studio limits or dropdowns may differ from the REST model identifier used in `models/{model}:generateContent`.
 - For deterministic releases, replace `latest` with SHA tags from the CI workflow.
 - The database service uses the official `postgres:17-alpine` image defined in `docker-compose.yml`.

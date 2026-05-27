@@ -12,6 +12,7 @@ import org.jakub.backendapi.dto.SignUpDto;
 import org.jakub.backendapi.dto.UserDto;
 import org.jakub.backendapi.exceptions.AppException;
 import org.jakub.backendapi.services.OAuthService;
+import org.jakub.backendapi.services.PostHogService;
 import org.jakub.backendapi.services.UserService;
 import org.jakub.backendapi.services.RateLimitService;
 import org.slf4j.Logger;
@@ -37,15 +38,17 @@ public class AuthController {
     private final UserService userService;
     private final UserAuthProvider userAuthProvider;
     private final OAuthService oAuthService;
+    private final PostHogService postHogService;
     private final RateLimitService rateLimitService;
 
     @Value("${app.security.trusted-proxies:127.0.0.1,0:0:0:0:0:0:0:1}")
     private String trustedProxyIps;
 
-    public AuthController(UserService userService, UserAuthProvider userAuthProvider, OAuthService oAuthService, RateLimitService rateLimitService) {
+    public AuthController(UserService userService, UserAuthProvider userAuthProvider, OAuthService oAuthService, PostHogService postHogService, RateLimitService rateLimitService) {
         this.userService = userService;
         this.userAuthProvider = userAuthProvider;
         this.oAuthService = oAuthService;
+        this.postHogService = postHogService;
         this.rateLimitService = rateLimitService;
     }
 
@@ -78,6 +81,7 @@ public class AuthController {
         UserDto user = userService.login(credentialsDto);
 
         CreateToken(response, user.getEmail()); // Pass email directly
+        captureAuthEvent(user, "auth_login_success", "credentials");
 
         return ResponseEntity.ok(user);
     }
@@ -95,6 +99,7 @@ public class AuthController {
 
         UserDto user = userService.register(signUpDto);
         CreateToken(response, user.getEmail()); // Pass email directly
+        captureAuthEvent(user, "auth_signup_success", "credentials");
 
         return ResponseEntity.created(URI.create("/users/" + user.getId())).body(user);
     }
@@ -121,7 +126,14 @@ public class AuthController {
 
         UserDto user = oAuthService.authenticateGoogle(oAuthLoginDto.getIdToken());
         CreateToken(response, user.getEmail());
+        captureAuthEvent(user, "auth_login_success", "google");
         return ResponseEntity.ok(user);
+    }
+
+    private void captureAuthEvent(UserDto user, String eventName, String method) {
+        postHogService.captureIdentifiedEvent(String.valueOf(user.getId()), eventName, Map.of(
+                "method", method
+        ));
     }
 
     // Refresh token endpoint: accepts refresh token from HttpOnly cookie and returns new tokens

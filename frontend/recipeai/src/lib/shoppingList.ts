@@ -15,7 +15,7 @@ interface ShoppingItemInput {
   unit?: string | null;
 }
 
-export interface ShoppingListGenerationItem {
+interface ShoppingListGenerationItem {
   name: string;
   amount?: string | number | null;
   unit?: string | null;

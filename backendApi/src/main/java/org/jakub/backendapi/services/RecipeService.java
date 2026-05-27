@@ -29,10 +29,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
 public class RecipeService {
+    private static final Pattern NUMERIC_IDENTIFIER_PATTERN = Pattern.compile("^\\d+$");
 
     private final RecipeRepository recipeRepository;
     private final UserRepository userRepository;
@@ -52,8 +54,29 @@ public class RecipeService {
     public RecipeDto getRecipeById(Long id) {
         Recipe recipe = recipeRepository.findByIdWithIngredients(id)
                 .orElseThrow(() -> new AppException("Recipe not found", HttpStatus.NOT_FOUND));
-        recipe.getInstructions().size();
-        return recipeMapper.toRecipeDto(recipe);
+        return toRecipeDto(recipe);
+    }
+
+    @Transactional
+    public RecipeDto getRecipeByIdentifier(String identifier) {
+        String normalizedIdentifier = identifier == null ? "" : identifier.trim();
+        if (!StringUtils.hasText(normalizedIdentifier)) {
+            throw new AppException("Recipe not found", HttpStatus.NOT_FOUND);
+        }
+
+        if (NUMERIC_IDENTIFIER_PATTERN.matcher(normalizedIdentifier).matches()) {
+            return getRecipeById(Long.parseLong(normalizedIdentifier));
+        }
+
+        String normalizedSlug = toRecipeSlug(normalizedIdentifier);
+        String guessedName = normalizedSlug.replace('-', ' ');
+
+        Recipe recipe = recipeRepository.findBySlugWithIngredients(normalizedSlug)
+                .or(() -> recipeRepository.findByNameIgnoreCaseWithIngredients(normalizedIdentifier))
+                .or(() -> recipeRepository.findByNameIgnoreCaseWithIngredients(guessedName))
+                .orElseThrow(() -> new AppException("Recipe not found", HttpStatus.NOT_FOUND));
+
+        return toRecipeDto(recipe);
     }
 
     @Transactional
@@ -101,10 +124,11 @@ public class RecipeService {
         return mapRecipeIdPage(recipeIds, pageable);
     }
 
+    @Transactional
     public RecipeDto getRecipeByName(String name) {
-        Recipe recipe = recipeRepository.findByName(name)
+        Recipe recipe = recipeRepository.findByNameIgnoreCaseWithIngredients(name)
                 .orElseThrow(() -> new AppException("Recipe not found", HttpStatus.NOT_FOUND));
-        return recipeMapper.toRecipeDto(recipe);
+        return toRecipeDto(recipe);
     }
 
     @Transactional
@@ -215,6 +239,19 @@ public class RecipeService {
                     return recipeIngredient;
                 })
                 .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    private RecipeDto toRecipeDto(Recipe recipe) {
+        recipe.getInstructions().size();
+        return recipeMapper.toRecipeDto(recipe);
+    }
+
+    private String toRecipeSlug(String value) {
+        String normalized = value.toLowerCase(Locale.ROOT).trim();
+        normalized = normalized.replaceAll("[^a-z0-9]+", "-");
+        normalized = normalized.replaceAll("^-+|-+$", "");
+        normalized = normalized.replaceAll("-{2,}", "-");
+        return normalized;
     }
 
     public Page<RecipeDto> searchRecipes(String searchTerm, Pageable pageable) {

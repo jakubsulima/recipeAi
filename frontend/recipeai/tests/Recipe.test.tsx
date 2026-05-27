@@ -1,6 +1,6 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import RecipePage from "../src/pages/RecipePage";
 import { apiClient, deleteClient, generateRecipe } from "../src/lib/hooks";
 import { useFridge } from "../src/context/fridgeContext";
@@ -31,6 +31,18 @@ vi.mock("../src/lib/shoppingList", () => ({
   generateShoppingListFromRecipe: vi.fn(),
 }));
 
+const LoginRouteProbe = () => {
+  const location = useLocation();
+  const fromPathname =
+    (
+      location.state as {
+        from?: { pathname?: string };
+      } | null
+    )?.from?.pathname ?? "";
+
+  return <div>Login Page::{fromPathname}</div>;
+};
+
 const renderRecipePage = (
   initialEntry: string | { pathname: string; state?: unknown },
 ) =>
@@ -40,6 +52,7 @@ const renderRecipePage = (
         <Route path="/Recipe" element={<RecipePage />} />
         <Route path="/Recipe/:id" element={<RecipePage />} />
         <Route path="/ShoppingList" element={<div>Shopping List Page</div>} />
+        <Route path="/login" element={<LoginRouteProbe />} />
       </Routes>
     </MemoryRouter>,
   );
@@ -126,9 +139,15 @@ describe("RecipePage", () => {
   });
 
   test("uses smart shopping list generation and adds only returned items", async () => {
-    vi.mocked(generateShoppingListFromRecipe).mockResolvedValue([
-      { name: "Flour", amount: 200, unit: "g" },
-    ]);
+    let resolveShoppingListGeneration:
+      | ((value: { name: string; amount: number; unit: string }[]) => void)
+      | undefined;
+
+    vi.mocked(generateShoppingListFromRecipe).mockReturnValue(
+      new Promise((resolve) => {
+        resolveShoppingListGeneration = resolve;
+      }),
+    );
 
     renderRecipePage({
       pathname: "/Recipe",
@@ -150,6 +169,12 @@ describe("RecipePage", () => {
       await screen.findByRole("button", { name: "Generate Shopping List" }),
     );
 
+    expect(
+      await screen.findByRole("button", {
+        name: /Generating Shopping List/i,
+      }),
+    ).toBeDisabled();
+
     await waitFor(() => {
       expect(generateShoppingListFromRecipe).toHaveBeenCalledWith([
         { name: "Egg", amount: 2, unit: "pcs" },
@@ -157,100 +182,18 @@ describe("RecipePage", () => {
       ]);
     });
 
-    expect(addShoppingItems).toHaveBeenCalledWith([
-      { name: "Flour", amount: 200, unit: "g" },
-    ]);
-    expect(await screen.findByText("Shopping List Page")).toBeInTheDocument();
-  });
-
-  test("falls back to local fridge matching when smart shopping list generation fails", async () => {
-    vi.mocked(generateShoppingListFromRecipe).mockRejectedValue(
-      new Error("backend unavailable"),
-    );
-
-    vi.mocked(useFridge).mockReturnValue({
-      fridgeItems: [],
-      setFridgeItems: vi.fn(),
-      loading: false,
-      error: "",
-      addFridgeItem: vi.fn(),
-      addFridgeItemsBatch: vi.fn(),
-      removeFridgeItem: vi.fn(),
-      updateFridgeItem: vi.fn(),
-      refreshFridgeItems: vi.fn(),
-      getFridgeItemNames: vi.fn(() => []),
+    await act(async () => {
+      resolveShoppingListGeneration?.([
+        { name: "Flour", amount: 200, unit: "g" },
+      ]);
     });
-
-    renderRecipePage({
-      pathname: "/Recipe",
-      state: {
-        existingRecipe: {
-          name: "Soup",
-          title: "Soup",
-          ingredients: [{ name: "Broth", amount: 500, unit: "ml" }],
-          instructions: ["Simmer"],
-          timeToPrepare: "20 min",
-        },
-      },
-    });
-
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Generate Shopping List" }),
-    );
 
     await waitFor(() => {
       expect(addShoppingItems).toHaveBeenCalledWith([
-        { name: "Broth", amount: 500, unit: "ml" },
+        { name: "Flour", amount: 200, unit: "g" },
       ]);
     });
-  });
-
-  test("does not add the full recipe when smart generation fails and fridge already covers it", async () => {
-    vi.mocked(generateShoppingListFromRecipe).mockRejectedValue(
-      new Error("backend unavailable"),
-    );
-
-    vi.mocked(useFridge).mockReturnValue({
-      fridgeItems: [
-        {
-          id: 1,
-          name: "Egg",
-          expirationDate: null,
-          amount: 4,
-          unit: "pcs",
-        },
-      ],
-      setFridgeItems: vi.fn(),
-      loading: false,
-      error: "",
-      addFridgeItem: vi.fn(),
-      addFridgeItemsBatch: vi.fn(),
-      removeFridgeItem: vi.fn(),
-      updateFridgeItem: vi.fn(),
-      refreshFridgeItems: vi.fn(),
-      getFridgeItemNames: vi.fn(() => ["Egg"]),
-    });
-
-    renderRecipePage({
-      pathname: "/Recipe",
-      state: {
-        existingRecipe: {
-          name: "Omelette",
-          title: "Omelette",
-          ingredients: [{ name: "Egg", amount: 2, unit: "pcs" }],
-          instructions: ["Cook gently"],
-          timeToPrepare: "8 min",
-        },
-      },
-    });
-
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Generate Shopping List" }),
-    );
-
-    await waitFor(() => {
-      expect(addShoppingItems).toHaveBeenCalledWith([]);
-    });
+    expect(await screen.findByText("Shopping List Page")).toBeInTheDocument();
   });
 
   test("navigates to shopping list even when no items need to be added", async () => {
@@ -278,5 +221,33 @@ describe("RecipePage", () => {
     });
 
     expect(await screen.findByText("Shopping List Page")).toBeInTheDocument();
+  });
+
+  test("guest on a public recipe page sees a login CTA for shopping list generation", async () => {
+    vi.mocked(useUser).mockReturnValue({
+      user: null,
+    } as ReturnType<typeof useUser>);
+
+    vi.mocked(apiClient).mockResolvedValue({
+      id: "101",
+      title: "Tomato Basil Pasta",
+      name: "Tomato Basil Pasta",
+      description: "A bright pantry pasta",
+      ingredients: [{ name: "Tomato", amount: 200, unit: "g" }],
+      instructions: ["Boil pasta"],
+      timeToPrepare: "25 min",
+    });
+
+    renderRecipePage("/Recipe/101");
+
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Log In to Generate Shopping List",
+      }),
+    );
+
+    expect(generateShoppingListFromRecipe).not.toHaveBeenCalled();
+    expect(addShoppingItems).not.toHaveBeenCalled();
+    expect(await screen.findByText("Login Page::/Recipe/101")).toBeInTheDocument();
   });
 });

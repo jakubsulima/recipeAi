@@ -8,6 +8,7 @@ import {
 } from "../context/fridgeContext";
 import { useUser } from "../context/context";
 import { formatDateForBackend, lookupProductByBarcode } from "../lib/hooks";
+import { captureEvent } from "../lib/posthog";
 import AddFridgeItemForm from "../components/AddFridgeItemForm";
 import FridgeDisplay from "../components/FridgeDisplay";
 import BarcodeScanner from "../components/BarcodeScanner";
@@ -157,6 +158,12 @@ export const Fridge = () => {
         unit,
         amount,
       });
+      captureEvent("fridge_item_added", {
+        source: "manual",
+        hasAmount: amount.trim() !== "",
+        hasUnit: unit !== "",
+        hasExpirationDate: Boolean(formattedDate),
+      });
 
       setNewItem("");
       setNewItemDate("");
@@ -215,6 +222,9 @@ export const Fridge = () => {
         unit: "",
         amount: "",
       });
+      captureEvent("fridge_item_added_barcode", {
+        source: "barcode",
+      });
     } catch (err: unknown) {
       setError(
         getErrorMessage(
@@ -239,6 +249,9 @@ export const Fridge = () => {
     setIsLoading(true);
     try {
       await addFridgeItemsBatch(items);
+      captureEvent("fridge_items_added_receipt", {
+        itemCount: items.length,
+      });
     } catch (err: unknown) {
       setError(getErrorMessage(err, "Could not add scanned receipt items."));
       throw err;

@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @ControllerAdvice
 public class RestExceptionHandler {
@@ -20,6 +21,14 @@ public class RestExceptionHandler {
     public ResponseEntity<ErrorDto> handleAppException(AppException e) {
         return ResponseEntity.status(e.getCode())
                 .body(new ErrorDto(e.getMessage()));
+    }
+
+    @ExceptionHandler(value = {MethodArgumentTypeMismatchException.class})
+    @ResponseBody
+    public ResponseEntity<ErrorDto> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
+        String parameterName = e.getName() == null ? "request parameter" : e.getName();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorDto("Invalid value for '" + parameterName + "'."));
     }
 
     @ExceptionHandler(value = {Exception.class})
