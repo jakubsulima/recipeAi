@@ -16,6 +16,14 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
 
     Optional<Recipe> findByName(String name);
 
+    @Query("""
+            SELECT DISTINCT r FROM Recipe r
+            LEFT JOIN FETCH r.recipeIngredients ri
+            LEFT JOIN FETCH ri.ingredient
+            WHERE LOWER(r.name) = LOWER(:name)
+            """)
+    Optional<Recipe> findByNameIgnoreCaseWithIngredients(@Param("name") String name);
+
     Page<Recipe> findByUser(User user, Pageable pageable);
 
     long countByUser(User user);
@@ -46,6 +54,14 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
             WHERE r.id = :id
             """)
     Optional<Recipe> findByIdWithIngredients(@Param("id") Long id);
+
+    @Query("""
+            SELECT DISTINCT r FROM Recipe r
+            LEFT JOIN FETCH r.recipeIngredients ri
+            LEFT JOIN FETCH ri.ingredient
+            WHERE LOWER(REPLACE(TRIM(r.name), ' ', '-')) = LOWER(:slug)
+            """)
+    Optional<Recipe> findBySlugWithIngredients(@Param("slug") String slug);
 
     @Query("""
             SELECT DISTINCT r FROM Recipe r

@@ -67,10 +67,10 @@ public class GeminiService {
     @Value("${gemini.api.key}")
     private String geminiApiKey;
 
-    @Value("${gemini.api.model:gemini-3.1-flash-lite-preview}")
+    @Value("${gemini.api.model:}")
     private String geminiModel;
 
-    @Value("${gemini.api.fallback-model:gemma-4-31b-it}")
+    @Value("${gemini.api.fallback-model:}")
     private String geminiFallbackModel;
 
     private final ObjectMapper objectMapper;
@@ -83,6 +83,15 @@ public class GeminiService {
         requestFactory.setConnectTimeout(GEMINI_CONNECT_TIMEOUT_MS);
         requestFactory.setReadTimeout(GEMINI_READ_TIMEOUT_MS);
         this.restTemplate = new RestTemplate(requestFactory);
+    }
+
+    @jakarta.annotation.PostConstruct
+    void logConfiguredModels() {
+        log.info(
+                "Configured Gemini models - primary: '{}', fallback: '{}'",
+                StringUtils.hasText(geminiModel) ? geminiModel : "<not-configured>",
+                StringUtils.hasText(geminiFallbackModel) ? geminiFallbackModel : "<not-configured>"
+        );
     }
 
     public String generateRecipe(String recipePrompt) {
@@ -114,6 +123,9 @@ public class GeminiService {
         if (!StringUtils.hasText(geminiApiKey)) {
             throw new AppException("Gemini API key is not configured on the server.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
+        if (!StringUtils.hasText(geminiModel)) {
+            throw new AppException("Gemini model is not configured on the server.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
 
         Map<String, Object> payload = buildTextPromptPayload(recipePrompt);
         JsonNode responseBody = invokeGemini(payload, "Error creating recipe");
@@ -136,6 +148,9 @@ public class GeminiService {
     public List<FridgeIngredientDto> extractFridgeIngredientsFromReceipt(MultipartFile file) {
         if (!StringUtils.hasText(geminiApiKey)) {
             throw new AppException("Gemini API key is not configured on the server.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        if (!StringUtils.hasText(geminiModel)) {
+            throw new AppException("Gemini model is not configured on the server.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         ValidatedReceiptImage image = validateAndReadReceiptImage(file);
@@ -183,6 +198,9 @@ public class GeminiService {
 
         if (!StringUtils.hasText(geminiApiKey)) {
             throw new AppException("Gemini API key is not configured on the server.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        if (!StringUtils.hasText(geminiModel)) {
+            throw new AppException("Gemini model is not configured on the server.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         String prompt = buildShoppingListReviewPrompt(candidateMissingIngredients, fridgeItems);

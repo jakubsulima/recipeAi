@@ -56,11 +56,19 @@ Minimum required:
 - POSTGRES_USER
 - POSTGRES_PASSWORD
 - GEMINI_API_KEY
+- GEMINI_API_MODEL
+- GEMINI_API_FALLBACK_MODEL
 - ALLOWED_ORIGINS
 - JWT_SECRET_KEY
 
 Recommended:
 - GOOGLE_OAUTH_CLIENT_ID
+- POSTHOG_ENABLED=true
+- POSTHOG_KEY
+- POSTHOG_API_HOST
+- POSTHOG_UI_HOST=https://eu.posthog.com
+- POSTHOG_PROJECT_KEY
+- POSTHOG_HOST=https://eu.i.posthog.com
 - TRUSTED_PROXY_IPS
 - JWT_COOKIE_SECURE=true
 - JWT_COOKIE_SAME_SITE=Lax
@@ -68,6 +76,9 @@ Recommended:
 - PAID_PLAN_RECIPE_LIMIT=-1
 - FRONTEND_PORT=80
 - SPRING_PROFILES_ACTIVE=prod
+
+Default repo values point to `gemini-2.5-flash-lite` and `gemini-2.5-flash`.
+If Google exposes a different REST model identifier for your key, override `GEMINI_API_MODEL` or `GEMINI_API_FALLBACK_MODEL` in Dokploy.
 
 Notes:
 - APP_DOMAIN should be hostname only (for example: dishgenie.app, without https://).
@@ -77,6 +88,16 @@ Frontend build-time variables are configured in GitHub Actions repository variab
 
 Frontend Google login is runtime-configured from compose/Dokploy env:
 - `GOOGLE_OAUTH_CLIENT_ID`
+
+Frontend PostHog analytics is runtime-configured from compose/Dokploy env:
+- `POSTHOG_ENABLED`
+- `POSTHOG_KEY`
+- `POSTHOG_API_HOST`
+- `POSTHOG_UI_HOST`
+
+Backend PostHog capture is runtime-configured from compose/Dokploy env:
+- `POSTHOG_PROJECT_KEY`
+- `POSTHOG_HOST`
 
 Frontend crawl files are runtime-generated from compose/Dokploy env:
 - `PUBLIC_SITE_URL` if you want to override the canonical site origin
@@ -95,7 +116,9 @@ The database service uses the official `postgres:17-alpine` image from `docker-c
 3. Verify frontend can call login/refresh endpoints.
 4. Confirm no CORS errors in browser console.
 5. Confirm cookies are set with expected attributes.
-6. Confirm DB migrations and startup complete successfully.
+6. Confirm the analytics banner appears and no PostHog traffic is sent before consent.
+7. Confirm PostHog traffic goes to the first-party proxy domain, not directly to `eu.i.posthog.com`.
+8. Confirm DB migrations and startup complete successfully.
 
 If backend logs show `FlywaySqlException`, `PSQLException`, or `SocketTimeoutException: Connect timed out` during startup, the backend cannot reach PostgreSQL. Check these first:
 

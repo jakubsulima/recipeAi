@@ -6,6 +6,7 @@ import org.jakub.backendapi.dto.RecipeResponseDto;
 import org.jakub.backendapi.dto.UserDto;
 import org.jakub.backendapi.dto.UserPreferencesDto;
 import org.jakub.backendapi.services.GeminiService;
+import org.jakub.backendapi.services.PostHogService;
 import org.jakub.backendapi.services.RateLimitService;
 import org.jakub.backendapi.services.RecipeService;
 import org.jakub.backendapi.services.UserPreferencesService;
@@ -24,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -36,6 +38,7 @@ public class RecipesController {
     private final UserService userService;
     private final UserPreferencesService userPreferencesService;
     private final GeminiService geminiService;
+    private final PostHogService postHogService;
     private final RateLimitService rateLimitService;
 
     @Value("${app.limits.generate-recipe-requests-per-minute:${GENERATE_RECIPE_LIMIT_PER_MINUTE:15}}")
@@ -44,17 +47,23 @@ public class RecipesController {
     @Value("${security.trusted-proxy-ips:}")
     private String trustedProxyIps;
 
-    public RecipesController(RecipeService recipeService, UserService userService, UserPreferencesService userPreferencesService, GeminiService geminiService, RateLimitService rateLimitService) {
+    public RecipesController(RecipeService recipeService, UserService userService, UserPreferencesService userPreferencesService, GeminiService geminiService, PostHogService postHogService, RateLimitService rateLimitService) {
         this.recipeService = recipeService;
         this.userService = userService;
         this.userPreferencesService = userPreferencesService;
         this.geminiService = geminiService;
+        this.postHogService = postHogService;
         this.rateLimitService = rateLimitService;
     }
 
     @PostMapping("/addRecipe")
-    public ResponseEntity<RecipeDto> addRecipe(@RequestBody RecipeDto recipeDto, HttpServletRequest request) {
-        recipeService.saveRecipe(recipeDto, getAuthenticatedUserEmail());
+    public ResponseEntity<RecipeDto> addRecipe(@RequestBody RecipeDto recipeDto) {
+        String userEmail = getAuthenticatedUserEmail();
+        recipeService.saveRecipe(recipeDto, userEmail);
+        captureUserEvent(userEmail, "recipe_saved", Map.of(
+                "ingredientCount", recipeDto.getIngredients() != null ? recipeDto.getIngredients().size() : 0,
+                "instructionCount", recipeDto.getInstructions() != null ? recipeDto.getInstructions().size() : 0
+        ));
         return ResponseEntity.ok(recipeDto);
     }
 
@@ -76,9 +85,9 @@ public class RecipesController {
         return ResponseEntity.ok(recipes);
     }
 
-    @GetMapping("/getRecipe/{id}")
-    public ResponseEntity<RecipeDto> getRecipe(@PathVariable Long id) {
-        RecipeDto recipe = recipeService.getRecipeById(id);
+    @GetMapping("/getRecipe/{identifier}")
+    public ResponseEntity<RecipeDto> getRecipe(@PathVariable String identifier) {
+        RecipeDto recipe = recipeService.getRecipeByIdentifier(identifier);
         return ResponseEntity.ok(recipe);
     }
 
@@ -89,7 +98,7 @@ public class RecipesController {
     }
 
     @DeleteMapping("/deleteRecipe/{id}")
-    public ResponseEntity<RecipeResponseDto> deleteRecipe(@PathVariable Long id, HttpServletRequest request) {
+    public ResponseEntity<RecipeResponseDto> deleteRecipe(@PathVariable Long id) {
         RecipeResponseDto recipeResponseDto = recipeService.deleteRecipe(id, getAuthenticatedUserEmail());
         return ResponseEntity.ok(recipeResponseDto);
     }
@@ -101,7 +110,7 @@ public class RecipesController {
     }
 
     @PostMapping("/updateRecipe/{id}")
-    public ResponseEntity<RecipeDto> updateRecipe(@PathVariable Long id, @RequestBody RecipeDto recipeDto, HttpServletRequest request) {
+    public ResponseEntity<RecipeDto> updateRecipe(@PathVariable Long id, @RequestBody RecipeDto recipeDto) {
         RecipeDto updatedRecipe = recipeService.updateRecipe(id, recipeDto, getAuthenticatedUserEmail());
         return ResponseEntity.ok(updatedRecipe);
     }
@@ -153,8 +162,18 @@ public class RecipesController {
 
         if (StringUtils.hasText(userEmail)) {
             userService.incrementDailyRecipeCount(userEmail);
+            captureUserEvent(userEmail, "recipe_generation_succeeded", Map.of(
+                    "generatedRecipeCount", recipeCount,
+                    "hasDietPreferences", preferences != null && preferences.getDiets() != null && preferences.getDiets().length > 0,
+                    "hasDislikedIngredients", preferences != null && preferences.getDislikedIngredients() != null && preferences.getDislikedIngredients().length > 0
+            ));
         }
         return ResponseEntity.ok(generatedRecipe);
+    }
+
+    private void captureUserEvent(String userEmail, String eventName, Map<String, Object> properties) {
+        UserDto user = userService.findByEmail(userEmail);
+        postHogService.captureIdentifiedEvent(String.valueOf(user.getId()), eventName, properties);
     }
 
     private String appendPreferencesToPrompt(String recipePrompt, UserPreferencesDto preferences) {

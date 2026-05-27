@@ -9,6 +9,8 @@ services:
       SPRING_DATASOURCE_USERNAME: "${POSTGRES_USER}"
       SPRING_DATASOURCE_PASSWORD: "${POSTGRES_PASSWORD}"
       GEMINI_API_KEY: "${GEMINI_API_KEY}"
+      GEMINI_API_MODEL: "${GEMINI_API_MODEL:-gemini-2.5-flash-lite}"
+      GEMINI_API_FALLBACK_MODEL: "${GEMINI_API_FALLBACK_MODEL:-gemini-2.5-flash}"
       POSTGRES_USER: "${POSTGRES_USER}"
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
       ALLOWED_ORIGINS: "${ALLOWED_ORIGINS}"
@@ -19,6 +21,9 @@ services:
       JWT_COOKIE_SECURE: "${JWT_COOKIE_SECURE:-true}"
       JWT_COOKIE_SAME_SITE: "${JWT_COOKIE_SAME_SITE:-Lax}"
       FREE_PLAN_RECIPE_LIMIT: "${FREE_PLAN_RECIPE_LIMIT:-75}"
+      POSTHOG_ENABLED: "${POSTHOG_ENABLED:-false}"
+      POSTHOG_HOST: "${POSTHOG_HOST:-https://eu.i.posthog.com}"
+      POSTHOG_PROJECT_KEY: "${POSTHOG_PROJECT_KEY:-}"
     depends_on:
       db:
         condition: service_healthy
@@ -44,6 +49,10 @@ services:
       APP_DOMAIN: "${APP_DOMAIN}"
       PUBLIC_SITE_URL: "${PUBLIC_SITE_URL:-}"
       BACKEND_INTERNAL_URL: "${BACKEND_INTERNAL_URL:-http://backend:8080}"
+      POSTHOG_ENABLED: "${POSTHOG_ENABLED:-false}"
+      POSTHOG_KEY: "${POSTHOG_KEY:-}"
+      POSTHOG_API_HOST: "${POSTHOG_API_HOST:-}"
+      POSTHOG_UI_HOST: "${POSTHOG_UI_HOST:-https://eu.posthog.com}"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.recipeai-frontend.rule=Host(`${APP_DOMAIN}`) || Host(`www.${APP_DOMAIN}`)"
