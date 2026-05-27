@@ -15,6 +15,7 @@ import {
   generateShoppingListFromRecipe,
 } from "../lib/shoppingList";
 import ErrorAlert from "../components/ErrorAlert";
+import { captureEvent } from "../lib/posthog";
 import { applySeo } from "../lib/seo";
 
 export interface RecipeIngredient {
@@ -76,6 +77,20 @@ const isAbortError = (error: unknown): boolean => {
     (error instanceof DOMException && error.name === "AbortError") ||
     (error instanceof Error && error.name === "AbortError")
   );
+};
+
+const getGenerationFailureReason = (error: unknown): string => {
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    if (message.includes("timed out")) {
+      return "timeout";
+    }
+    if (message.includes("cancel")) {
+      return "cancelled";
+    }
+  }
+
+  return "generation_failed";
 };
 
 const formatMacro = (value: string | number | undefined, suffix: string) => {
@@ -363,6 +378,11 @@ const RecipePage = () => {
               setIsLoading(true);
               setError("");
               const fridgeIngredients = getFridgeItemNames();
+              captureEvent("recipe_generation_requested", {
+                requestRecipeCount: GENERATED_RECIPES_REQUEST_COUNT,
+                fridgeItemCount: fridgeIngredients.length,
+                isAuthenticated: Boolean(user),
+              });
               abortControllerRef.current?.abort();
               const controller = new AbortController();
               abortControllerRef.current = controller;
@@ -392,10 +412,18 @@ const RecipePage = () => {
               }
 
               applyGeneratedRecipeResponse(response, search);
+              const generatedRecipes = parseGeneratedRecipeResponse(response);
+              captureEvent("recipe_generation_succeeded", {
+                generatedRecipeCount: generatedRecipes.length,
+                fridgeItemCount: fridgeIngredients.length,
+              });
               setIsLoading(false);
             } catch (err: unknown) {
               if (isAbortError(err)) return; // new request owns loading state
               console.error("Error generating recipe:", err);
+              captureEvent("recipe_generation_failed", {
+                reason: getGenerationFailureReason(err),
+              });
               setError(resolveGenerationErrorMessage(err));
               setRecipeOptions([]);
               currentRecipeIdentifierRef.current = null;
@@ -426,6 +454,7 @@ const RecipePage = () => {
     applyGeneratedRecipeResponse,
     getFridgeItemNames,
     generationRetryKey,
+    user,
   ]);
 
   const handleRetryGeneration = () => {
@@ -466,6 +495,10 @@ const RecipePage = () => {
         timeToPrepare: recipeData.timeToPrepare,
         ingredients: recipeData.ingredients,
         instructions: recipeData.instructions,
+      });
+      captureEvent("recipe_saved", {
+        ingredientCount: recipeData.ingredients.length,
+        instructionCount: recipeData.instructions.length,
       });
       setSaveStatus("saved");
     } catch (error: unknown) {
@@ -532,6 +565,9 @@ const RecipePage = () => {
           unit: ingredient.unit,
         })),
       );
+      captureEvent("shopping_list_generated", {
+        addedItemCount: sourceIngredients.length,
+      });
 
       navigate("/ShoppingList");
     } catch (error: unknown) {

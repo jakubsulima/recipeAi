@@ -3,7 +3,10 @@
 interface ImportMetaEnv {
   readonly VITE_AI_API_KEY: string;
   readonly VITE_GOOGLE_CLIENT_ID?: string;
-  // more env variables...
+  readonly VITE_POSTHOG_ENABLED?: string;
+  readonly VITE_POSTHOG_KEY?: string;
+  readonly VITE_POSTHOG_API_HOST?: string;
+  readonly VITE_POSTHOG_UI_HOST?: string;
 }
 
 interface ImportMeta {
@@ -40,5 +43,9 @@ interface Window {
   };
   __RECIPE_AI_RUNTIME_CONFIG__?: {
     googleClientId?: string;
+    posthogEnabled?: boolean | string;
+    posthogKey?: string;
+    posthogApiHost?: string;
+    posthogUiHost?: string;
   };
 }

@@ -6,6 +6,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useUser, type UserProps } from "../context/context";
 import ErrorAlert from "../components/ErrorAlert";
+import { captureEvent } from "../lib/posthog";
 import { getGoogleClientId } from "../lib/runtimeConfig";
 
 const schema = yup.object({
@@ -113,7 +114,11 @@ const Register = () => {
   }, [user, authLoading, navigate]);
 
   const handleAuthSuccess = useCallback(
-    (userData: UserProps) => {
+    (userData: UserProps, method: "credentials" | "google") => {
+      captureEvent("auth_signup_success", {
+        method,
+      });
+
       const redirectTarget = resolveAuthRedirectTarget(location.state);
       localStorage.setItem("isLoggedIn", "true");
       setUser(userData);
@@ -148,7 +153,7 @@ const Register = () => {
         const userData = await apiClient<UserProps>("oauth/google", true, {
           idToken: response.credential,
         });
-        handleAuthSuccess(userData);
+        handleAuthSuccess(userData, "google");
       } catch {
         setError(GOOGLE_SIGN_UP_ERROR_MESSAGE);
       } finally {
@@ -232,7 +237,7 @@ const Register = () => {
     setError("");
     try {
       const userData = await apiClient<UserProps>("register", true, data);
-      handleAuthSuccess(userData);
+      handleAuthSuccess(userData, "credentials");
     } catch (error: unknown) {
       setError(getErrorMessage(error, "Registration failed"));
     } finally {

@@ -6,6 +6,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { useUser, type UserProps } from "../context/context";
 import { useLocation, useNavigate } from "react-router-dom";
 import ErrorAlert from "../components/ErrorAlert";
+import { captureEvent } from "../lib/posthog";
 import { getGoogleClientId } from "../lib/runtimeConfig";
 
 interface LoginProps {
@@ -98,7 +99,11 @@ const Login = () => {
   }, [user, authLoading, navigate]);
 
   const handleAuthSuccess = useCallback(
-    (userData: UserProps) => {
+    (userData: UserProps, method: "credentials" | "google") => {
+      captureEvent("auth_login_success", {
+        method,
+      });
+
       const redirectTarget = resolveAuthRedirectTarget(location.state);
       localStorage.setItem("isLoggedIn", "true");
       setUser(userData);
@@ -130,7 +135,7 @@ const Login = () => {
         const userData = await apiClient<UserProps>("oauth/google", true, {
           idToken: response.credential,
         });
-        handleAuthSuccess(userData);
+        handleAuthSuccess(userData, "google");
       } catch {
         setError(GOOGLE_SIGN_IN_ERROR_MESSAGE);
       } finally {
@@ -214,7 +219,7 @@ const Login = () => {
     setError("");
     try {
       const userData = await apiClient<UserProps>("login", true, data);
-      handleAuthSuccess(userData);
+      handleAuthSuccess(userData, "credentials");
     } catch (error: unknown) {
       setError(getErrorMessage(error, "Login failed"));
     } finally {

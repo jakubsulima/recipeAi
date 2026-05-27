@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFridge } from "../context/fridgeContext";
 import { useUser } from "../context/context";
+import { captureEvent } from "../lib/posthog";
 import ButtonsForm from "../components/ButtonsForm";
 
 const HomePage = () => {
@@ -18,6 +19,15 @@ const HomePage = () => {
   const [selectedCuisine, setSelectedCuisine] = useState<string | null>(null);
 
   const handleSearch = () => {
+    captureEvent("marketing_cta_click", {
+      cta: user ? "generate_recipe" : "login_to_generate_recipe",
+      hasFridgeItems: hasIngredients,
+      hasCustomInput: search.trim() !== "",
+      selectedFilterCount: [selectedMeal, selectedCuisine, selectedTime].filter(
+        Boolean,
+      ).length,
+    });
+
     if (!user) {
       navigate("/login", { state: { from: { pathname: "/Recipe" } } });
       return;
@@ -48,6 +58,9 @@ const HomePage = () => {
   };
 
   const handleBrowseLatest = () => {
+    captureEvent("marketing_cta_click", {
+      cta: "browse_public_recipes",
+    });
     navigate("/Recipes");
   };
 

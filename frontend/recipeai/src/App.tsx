@@ -20,10 +20,12 @@ const MePage = lazy(() => import("./pages/UserPreferencesPage.tsx"));
 const AdminPage = lazy(() => import("./pages/AdminPage"));
 const ShoppingList = lazy(() => import("./pages/ShoppingList"));
 import { AuthProvider } from "./context/context"; // Add import for AuthProvider
+import { AnalyticsConsentProvider } from "./context/analyticsConsentContext";
 import { FridgeProvider } from "./context/fridgeContext.tsx"; // Add import for FridgeProvider
 import { GuestRoute, ProtectedRoute } from "./components/RouteGuards";
 import ErrorPage from "./pages/ErrorPage";
 import { RouteShell } from "./components/RouteShell";
+import AnalyticsIdentitySync from "./components/AnalyticsIdentitySync";
 
 const withSuspense = (element: ReactElement) => (
   <Suspense fallback={<RouteShell />}>{element}</Suspense>
@@ -115,9 +117,12 @@ function App() {
 
   return (
     <AuthProvider>
-      <FridgeProvider>
-        <RouterProvider router={router} />
-      </FridgeProvider>
+      <AnalyticsConsentProvider>
+        <FridgeProvider>
+          <AnalyticsIdentitySync />
+          <RouterProvider router={router} />
+        </FridgeProvider>
+      </AnalyticsConsentProvider>
     </AuthProvider>
   );
 }

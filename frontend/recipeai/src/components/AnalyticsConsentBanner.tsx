@@ -1,0 +1,62 @@
+import { useAnalyticsConsent } from "../context/analyticsConsentContext";
+
+const AnalyticsConsentBanner = () => {
+  const {
+    isAnalyticsAvailable,
+    consentStatus,
+    grantConsent,
+    denyConsent,
+    closeConsentSettings,
+    isConsentSettingsOpen,
+  } = useAnalyticsConsent();
+
+  const isFirstDecision = consentStatus === "unset";
+  const isVisible = isFirstDecision || isConsentSettingsOpen;
+
+  if (!isAnalyticsAvailable || !isVisible) {
+    return null;
+  }
+
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-50 border-t border-primary/15 bg-background/95 px-4 py-4 shadow-[0_-12px_32px_rgba(0,0,0,0.08)] backdrop-blur-sm">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div className="max-w-3xl">
+          <p className="text-sm font-semibold text-text">Analytics settings</p>
+          <p className="mt-1 text-sm text-text/70">
+            Dish Genie uses PostHog analytics through a first-party proxy domain
+            to measure product usage and improve key flows. Analytics stays off
+            until you opt in.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {!isFirstDecision && (
+            <button
+              type="button"
+              onClick={closeConsentSettings}
+              className="rounded-full border border-primary/20 px-4 py-2 text-sm font-medium text-text/70 transition-colors hover:bg-secondary"
+            >
+              Close
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={denyConsent}
+            className="rounded-full border border-primary/20 px-4 py-2 text-sm font-medium text-text transition-colors hover:bg-secondary"
+          >
+            Reject analytics
+          </button>
+          <button
+            type="button"
+            onClick={grantConsent}
+            className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-text transition-colors hover:bg-accent/90"
+          >
+            Accept analytics
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AnalyticsConsentBanner;
