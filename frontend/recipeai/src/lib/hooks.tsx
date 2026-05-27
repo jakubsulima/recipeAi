@@ -7,6 +7,9 @@ const batchFormOfPrompt =
   ' Act as a professional culinary database architect and recommendation engine. Return ONLY a single valid JSON object following this exact schema: { "recipes": [{ "name": string, "description": string, "timeToPrepare": string, "ingredients": [{"name": string, "amount": number, "unit": string}], "instructions": [string], "nutrition": { "calories": number, "protein": number, "carbs": number, "fats": number } }] }. Enforce user filters from the request text (meal type, cuisine, time constraint, and additional notes). All generated recipes must match those filters. Create meaningful diversity across recipes by varying core protein category, cooking technique, and flavor profile while staying plausible. For EACH recipe: include 8-14 ingredients with realistic amounts for 2 servings, use strict metric units (g, ml, kg) or whole counts, and provide 6-9 technical instructions with sensory cues and clear time/temperature markers. Ensure nutrition values are internally consistent with the listed ingredients. Do not include markdown or conversational text.';
 
 type ApiRecord = Record<string, unknown>;
+const REQUEST_TIMEOUT_MS = TIMEOUT * 1000;
+const XSRF_COOKIE_NAME = "XSRF-TOKEN";
+const XSRF_HEADER_NAME = "X-XSRF-TOKEN";
 
 interface AppError extends Error {
   status?: number;
@@ -93,6 +96,7 @@ const requestRecipeGeneration = async (
   signal?: AbortSignal,
 ): Promise<unknown> => {
   const fullPrompt = buildRecipePrompt(prompt, productsFridge, requestedCount);
+  await ensureCsrfToken();
   const result = await axios.post(
     `${API_URL}generateRecipe`,
     {
@@ -223,13 +227,51 @@ export const lookupProductByBarcode = async (
 
 axios.defaults.headers.common["Content-Type"] = "application/json";
 axios.defaults.withCredentials = true;
+axios.defaults.xsrfCookieName = XSRF_COOKIE_NAME;
+axios.defaults.xsrfHeaderName = XSRF_HEADER_NAME;
 
 let refreshTokenRequest: Promise<void> | null = null;
+let csrfBootstrapRequest: Promise<void> | null = null;
+
+const hasCsrfTokenCookie = (): boolean => {
+  if (typeof document === "undefined") {
+    return false;
+  }
+
+  return document.cookie
+    .split(";")
+    .some((cookie) => cookie.trim().startsWith(`${XSRF_COOKIE_NAME}=`));
+};
+
+export const ensureCsrfToken = async (forceRefresh = false): Promise<void> => {
+  if (!forceRefresh && hasCsrfTokenCookie()) {
+    return;
+  }
+
+  if (!csrfBootstrapRequest) {
+    csrfBootstrapRequest = axios
+      .get(`${API_URL}csrf`, {
+        timeout: REQUEST_TIMEOUT_MS,
+        withCredentials: true,
+      })
+      .then(() => undefined)
+      .finally(() => {
+        csrfBootstrapRequest = null;
+      });
+  }
+
+  return csrfBootstrapRequest;
+};
 
 const refreshAccessToken = async () => {
   if (!refreshTokenRequest) {
-    refreshTokenRequest = axios
-      .post(`${API_URL}refresh`, null, { withCredentials: true })
+    refreshTokenRequest = ensureCsrfToken()
+      .then(() =>
+        axios.post(`${API_URL}refresh`, null, {
+          timeout: REQUEST_TIMEOUT_MS,
+          withCredentials: true,
+        }),
+      )
       .then(() => undefined)
       .finally(() => {
         refreshTokenRequest = null;
@@ -282,6 +324,7 @@ export const apiClient = async function <T = unknown>(
 ): Promise<T> {
   const normalizedUrl = String(url ?? "");
   const authNoiseEndpoints = [
+    "csrf",
     "me",
     "refresh",
     "user/getPreferences",
@@ -295,6 +338,9 @@ export const apiClient = async function <T = unknown>(
 
   try {
     const isPlainString = typeof body === "string";
+    if (uploadData) {
+      await ensureCsrfToken();
+    }
     const fetchOperation: Promise<AxiosResponse<unknown>> = uploadData
       ? axios.post(API_URL + url, body, {
           headers: isPlainString
@@ -302,7 +348,7 @@ export const apiClient = async function <T = unknown>(
             : { "Content-Type": "application/json" },
         })
       : axios.get(API_URL + url, {
-          timeout: TIMEOUT * 1000,
+          timeout: REQUEST_TIMEOUT_MS,
         });
 
     const res = (await Promise.race([
@@ -310,7 +356,7 @@ export const apiClient = async function <T = unknown>(
       new Promise<never>((_, reject) =>
         setTimeout(
           () => reject(new Error(`Request timed out after ${TIMEOUT} seconds`)),
-          TIMEOUT * 1000,
+          REQUEST_TIMEOUT_MS,
         ),
       ),
     ])) as AxiosResponse<unknown>;
@@ -406,6 +452,7 @@ export const apiClient = async function <T = unknown>(
 
 export const deleteClient = async function (url: string) {
   try {
+    await ensureCsrfToken();
     const res = await axios.delete(API_URL + url);
     return res.data;
   } catch (error: unknown) {
@@ -437,6 +484,7 @@ export const deleteClient = async function (url: string) {
 
 export const putClient = async function (url: string, body: unknown = null) {
   try {
+    await ensureCsrfToken();
     const res = await axios.put(API_URL + url, body, {
       headers: { "Content-Type": "application/json" },
     });

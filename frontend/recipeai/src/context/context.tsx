@@ -6,7 +6,7 @@ import {
   useEffect,
   useMemo,
 } from "react";
-import { apiClient } from "../lib/hooks";
+import { apiClient, ensureCsrfToken } from "../lib/hooks";
 
 /* eslint-disable react-refresh/only-export-components */
 
@@ -122,6 +122,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } catch {
       // Ignore logout endpoint failures and clear client auth state anyway.
     } finally {
+      await ensureCsrfToken(true).catch(() => {
+        // Keep logout resilient even if the CSRF bootstrap request fails.
+      });
       clearAuthState();
     }
   }, [clearAuthState]);
@@ -156,6 +159,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     let isMounted = true;
 
     const initializeSession = async () => {
+      await ensureCsrfToken();
       await refreshSession();
       if (isMounted) {
         setLoading(false);

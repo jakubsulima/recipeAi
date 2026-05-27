@@ -1,3 +1,4 @@
+import { waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { generateRecipe } from "../src/lib/hooks";
 
@@ -31,6 +32,7 @@ vi.mock("axios", () => ({
 describe("generateRecipe", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    document.cookie = "XSRF-TOKEN=test-token; path=/";
   });
 
   it("deduplicates concurrent requests with the same prompt", async () => {
@@ -47,7 +49,9 @@ describe("generateRecipe", () => {
     const firstRequest = generateRecipe("test prompt", ["Onion", "Tomato"]);
     const secondRequest = generateRecipe("test prompt", ["Onion", "Tomato"]);
 
-    expect(axiosMock.post).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(axiosMock.post).toHaveBeenCalledTimes(1);
+    });
 
     resolveRequest?.({ data: { name: "Test Recipe" } });
 
