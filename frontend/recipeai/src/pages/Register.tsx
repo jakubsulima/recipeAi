@@ -8,6 +8,11 @@ import { useUser, type UserProps } from "../context/context";
 import ErrorAlert from "../components/ErrorAlert";
 import { captureEvent } from "../lib/posthog";
 import { getGoogleClientId } from "../lib/runtimeConfig";
+import {
+  getGsiState,
+  loadGoogleIdentityScript,
+  type GoogleCredentialResponse,
+} from "../lib/googleIdentity";
 
 const schema = yup.object({
   email: yup
@@ -32,18 +37,6 @@ interface RegisterProps {
   email: string;
   password: string;
   confirmPassword: string;
-}
-
-type GoogleCallback = (response: { credential: string }) => void;
-
-interface GsiState {
-  initialized: boolean;
-  clientId: string;
-  callback: GoogleCallback | null;
-}
-
-interface RecipeAiWindow extends Window {
-  __recipeAiGsiState?: GsiState;
 }
 
 interface AuthRedirectTarget {
@@ -85,18 +78,6 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 };
 
 const GOOGLE_SIGN_UP_ERROR_MESSAGE = "Google sign-up failed. Please try again.";
-
-const getGsiState = (): GsiState => {
-  const globalWindow = window as RecipeAiWindow;
-  if (!globalWindow.__recipeAiGsiState) {
-    globalWindow.__recipeAiGsiState = {
-      initialized: false,
-      clientId: "",
-      callback: null,
-    } as GsiState;
-  }
-  return globalWindow.__recipeAiGsiState as GsiState;
-};
 
 const Register = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -146,7 +127,7 @@ const Register = () => {
 
   // Google OAuth callback
   const handleGoogleCallback = useCallback(
-    async (response: { credential: string }) => {
+    async (response: GoogleCredentialResponse) => {
       setIsSubmitting(true);
       setError("");
       try {
@@ -165,8 +146,10 @@ const Register = () => {
 
   // Initialize Google Sign-In button
   useEffect(() => {
+    let isMounted = true;
+
     const initGoogle = () => {
-      if (window.google?.accounts?.id && googleBtnRef.current) {
+      if (isMounted && window.google?.accounts?.id && googleBtnRef.current) {
         const clientId = getGoogleClientId();
         if (!clientId) {
           return;
@@ -178,7 +161,7 @@ const Register = () => {
         if (!gsiState.initialized || gsiState.clientId !== clientId) {
           window.google.accounts.id.initialize({
             client_id: clientId,
-            callback: (response: { credential: string }) => {
+            callback: (response: GoogleCredentialResponse) => {
               const activeCallback = getGsiState().callback;
               if (activeCallback) {
                 activeCallback(response);
@@ -202,21 +185,17 @@ const Register = () => {
       }
     };
 
-    if (window.google?.accounts?.id) {
-      initGoogle();
-    } else {
-      const interval = setInterval(() => {
-        if (window.google?.accounts?.id) {
-          clearInterval(interval);
-          initGoogle();
+    loadGoogleIdentityScript()
+      .then(initGoogle)
+      .catch(() => {
+        if (isMounted) {
+          setError(GOOGLE_SIGN_UP_ERROR_MESSAGE);
         }
-      }, 100);
-      const timeout = setTimeout(() => clearInterval(interval), 5000);
-      return () => {
-        clearInterval(interval);
-        clearTimeout(timeout);
-      };
-    }
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [handleGoogleCallback]);
 
   const {

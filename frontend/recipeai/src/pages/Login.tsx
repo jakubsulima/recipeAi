@@ -8,22 +8,15 @@ import { useLocation, useNavigate } from "react-router-dom";
 import ErrorAlert from "../components/ErrorAlert";
 import { captureEvent } from "../lib/posthog";
 import { getGoogleClientId } from "../lib/runtimeConfig";
+import {
+  getGsiState,
+  loadGoogleIdentityScript,
+  type GoogleCredentialResponse,
+} from "../lib/googleIdentity";
 
 interface LoginProps {
   email: string;
   password: string;
-}
-
-type GoogleCallback = (response: { credential: string }) => void;
-
-interface GsiState {
-  initialized: boolean;
-  clientId: string;
-  callback: GoogleCallback | null;
-}
-
-interface RecipeAiWindow extends Window {
-  __recipeAiGsiState?: GsiState;
 }
 
 interface AuthRedirectTarget {
@@ -65,18 +58,6 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 };
 
 const GOOGLE_SIGN_IN_ERROR_MESSAGE = "Google sign-in failed. Please try again.";
-
-const getGsiState = (): GsiState => {
-  const globalWindow = window as RecipeAiWindow;
-  if (!globalWindow.__recipeAiGsiState) {
-    globalWindow.__recipeAiGsiState = {
-      initialized: false,
-      clientId: "",
-      callback: null,
-    } as GsiState;
-  }
-  return globalWindow.__recipeAiGsiState as GsiState;
-};
 
 const schema = yup.object({
   email: yup.string().required("Email is required"),
@@ -128,7 +109,7 @@ const Login = () => {
 
   // Google OAuth callback
   const handleGoogleCallback = useCallback(
-    async (response: { credential: string }) => {
+    async (response: GoogleCredentialResponse) => {
       setIsSubmitting(true);
       setError("");
       try {
@@ -147,8 +128,10 @@ const Login = () => {
 
   // Initialize Google Sign-In button
   useEffect(() => {
+    let isMounted = true;
+
     const initGoogle = () => {
-      if (window.google?.accounts?.id && googleBtnRef.current) {
+      if (isMounted && window.google?.accounts?.id && googleBtnRef.current) {
         const clientId = getGoogleClientId();
         if (!clientId) {
           return;
@@ -160,7 +143,7 @@ const Login = () => {
         if (!gsiState.initialized || gsiState.clientId !== clientId) {
           window.google.accounts.id.initialize({
             client_id: clientId,
-            callback: (response: { credential: string }) => {
+            callback: (response: GoogleCredentialResponse) => {
               const activeCallback = getGsiState().callback;
               if (activeCallback) {
                 activeCallback(response);
@@ -185,21 +168,17 @@ const Login = () => {
       }
     };
 
-    if (window.google?.accounts?.id) {
-      initGoogle();
-    } else {
-      const interval = setInterval(() => {
-        if (window.google?.accounts?.id) {
-          clearInterval(interval);
-          initGoogle();
+    loadGoogleIdentityScript()
+      .then(initGoogle)
+      .catch(() => {
+        if (isMounted) {
+          setError(GOOGLE_SIGN_IN_ERROR_MESSAGE);
         }
-      }, 100);
-      const timeout = setTimeout(() => clearInterval(interval), 5000);
-      return () => {
-        clearInterval(interval);
-        clearTimeout(timeout);
-      };
-    }
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [handleGoogleCallback]);
 
   const {

@@ -4,6 +4,10 @@ import { useFridge } from "../context/fridgeContext";
 import { useUser } from "../context/context";
 import { captureEvent } from "../lib/posthog";
 import ButtonsForm from "../components/ButtonsForm";
+import homepageIcon160 from "../assets/dish-genie-homepage-icon-160.webp";
+import homepageIcon288 from "../assets/dish-genie-homepage-icon-288.webp";
+
+const homepageIconSrcSet = `${homepageIcon160} 160w, ${homepageIcon288} 288w`;
 
 const HomePage = () => {
   const [search, setSearch] = useState("");
@@ -81,11 +85,21 @@ const HomePage = () => {
             style={{ animationDelay: "80ms" }}
           >
             <div className="mb-5 flex justify-center">
-              <img
-                src="/dish-genie-homepage-icon.png"
-                alt="Dish Genie app icon with a chef hat, steam, and a cooking pot"
-                className="h-28 w-28 object-contain drop-shadow-[0_18px_30px_rgba(0,0,0,0.08)] md:h-36 md:w-36"
-              />
+              <picture>
+                <source
+                  type="image/webp"
+                  srcSet={homepageIconSrcSet}
+                  sizes="(min-width: 768px) 144px, 112px"
+                />
+                <img
+                  src="/dish-genie-homepage-icon.png"
+                  alt="Dish Genie app icon with a chef hat, steam, and a cooking pot"
+                  width="144"
+                  height="144"
+                  fetchPriority="high"
+                  className="h-28 w-28 object-contain drop-shadow-[0_18px_30px_rgba(0,0,0,0.08)] md:h-36 md:w-36"
+                />
+              </picture>
             </div>
             <h1 className="flex-col p-3 text-text">
               Dish Genie turns ingredients into recipes &#127869; &#129302;

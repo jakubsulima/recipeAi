@@ -124,19 +124,41 @@ public class UserAuthProvider {
 
         ResponseCookie accessCookie = ResponseCookie.from("access_token", accessToken)
                 .httpOnly(true)
-            .secure(secureCookie)
+                .secure(secureCookie)
                 .path("/")
                 .maxAge(3 * 24 * 60 * 60) // 3 days (matching token expiry)
-            .sameSite(normalizedSameSite)
+                .sameSite(normalizedSameSite)
                 .build();
 
         ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
                 .httpOnly(true)
-            .secure(secureCookie)
+                .secure(secureCookie)
                 .path("/")
                 .maxAge(7 * 24 * 60 * 60) // 7 days (matching token expiry)
-            .sameSite(normalizedSameSite)
+                .sameSite(normalizedSameSite)
                 .build();
+        return new ArrayList<>(Arrays.asList(accessCookie, refreshCookie));
+    }
+
+    public ArrayList<ResponseCookie> clearHttpOnlyCookies() {
+        String normalizedSameSite = StringUtils.hasText(sameSite) ? sameSite : "Lax";
+
+        ResponseCookie accessCookie = ResponseCookie.from("access_token", "")
+                .httpOnly(true)
+                .secure(secureCookie)
+                .path("/")
+                .maxAge(0)
+                .sameSite(normalizedSameSite)
+                .build();
+
+        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", "")
+                .httpOnly(true)
+                .secure(secureCookie)
+                .path("/")
+                .maxAge(0)
+                .sameSite(normalizedSameSite)
+                .build();
+
         return new ArrayList<>(Arrays.asList(accessCookie, refreshCookie));
     }
 

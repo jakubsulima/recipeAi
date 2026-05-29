@@ -63,6 +63,8 @@ const Navbar = () => {
               <img
                 src="/favicon.png?v=5"
                 alt="Dish Genie logo"
+                width="36"
+                height="36"
                 className="h-9 w-9 shrink-0 object-contain"
               />
               <span>DishGenie</span>

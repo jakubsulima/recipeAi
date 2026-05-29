@@ -10,7 +10,8 @@
   --color-error: #ef4444; /* Added reddish error color to match the yellowish accent */
 
   /* Font Family */
-  --font-family-sans: "Roboto", ui-sans-serif, system-ui, sans-serif;
+  --font-family-sans: ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 /* Custom animations */

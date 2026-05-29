@@ -3,6 +3,7 @@ package org.jakub.backendapi.config;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -19,10 +20,15 @@ public class SecurityConfig {
 
     private final UserAuthenticationEntryPoint userAuthenticationEntryPoint;
     private final JwtAuthFilter jwtAuthFilter;
+    private final UserAuthProvider userAuthProvider;
 
-    public SecurityConfig(UserAuthenticationEntryPoint userAuthenticationEntryPoint, JwtAuthFilter jwtAuthFilter) {
+    public SecurityConfig(
+            UserAuthenticationEntryPoint userAuthenticationEntryPoint,
+            JwtAuthFilter jwtAuthFilter,
+            UserAuthProvider userAuthProvider) {
         this.userAuthenticationEntryPoint = userAuthenticationEntryPoint;
         this.jwtAuthFilter = jwtAuthFilter;
+        this.userAuthProvider = userAuthProvider;
     }
 
     @Bean
@@ -52,9 +58,12 @@ public class SecurityConfig {
                         .logoutUrl("/logout")
                         .clearAuthentication(true)
                         .invalidateHttpSession(true)
-                        .deleteCookies("JSESSIONID", "access_token", "refresh_token") // Delete cookies on logout if applicable
-                        .logoutSuccessHandler((request, response, authentication) ->
-                                response.setStatus(HttpServletResponse.SC_OK))
+                        .deleteCookies("JSESSIONID")
+                        .logoutSuccessHandler((request, response, authentication) -> {
+                            userAuthProvider.clearHttpOnlyCookies().forEach(cookie ->
+                                    response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString()));
+                            response.setStatus(HttpServletResponse.SC_OK);
+                        })
                         .permitAll()
                 );
 

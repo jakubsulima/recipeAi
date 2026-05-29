@@ -161,7 +161,12 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout() {
+    public ResponseEntity<?> logout(HttpServletResponse response) {
+        ArrayList<ResponseCookie> expiredTokens = userAuthProvider.clearHttpOnlyCookies();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, expiredTokens.get(0).toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, expiredTokens.get(1).toString());
+
         return ResponseEntity.ok().body(Map.of("message", "Logged out successfully"));
     }
 
