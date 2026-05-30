@@ -29,6 +29,64 @@
   opacity: 0;
 }
 
+@keyframes landingIconFloat {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(1.5deg);
+  }
+}
+
+@keyframes landingSoftRise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.landing-icon-float {
+  animation: landingIconFloat 4.8s ease-in-out infinite;
+}
+
+.landing-proof-card {
+  opacity: 0;
+  transform: translateY(22px) scale(0.985);
+  transition:
+    opacity 520ms ease,
+    transform 620ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 240ms ease;
+}
+
+.landing-proof-card-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+@supports (animation-timeline: view()) {
+  .landing-scroll-reveal {
+    animation: landingSoftRise both;
+    animation-range: entry 8% cover 28%;
+    animation-timeline: view();
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-icon-float,
+  .landing-scroll-reveal,
+  .landing-proof-card {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
 @keyframes amountSlideIn {
   from {
     opacity: 0;

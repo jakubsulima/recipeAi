@@ -19,11 +19,14 @@ A full-stack web application that helps users discover and manage recipes using 
 - Browse and search through recipe database
 - Browse the 10 latest public recipes without an account
 - Generate recipes based on fridge contents
-- Filter by cuisine (Italian, Mexican, Indian, Chinese)
 - Filter by meal type (Breakfast, Lunch, Dinner, Snack)
-- Filter by preparation time (Quick, Moderate, Slow)
+- Choose a dinner constraint (Quick, No shopping, Low cleanup, Use soon)
 - Save favorite recipes to your personal collection
 - Track ingredient expiration dates and avoid duplicate fridge entries
+
+## Codex Notes
+
+- In the dev-container setup, the frontend is already served at `http://localhost:80`. Use that URL for browser checks instead of starting a separate Vite dev server.
 
 ## 🛠️ Technology Stack
 

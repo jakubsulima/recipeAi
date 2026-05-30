@@ -1,60 +1,227 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFridge } from "../context/fridgeContext";
 import { useUser } from "../context/context";
 import { captureEvent } from "../lib/posthog";
+import { savePendingRecipeSearch } from "../lib/pendingRecipeIntent";
 import ButtonsForm from "../components/ButtonsForm";
 import homepageIcon160 from "../assets/dish-genie-homepage-icon-160.webp";
 import homepageIcon288 from "../assets/dish-genie-homepage-icon-288.webp";
+import barcodeScanningGif from "../assets/landing/barcode-scanning.gif";
+import fridgeScreenshot from "../assets/landing/fridge.jpeg";
+import recipeActionsScreenshot from "../assets/landing/recipe-actions.jpeg";
+import recipeOptionsScreenshot from "../assets/landing/recipe-options.jpeg";
+import shoppingListScreenshot from "../assets/landing/shopping-list.jpeg";
 
 const homepageIconSrcSet = `${homepageIcon160} 160w, ${homepageIcon288} 288w`;
 
+const landingScreenshots = [
+  {
+    title: "Pick from 3",
+    body: "One request gives three different directions, not an endless feed.",
+    src: recipeOptionsScreenshot,
+    alt: "Dish Genie screen showing three generated recipe options",
+  },
+  {
+    title: "Cook, save, or shop",
+    body: "After choosing, the useful actions are right under the recipe.",
+    src: recipeActionsScreenshot,
+    alt: "Dish Genie recipe screen with shopping list and save recipe buttons",
+  },
+  {
+    title: "Shop what is missing",
+    body: "Turn a recipe into a checked shopping list before you leave.",
+    src: shoppingListScreenshot,
+    alt: "Dish Genie shopping list screen with ingredients to check off",
+  },
+  {
+    title: "Scan groceries fast",
+    body: "Add products by barcode when you restock the fridge.",
+    src: barcodeScanningGif,
+    alt: "Dish Genie barcode scanning screen recording",
+  },
+  {
+    title: "Use what is already there",
+    body: "Fridge ingredients can make future ideas more practical.",
+    src: fridgeScreenshot,
+    alt: "Dish Genie fridge screen with quick add options and saved ingredients",
+  },
+];
+
+const foodTypeExamples = [
+  {
+    label: "Comfort",
+    prompt: "comfort food",
+  },
+  {
+    label: "Fresh",
+    prompt: "fresh colorful food",
+  },
+  {
+    label: "Spicy",
+    prompt: "spicy food",
+  },
+  {
+    label: "Crispy",
+    prompt: "crispy food",
+  },
+];
+
+const recipeGoals = [
+  {
+    label: "Quick",
+    prompt: "quick",
+  },
+  {
+    label: "No shopping",
+    prompt: "no shopping",
+  },
+  {
+    label: "Low cleanup",
+    prompt: "low cleanup",
+  },
+  {
+    label: "Use soon",
+    prompt: "use soon",
+  },
+];
+
+const mealTypes = ["Dinner", "Lunch", "Breakfast", "Snack"];
+
+const foodTypeExampleLabels = foodTypeExamples.map(
+  (option) => option.label,
+);
+const recipeGoalLabels = recipeGoals.map((option) => option.label);
+
 const HomePage = () => {
   const [search, setSearch] = useState("");
+  const [selectedFoodType, setSelectedFoodType] = useState<string | null>(null);
+  const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
+  const [selectedMealType, setSelectedMealType] = useState<string | null>(null);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [visibleScreenshotCards, setVisibleScreenshotCards] = useState<
+    number[]
+  >([]);
+  const screenshotCardRefs = useRef<Array<HTMLElement | null>>([]);
   const navigate = useNavigate();
   const { fridgeItems } = useFridge();
   const { user } = useUser();
-  const controlsCuisine = ["Italian", "Mexican", "Indian", "Chinese"];
-  const controlsMeal = ["Dinner", "Lunch", "Breakfast", "Snack"];
-  const controlsTime = ["Quick", "Moderate", "Slow"];
-  const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [selectedMeal, setSelectedMeal] = useState<string | null>(null);
-  const [selectedCuisine, setSelectedCuisine] = useState<string | null>(null);
 
-  const handleSearch = () => {
-    captureEvent("marketing_cta_click", {
-      cta: user ? "generate_recipe" : "login_to_generate_recipe",
-      hasFridgeItems: hasIngredients,
-      hasCustomInput: search.trim() !== "",
-      selectedFilterCount: [selectedMeal, selectedCuisine, selectedTime].filter(
-        Boolean,
-      ).length,
-    });
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
 
-    if (!user) {
-      navigate("/login", { state: { from: { pathname: "/Recipe" } } });
+    if (prefersReducedMotion) {
+      setVisibleScreenshotCards(landingScreenshots.map((_, index) => index));
       return;
     }
 
-    let finalSearch = search;
-    if (!search.trim()) {
+    if (!("IntersectionObserver" in window)) {
+      setVisibleScreenshotCards(landingScreenshots.map((_, index) => index));
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) {
+            return;
+          }
+
+          const index = Number(
+            (entry.target as HTMLElement).dataset.screenshotIndex,
+          );
+
+          setVisibleScreenshotCards((current) =>
+            current.includes(index) ? current : [...current, index],
+          );
+          observer.unobserve(entry.target);
+        });
+      },
+      {
+        rootMargin: "0px 0px -12% 0px",
+        threshold: 0.16,
+      },
+    );
+
+    screenshotCardRefs.current.forEach((card) => {
+      if (card) {
+        observer.observe(card);
+      }
+    });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  const buildCategoryPrompt = () => {
+    const foodTypePrompt = foodTypeExamples.find(
+      (option) => option.label === selectedFoodType,
+    )?.prompt;
+    const goalPrompt = recipeGoals.find(
+      (option) => option.label === selectedGoal,
+    )?.prompt;
+    const mealPrompt = selectedMealType
+      ? `${selectedMealType.toLowerCase()} recipe`
+      : undefined;
+
+    return [foodTypePrompt, goalPrompt, mealPrompt]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+  };
+
+  const buildRecipeSearch = (searchValue = search) => {
+    const categoryPrompt = buildCategoryPrompt();
+    const customPrompt = searchValue.trim();
+    let finalSearch = [categoryPrompt, customPrompt].filter(Boolean).join(" with ");
+
+    if (!finalSearch) {
       finalSearch = "random recipe";
-    } else if (hasIngredients && search.trim()) {
+    } else if (hasIngredients) {
       const ingredientsText = fridgeItems.map((item) => item.name).join(", ");
       finalSearch += " and try to use those ingredients: " + ingredientsText;
     }
-    if (selectedMeal) {
-      finalSearch += ` for ${selectedMeal}`;
+    return finalSearch;
+  };
+
+  const startRecipeFlow = (searchValue = search, cta: string) => {
+    const finalSearch = buildRecipeSearch(searchValue);
+    captureEvent("marketing_cta_click", {
+      cta,
+      hasFridgeItems: hasIngredients,
+      hasCustomInput: searchValue.trim() !== "",
+      selectedCategoryCount: [
+        selectedFoodType,
+        selectedGoal,
+        selectedMealType,
+      ].filter(Boolean).length,
+    });
+
+    if (!user) {
+      savePendingRecipeSearch(finalSearch);
+      navigate("/login", {
+        state: {
+          from: {
+            pathname: "/Recipe",
+            state: { search: finalSearch },
+          },
+        },
+      });
+      return;
     }
-    if (selectedCuisine) {
-      finalSearch += ` in ${selectedCuisine} cuisine`;
-    }
-    if (selectedTime) {
-      finalSearch += ` in ${selectedTime} time`;
-    }
+
     setIsNavigating(true);
     navigate("Recipe", { state: { search: finalSearch } });
+  };
+
+  const handleSearch = () => {
+    startRecipeFlow(
+      search,
+      user ? "show_me_3_ideas" : "get_my_3_dinner_ideas",
+    );
   };
 
   const handleClear = () => {
@@ -97,23 +264,25 @@ const HomePage = () => {
                   width="144"
                   height="144"
                   fetchPriority="high"
-                  className="h-28 w-28 object-contain drop-shadow-[0_18px_30px_rgba(0,0,0,0.08)] md:h-36 md:w-36"
+                  className="landing-icon-float h-28 w-28 object-contain drop-shadow-[0_18px_30px_rgba(0,0,0,0.08)] md:h-36 md:w-36"
                 />
               </picture>
             </div>
             <h1 className="flex-col p-3 text-text">
-              Dish Genie turns ingredients into recipes &#127869; &#129302;
+              Decide what to cook tonight in seconds
             </h1>
             <p className="mb-5 text-sm text-text/70 md:text-base">
-              Generate meal ideas from what you already have, browse public
-              recipes, and keep your cooking plan organized in one place.
+              Pick a direction and Dish Genie gives you 3 realistic recipe
+              ideas without another endless feed.
             </p>
             <article className="relative w-full">
               <input
                 type="text"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Create recipe"
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                }}
+                placeholder="What sounds good?"
                 className="w-full rounded-full border border-primary/20 bg-secondary/90 p-2 pr-10 text-text shadow-[0_8px_20px_rgba(0,0,0,0.04)] placeholder:text-text/50 focus:outline-none focus:ring-2 focus:ring-accent"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
@@ -144,23 +313,29 @@ const HomePage = () => {
             </article>
             <section className="space-y-4 pb-3 pt-5">
               <ButtonsForm
-                options={controlsMeal}
-                onButtonClick={setSelectedMeal}
-                selectedButton={selectedMeal}
-                title="Select Meal Type:"
-              ></ButtonsForm>
+                options={foodTypeExampleLabels}
+                onButtonClick={(label) => {
+                  setSelectedFoodType(label);
+                }}
+                selectedButton={selectedFoodType}
+                title="Choose a vibe"
+              />
               <ButtonsForm
-                options={controlsCuisine}
-                onButtonClick={setSelectedCuisine}
-                selectedButton={selectedCuisine}
-                title="Select Cuisine:"
-              ></ButtonsForm>
+                options={recipeGoalLabels}
+                onButtonClick={(label) => {
+                  setSelectedGoal(label);
+                }}
+                selectedButton={selectedGoal}
+                title="Need it to be"
+              />
               <ButtonsForm
-                options={controlsTime}
-                onButtonClick={setSelectedTime}
-                selectedButton={selectedTime}
-                title="Select Time to Prepare:"
-              ></ButtonsForm>
+                options={mealTypes}
+                onButtonClick={(label) => {
+                  setSelectedMealType(label);
+                }}
+                selectedButton={selectedMealType}
+                title="Meal"
+              />
               <button
                 onClick={handleSearch}
                 disabled={isNavigating}
@@ -184,56 +359,67 @@ const HomePage = () => {
                     <span>Generating...</span>
                   </>
                 ) : user ? (
-                  "Generate Recipe"
+                  "Show me 3 ideas"
                 ) : (
-                  "Log in to Generate Recipes"
+                  "Get my 3 dinner ideas"
                 )}
               </button>
-
-              {!user && (
-                <div className="mt-6 rounded-2xl border border-primary/15 bg-secondary/40 p-4 text-left text-sm text-text/80 backdrop-blur-sm">
-                  <p className="font-semibold text-text">
-                    Guest mode: what you can do now
-                  </p>
-                  <ul className="mt-2 space-y-1.5 text-text/75">
-                    <li>Browse the 10 latest public recipes.</li>
-                    <li>
-                      Open full recipe details with ingredients and steps.
-                    </li>
-                    <li>Try the app UI before creating an account.</li>
-                  </ul>
-                  <p className="mt-3 text-text/70">
-                    After sign up you unlock AI recipe generation, saving
-                    recipes, the Virtual Fridge, and personal diet preferences.
-                  </p>
-                  <button
-                    onClick={handleBrowseLatest}
-                    className="mobile-soft-press mt-4 rounded-full bg-background px-4 py-2 font-semibold text-text shadow-sm transition-colors hover:text-accent"
-                  >
-                    Browse 10 Latest Recipes
-                  </button>
-                </div>
-              )}
             </section>
           </div>
+          {!user && (
+            <div className="mt-4 text-center">
+              <button
+                onClick={handleBrowseLatest}
+                className="mobile-soft-press rounded-full border border-primary/10 bg-background/80 px-4 py-2 text-sm font-semibold text-text shadow-sm transition-colors hover:border-accent/60 hover:text-accent"
+              >
+                Browse latest public recipes
+              </button>
+            </div>
+          )}
         </article>
 
-        <section
-          className="animate-fadeIn relative z-10 mx-5 mb-6 flex flex-col gap-4 rounded-3xl border border-primary/10 bg-[linear-gradient(160deg,_color-mix(in_srgb,var(--color-secondary)_88%,white)_0%,_color-mix(in_srgb,var(--color-accent)_18%,white)_100%)] p-5 text-center shadow-[0_18px_45px_rgba(0,0,0,0.06)] md:mx-8 md:mb-10 md:flex-row md:p-7"
-          style={{ animationDelay: "200ms" }}
-        >
-          <p className="pt-2 md:pt-0 text-text">
-            🧑‍🍳 No idea what to cook? Let our AI suggest recipes based on your
-            mood, time, and dietary preferences!
-          </p>
-          <p className="pt-2 md:pt-0 text-text">
-            🥗 Virtual Fridge 🍱 Add whatever ingredients you have at home, and
-            we'll generate the perfect meal ideas for you.
-          </p>
-          <p className="pt-2 md:pt-0 text-text">
-            🍽️ Save & Organize Keep your favorite recipes in one place and
-            revisit them anytime!
-          </p>
+        <section className="landing-scroll-reveal relative z-10 mx-auto mb-10 w-full max-w-6xl px-5 md:px-8">
+          <div className="mb-5 text-center">
+            <h2 className="text-xl font-bold text-text">
+              How Dish Genie helps after you choose
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-text/65">
+              Real app screens, shown as a simple flow: choose, cook, shop,
+              scan, then reuse what is already in the fridge.
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {landingScreenshots.map((screenshot, index) => (
+              <article
+                key={screenshot.src}
+                ref={(node) => {
+                  screenshotCardRefs.current[index] = node;
+                }}
+                data-screenshot-index={index}
+                style={{ transitionDelay: `${index * 85}ms` }}
+                className={`landing-screenshot-card landing-proof-card overflow-hidden rounded-2xl border border-primary/10 bg-background shadow-[0_18px_42px_rgba(0,0,0,0.08)] ${
+                  visibleScreenshotCards.includes(index)
+                    ? "landing-proof-card-visible"
+                    : ""
+                }`}
+              >
+                <img
+                  src={screenshot.src}
+                  alt={screenshot.alt}
+                  loading="lazy"
+                  className="h-72 w-full bg-secondary/40 object-contain object-top sm:h-80 xl:h-72"
+                />
+                <div className="p-4">
+                  <h3 className="text-sm font-bold text-text">
+                    {screenshot.title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-text/65">
+                    {screenshot.body}
+                  </p>
+                </div>
+              </article>
+            ))}
+          </div>
         </section>
       </section>
     </>

@@ -12,12 +12,22 @@ test("guest can land on the homepage and open login from recipe generation", asy
 
   await expect(
     page.getByRole("heading", {
-      name: /dish genie turns ingredients into recipes/i,
+      name: /decide what to cook tonight in seconds/i,
     }),
   ).toBeVisible();
-  await expect(page.getByText("Guest mode: what you can do now")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Get my 3 dinner ideas" })).toBeVisible();
 
-  await page.getByRole("button", { name: "Log in to Generate Recipes" }).click();
+  await page
+    .getByPlaceholder("What sounds good?")
+    .fill("extra lemon");
+  await page.getByRole("button", { name: "Comfort" }).click();
+  await page.getByRole("button", { name: "Quick" }).click();
+  await page.getByRole("button", { name: "Dinner", exact: true }).click();
+  await expect(
+    page.getByPlaceholder("What sounds good?"),
+  ).toHaveValue("extra lemon");
+
+  await page.getByRole("button", { name: "Get my 3 dinner ideas" }).click();
 
   await expect(page).toHaveURL(/\/login$/);
   await expect(
@@ -28,7 +38,7 @@ test("guest can land on the homepage and open login from recipe generation", asy
 test("guest can browse latest public recipes", async ({ page }) => {
   await page.goto("/");
 
-  await page.getByRole("button", { name: "Browse 10 Latest Recipes" }).click();
+  await page.getByRole("button", { name: "Browse latest public recipes" }).click();
 
   await expect(page).toHaveURL(/\/Recipes$/);
   await expect(

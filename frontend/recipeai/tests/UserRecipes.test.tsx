@@ -30,14 +30,14 @@ describe("UserRecipes search flow", () => {
         };
       }
 
-      if (url === "searchRecipes/pasta?page=0&size=9") {
+      if (url === "searchRecipes/pasta?page=0&size=9&sort=id,desc") {
         return {
           content: [{ id: "9", name: "Pasta soup", timeToPrepare: "20 min" }],
           totalPages: 2,
         };
       }
 
-      if (url === "searchRecipes/pasta?page=1&size=9") {
+      if (url === "searchRecipes/pasta?page=1&size=9&sort=id,desc") {
         return {
           content: [{ id: "10", name: "Pasta bake", timeToPrepare: "30 min" }],
           totalPages: 2,
@@ -70,7 +70,7 @@ describe("UserRecipes search flow", () => {
 
     await waitFor(() => {
       expect(apiClient).toHaveBeenCalledWith(
-        "searchRecipes/pasta?page=0&size=9",
+        "searchRecipes/pasta?page=0&size=9&sort=id,desc",
         false,
       );
     });
@@ -98,7 +98,7 @@ describe("UserRecipes search flow", () => {
 
     await waitFor(() => {
       expect(apiClient).toHaveBeenCalledWith(
-        "searchRecipes/pasta?page=1&size=9",
+        "searchRecipes/pasta?page=1&size=9&sort=id,desc",
         false,
       );
     });

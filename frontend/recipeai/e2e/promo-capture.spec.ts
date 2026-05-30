@@ -77,10 +77,12 @@ test.describe("promo screenshot capture", () => {
     await mockPromoJourneyApi(page);
     await page.goto("/");
 
-    await page.getByPlaceholder("Create recipe").fill("quick creamy dinner");
+    await page
+      .getByPlaceholder("What sounds good?")
+      .fill("quick creamy dinner");
     await page.getByRole("button", { name: "Dinner" }).click();
     await page.getByRole("button", { name: "Quick" }).click();
-    await page.getByRole("button", { name: "Generate Recipe" }).click();
+    await page.getByRole("button", { name: "Show me 3 ideas" }).click();
 
     await expect(page.getByText("Creamy Coconut Chicken Bowl")).toBeVisible();
     await expect(page.getByRole("button", { name: "Save Recipe" })).toBeVisible();
@@ -92,10 +94,12 @@ test.describe("promo screenshot capture", () => {
     await mockPromoJourneyApi(page);
     await page.goto("/");
 
-    await page.getByPlaceholder("Create recipe").fill("quick creamy dinner");
+    await page
+      .getByPlaceholder("What sounds good?")
+      .fill("quick creamy dinner");
     await page.getByRole("button", { name: "Dinner" }).click();
     await page.getByRole("button", { name: "Quick" }).click();
-    await page.getByRole("button", { name: "Generate Recipe" }).click();
+    await page.getByRole("button", { name: "Show me 3 ideas" }).click();
     await expect(page.getByRole("button", { name: "Save Recipe" })).toBeVisible();
 
     await page.getByRole("button", { name: "Save Recipe" }).click();
@@ -108,10 +112,12 @@ test.describe("promo screenshot capture", () => {
     await mockPromoJourneyApi(page);
     await page.goto("/");
 
-    await page.getByPlaceholder("Create recipe").fill("quick creamy dinner");
+    await page
+      .getByPlaceholder("What sounds good?")
+      .fill("quick creamy dinner");
     await page.getByRole("button", { name: "Dinner" }).click();
     await page.getByRole("button", { name: "Quick" }).click();
-    await page.getByRole("button", { name: "Generate Recipe" }).click();
+    await page.getByRole("button", { name: "Show me 3 ideas" }).click();
     await expect(
       page.getByRole("button", { name: "Generate Shopping List" }),
     ).toBeVisible();

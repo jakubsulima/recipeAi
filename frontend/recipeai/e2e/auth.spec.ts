@@ -10,6 +10,6 @@ test("user can sign in with email and password", async ({ page }) => {
   await page.getByRole("button", { name: "Sign in" }).click();
 
   await expect(page).toHaveURL("/");
-  await expect(page.getByRole("button", { name: "Generate Recipe" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Show me 3 ideas" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Logout" })).toBeVisible();
 });

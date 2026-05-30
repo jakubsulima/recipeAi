@@ -55,10 +55,12 @@ const generatePromoRecipe = async (
   recipeTitle: string,
 ) => {
   await page.goto("/");
-  await page.getByPlaceholder("Create recipe").fill("quick creamy dinner");
+  await page
+    .getByPlaceholder("What sounds good?")
+    .fill("quick creamy dinner");
   await page.getByRole("button", { name: "Dinner" }).click();
   await page.getByRole("button", { name: "Quick" }).click();
-  await page.getByRole("button", { name: "Generate Recipe" }).click();
+  await page.getByRole("button", { name: "Show me 3 ideas" }).click();
   await expect(page.getByText(recipeTitle)).toBeVisible();
 };
 
@@ -66,7 +68,9 @@ const captureHomepageCreateState = async (
   page: import("@playwright/test").Page,
 ) => {
   await page.goto("/");
-  await page.getByPlaceholder("Create recipe").fill("quick creamy dinner");
+  await page
+    .getByPlaceholder("What sounds good?")
+    .fill("quick creamy dinner");
   await page.getByRole("button", { name: "Dinner" }).click();
   await page.getByRole("button", { name: "Quick" }).click();
   await page.screenshot({

@@ -39,6 +39,18 @@ public class Recipe {
     @Column
     private String timeToPrepare;
 
+    @Column(name = "nutrition_calories")
+    private Double nutritionCalories;
+
+    @Column(name = "nutrition_protein")
+    private Double nutritionProtein;
+
+    @Column(name = "nutrition_carbs")
+    private Double nutritionCarbs;
+
+    @Column(name = "nutrition_fats")
+    private Double nutritionFats;
+
     @UpdateTimestamp
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "updated_at")
@@ -120,6 +132,38 @@ public class Recipe {
 
     public void setTimeToPrepare(String timeToPrepare) {
         this.timeToPrepare = timeToPrepare;
+    }
+
+    public Double getNutritionCalories() {
+        return nutritionCalories;
+    }
+
+    public void setNutritionCalories(Double nutritionCalories) {
+        this.nutritionCalories = nutritionCalories;
+    }
+
+    public Double getNutritionProtein() {
+        return nutritionProtein;
+    }
+
+    public void setNutritionProtein(Double nutritionProtein) {
+        this.nutritionProtein = nutritionProtein;
+    }
+
+    public Double getNutritionCarbs() {
+        return nutritionCarbs;
+    }
+
+    public void setNutritionCarbs(Double nutritionCarbs) {
+        this.nutritionCarbs = nutritionCarbs;
+    }
+
+    public Double getNutritionFats() {
+        return nutritionFats;
+    }
+
+    public void setNutritionFats(Double nutritionFats) {
+        this.nutritionFats = nutritionFats;
     }
 
     public Instant getUpdatedAt() {

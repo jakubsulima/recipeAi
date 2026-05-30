@@ -19,7 +19,7 @@ const AnalyticsConsentBanner = () => {
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-50 border-t border-primary/15 bg-background/95 px-4 py-4 shadow-[0_-12px_32px_rgba(0,0,0,0.08)] backdrop-blur-sm">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 md:flex-row md:items-end md:justify-between">
+      <div className="mx-auto flex w-full max-w-5xl flex-col items-center gap-4 text-center">
         <div className="max-w-3xl">
           <p className="text-sm font-semibold text-text">Analytics settings</p>
           <p className="mt-1 text-sm text-text/70">
@@ -29,7 +29,7 @@ const AnalyticsConsentBanner = () => {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center justify-center gap-2">
           {!isFirstDecision && (
             <button
               type="button"

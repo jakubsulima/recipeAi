@@ -11,6 +11,7 @@ public class RecipeDto {
     private List<String> instructions = new ArrayList<>();
     private String description;
     private String timeToPrepare;
+    private RecipeNutritionDto nutrition;
     private int servings;
 
     public RecipeDto() {
@@ -74,6 +75,14 @@ public class RecipeDto {
         this.timeToPrepare = timeToPrepare;
     }
 
+    public RecipeNutritionDto getNutrition() {
+        return nutrition;
+    }
+
+    public void setNutrition(RecipeNutritionDto nutrition) {
+        this.nutrition = nutrition;
+    }
+
     public int getServings() {
         return servings;
     }
@@ -87,12 +96,28 @@ public class RecipeDto {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         RecipeDto recipeDto = (RecipeDto) o;
-        return servings == recipeDto.servings && Objects.equals(id, recipeDto.id) && Objects.equals(name, recipeDto.name) && Objects.equals(ingredients, recipeDto.ingredients) && Objects.equals(instructions, recipeDto.instructions) && Objects.equals(description, recipeDto.description) && Objects.equals(timeToPrepare, recipeDto.timeToPrepare);
+        return servings == recipeDto.servings
+                && Objects.equals(id, recipeDto.id)
+                && Objects.equals(name, recipeDto.name)
+                && Objects.equals(ingredients, recipeDto.ingredients)
+                && Objects.equals(instructions, recipeDto.instructions)
+                && Objects.equals(description, recipeDto.description)
+                && Objects.equals(timeToPrepare, recipeDto.timeToPrepare)
+                && Objects.equals(nutrition, recipeDto.nutrition);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, ingredients, instructions, description, timeToPrepare, servings);
+        return Objects.hash(
+                id,
+                name,
+                ingredients,
+                instructions,
+                description,
+                timeToPrepare,
+                nutrition,
+                servings
+        );
     }
 
     @Override
@@ -104,6 +129,7 @@ public class RecipeDto {
                 ", instructions=" + instructions +
                 ", description='" + description + '\'' +
                 ", timeToPrepare='" + timeToPrepare + '\'' +
+                ", nutrition=" + nutrition +
                 ", servings=" + servings +
                 '}';
     }
