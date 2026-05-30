@@ -64,7 +64,7 @@ const Recipes = () => {
         const response = await apiClient<Partial<PagedRecipesResponse>>(
           `searchRecipes/${encodeURIComponent(
             term,
-          )}?page=${currentPage}&size=${RECIPES_PER_PAGE}`,
+          )}?page=${currentPage}&size=${RECIPES_PER_PAGE}&sort=id,desc`,
           false,
         );
         const paged =
@@ -118,7 +118,7 @@ const Recipes = () => {
           setIsLoading(true);
           setError("");
           const response = await apiClient<PagedRecipesResponse>(
-            `getUserRecipes/${user.id}?page=${currentPage}&size=${RECIPES_PER_PAGE}`,
+            `getUserRecipes/${user.id}?page=${currentPage}&size=${RECIPES_PER_PAGE}&sort=id,desc`,
             false,
           );
           setRecipes(response.content);

@@ -35,6 +35,6 @@ test("new user is signed in after registration", async ({ page }) => {
   await page.getByRole("button", { name: "Create account" }).click();
 
   await expect(page).toHaveURL("/");
-  await expect(page.getByRole("button", { name: "Generate Recipe" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Show me 3 ideas" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Logout" })).toBeVisible();
 });

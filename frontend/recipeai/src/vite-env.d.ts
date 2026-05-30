@@ -30,6 +30,7 @@ interface GoogleAccountsId {
       shape?: string;
       logo_alignment?: string;
       width?: number;
+      locale?: string;
     }
   ) => void;
   prompt: () => void;

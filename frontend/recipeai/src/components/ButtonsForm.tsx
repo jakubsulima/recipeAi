@@ -36,14 +36,14 @@ const ButtonsForm = ({
         {options.map((button) => (
           <button
             key={button}
-            className={`relative z-10 flex min-w-0 flex-1 basis-0 items-center justify-center rounded-[1.75rem] px-1 py-3 text-xs font-semibold sm:text-sm tracking-wide transition-colors duration-[250ms] ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 hover:text-text active:scale-[0.97] ${
+            className={`relative z-10 flex min-w-0 flex-1 basis-0 items-center justify-center rounded-[1.75rem] px-0 py-3 text-[10px] font-semibold sm:px-1 sm:text-sm transition-colors duration-[250ms] ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 hover:text-text active:scale-[0.97] ${
               selectedButton === button
                 ? "text-text"
                 : "text-text/70 hover:bg-white/30"
             }`}
             onClick={() => onButtonClick(button)}
           >
-            <span className="truncate">{button}</span>
+            <span className="whitespace-normal leading-tight">{button}</span>
           </button>
         ))}
       </article>

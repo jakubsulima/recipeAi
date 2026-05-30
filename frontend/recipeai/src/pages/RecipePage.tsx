@@ -495,6 +495,7 @@ const RecipePage = () => {
         timeToPrepare: recipeData.timeToPrepare,
         ingredients: recipeData.ingredients,
         instructions: recipeData.instructions,
+        nutrition: recipeData.nutrition,
       });
       captureEvent("recipe_saved", {
         ingredientCount: recipeData.ingredients.length,

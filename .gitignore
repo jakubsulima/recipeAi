@@ -61,3 +61,4 @@ docker-compose.dev.yml
 .playwright-mcp/
 
 public/
+.security-review-report.md

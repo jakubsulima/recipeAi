@@ -9,7 +9,17 @@ interface SeoConfig {
 const SITE_NAME = "Dish Genie";
 const DEFAULT_TITLE = "Dish Genie";
 const DEFAULT_DESCRIPTION =
-	"Dish Genie helps you generate recipes from the ingredients you already have, browse public recipes, and plan meals faster.";
+	"Dish Genie helps you decide what to cook from ingredients you already have, without meal planning, inventory setup, or endless recipe scrolling.";
+
+const NOINDEX_ROUTE_TITLES: Record<string, string> = {
+	"/login": "Log in | Dish Genie",
+	"/register": "Create account | Dish Genie",
+	"/Recipe": "Recipe generator | Dish Genie",
+	"/admin": "Admin | Dish Genie",
+	"/My Profile": "My profile | Dish Genie",
+	"/My Preferences": "My preferences | Dish Genie",
+	"/ShoppingList": "Shopping list | Dish Genie",
+};
 
 const getOrigin = () => window.location.origin.replace(/\/$/, "");
 
@@ -135,9 +145,9 @@ export const getSeoConfig = (pathname: string): SeoConfig => {
 
 	if (decodedPath === "/") {
 		return {
-			title: "Dish Genie | Smart recipe generation from ingredients you already have",
+			title: "Dish Genie | Decide what to cook tonight in seconds",
 			description:
-				"Dish Genie generates meal ideas from ingredients you already have, helps you browse public recipes, and keeps your cooking plan organized.",
+				"Pick a dinner direction and Dish Genie gives you 3 realistic recipe ideas without another endless feed.",
 			canonicalPath: "/",
 			structuredData: {
 				"@context": "https://schema.org",
@@ -145,7 +155,7 @@ export const getSeoConfig = (pathname: string): SeoConfig => {
 				name: SITE_NAME,
 				url: toAbsoluteUrl("/"),
 				description:
-					"Dish Genie generates meal ideas from ingredients you already have, helps you browse public recipes, and keeps your cooking plan organized.",
+					"Dish Genie helps you decide what to cook tonight with 3 realistic recipe ideas instead of another endless feed.",
 			},
 		};
 	}
@@ -168,23 +178,10 @@ export const getSeoConfig = (pathname: string): SeoConfig => {
 		};
 	}
 
-	if (
-		["/login", "/register", "/Recipe", "/admin", "/My Profile", "/My Preferences", "/ShoppingList"].includes(decodedPath)
-	) {
+	const noindexTitle = NOINDEX_ROUTE_TITLES[decodedPath];
+	if (noindexTitle) {
 		return {
-			title: decodedPath === "/login"
-				? "Log in | Dish Genie"
-				: decodedPath === "/register"
-					? "Create account | Dish Genie"
-					: decodedPath === "/Recipe"
-						? "Recipe generator | Dish Genie"
-						: decodedPath === "/admin"
-							? "Admin | Dish Genie"
-							: decodedPath === "/ShoppingList"
-								? "Shopping list | Dish Genie"
-								: decodedPath === "/My Profile"
-									? "My profile | Dish Genie"
-									: "My preferences | Dish Genie",
+			title: noindexTitle,
 			description: DEFAULT_DESCRIPTION,
 			canonicalPath: decodedPath,
 			noindex: true,
