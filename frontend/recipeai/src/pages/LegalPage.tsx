@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 
 const policyUpdatedAt = "May 30, 2026";
-const contactEmail = "privacy@dishgenie.app";
+const contactEmail = "support@dishgenie.app";
 const contactEmailClassName = "font-semibold text-text hover:text-accent";
 
 const Section = ({
