@@ -23,6 +23,12 @@ public interface UserMapper {
     @Mapping(target = "fridgeIngredients", ignore = true)
     @Mapping(target = "authMethod", ignore = true)
     @Mapping(target = "subscriptionPlan", ignore = true)
+    @Mapping(target = "dailyRecipeCount", ignore = true)
+    @Mapping(target = "lastRecipeResetDate", ignore = true)
+    @Mapping(target = "termsAcceptedAt", ignore = true)
+    @Mapping(target = "privacyAcceptedAt", ignore = true)
+    @Mapping(target = "termsVersion", ignore = true)
+    @Mapping(target = "privacyVersion", ignore = true)
     User signUpToUser(SignUpDto userDto);
 
 }

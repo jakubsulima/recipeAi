@@ -3,7 +3,7 @@ import { apiClient } from "../lib/hooks";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useUser, type UserProps } from "../context/context";
 import ErrorAlert from "../components/ErrorAlert";
 import { captureEvent } from "../lib/posthog";
@@ -94,6 +94,19 @@ const Register = () => {
   const googleBtnRef = useRef<HTMLDivElement>(null);
   const isHandlingAuthSuccessRef = useRef(false);
 
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<RegisterProps>({
+    resolver: yupResolver(schema),
+    defaultValues: {
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+  });
+
   // Redirect already-logged-in users
   useEffect(() => {
     if (!authLoading && user && !isHandlingAuthSuccessRef.current) {
@@ -157,10 +170,12 @@ const Register = () => {
       try {
         const userData = await apiClient<UserProps>("oauth/google", true, {
           idToken: response.credential,
+          acceptedTerms: true,
+          acceptedPrivacy: true,
         });
         handleAuthSuccess(userData, "google");
-      } catch {
-        setError(GOOGLE_SIGN_UP_ERROR_MESSAGE);
+      } catch (error: unknown) {
+        setError(getErrorMessage(error, GOOGLE_SIGN_UP_ERROR_MESSAGE));
       } finally {
         setIsSubmitting(false);
       }
@@ -240,24 +255,15 @@ const Register = () => {
     };
   }, [handleGoogleCallback]);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<RegisterProps>({
-    resolver: yupResolver(schema),
-    defaultValues: {
-      email: "",
-      password: "",
-      confirmPassword: "",
-    },
-  });
-
   const onSubmit = async (data: RegisterProps) => {
     setIsSubmitting(true);
     setError("");
     try {
-      const userData = await apiClient<UserProps>("register", true, data);
+      const userData = await apiClient<UserProps>("register", true, {
+        ...data,
+        acceptedTerms: true,
+        acceptedPrivacy: true,
+      });
       handleAuthSuccess(userData, "credentials");
     } catch (error: unknown) {
       setError(getErrorMessage(error, "Registration failed"));
@@ -298,14 +304,14 @@ const Register = () => {
           {/* Google Sign-Up (rendered by Google SDK) */}
           <div className="mb-6 w-full">
             <div className="relative mx-auto h-11 w-full max-w-[400px]">
-              {!isGoogleButtonReady && (
+              {!isGoogleButtonReady ? (
                 <div className="absolute inset-0 flex animate-pulse items-center justify-center gap-3 rounded-full border border-primary/10 bg-secondary/70 text-sm font-semibold text-text/60 shadow-sm">
                   <span className="grid h-5 w-5 place-items-center rounded-full bg-background text-sm font-bold text-[#4285f4] shadow-sm">
                     G
                   </span>
                   <span>Continue with Google</span>
                 </div>
-              )}
+              ) : null}
               <div
                 ref={googleBtnRef}
                 className={`absolute inset-0 flex h-11 w-full justify-center transition-opacity duration-200 [&>div]:!mx-auto [&_iframe]:!rounded-full ${
@@ -394,6 +400,27 @@ const Register = () => {
             >
               {isSubmitting ? "Creating account..." : "Create account"}
             </button>
+            <p className="text-center text-xs leading-5 text-text/50">
+              By creating an account or continuing with Google, you agree to the{" "}
+              <Link
+                to="/terms"
+                target="_blank"
+                rel="noreferrer"
+                className="font-semibold text-text hover:text-accent"
+              >
+                Terms of Service
+              </Link>{" "}
+              and acknowledge the{" "}
+              <Link
+                to="/privacy"
+                target="_blank"
+                rel="noreferrer"
+                className="font-semibold text-text hover:text-accent"
+              >
+                Privacy Policy
+              </Link>
+              .
+            </p>
           </form>
         </div>
 

@@ -124,7 +124,10 @@ public class AuthController {
             "Przekroczono limit prób logowania. Spróbuj ponownie później."
         );
 
-        UserDto user = oAuthService.authenticateGoogle(oAuthLoginDto.getIdToken());
+        UserDto user = oAuthService.authenticateGoogle(
+                oAuthLoginDto.getIdToken(),
+                oAuthLoginDto.isAcceptedTerms(),
+                oAuthLoginDto.isAcceptedPrivacy());
         CreateToken(response, user.getEmail());
         captureAuthEvent(user, "auth_login_success", "google");
         return ResponseEntity.ok(user);

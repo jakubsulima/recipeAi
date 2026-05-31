@@ -1,8 +1,11 @@
 package org.jakub.backendapi.services;
 
 import org.jakub.backendapi.dto.RecipeDto;
+import org.jakub.backendapi.dto.RecipeIngredientDto;
+import org.jakub.backendapi.dto.RecipeNutritionDto;
 import org.jakub.backendapi.entities.Enums.Role;
 import org.jakub.backendapi.entities.Recipe;
+import org.jakub.backendapi.entities.RecipeIngredient;
 import org.jakub.backendapi.entities.User;
 import org.jakub.backendapi.exceptions.AppException;
 import org.jakub.backendapi.mappers.RecipeMapper;
@@ -30,6 +33,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(MockitoExtension.class)
 class RecipeServiceTest {
@@ -208,5 +212,45 @@ class RecipeServiceTest {
 
         assertTrue(result.isEmpty());
         verifyNoInteractions(recipeRepository);
+    }
+
+    @Test
+    void adminUpdateRecipe_shouldUpdateEditableRecipeFields() {
+        Recipe recipe = new Recipe();
+        recipe.setId(1L);
+        recipe.setName("Old name");
+        recipe.setDescription("Old description");
+        recipe.setTimeToPrepare("10 min");
+        recipe.setInstructions(List.of("Old instruction"));
+        recipe.setRecipeIngredients(List.of(new RecipeIngredient()));
+
+        RecipeDto update = new RecipeDto();
+        update.setName("New name");
+        update.setDescription("New description");
+        update.setTimeToPrepare("25 min");
+        update.setInstructions(List.of("Prep", "Cook"));
+        update.setNutrition(new RecipeNutritionDto(400.0, 20.0, 30.0, 10.0));
+        update.setIngredients(List.of(new RecipeIngredientDto("Rice", 100.0, "GRAMS")));
+
+        RecipeDto mappedResult = new RecipeDto();
+        mappedResult.setName("New name");
+
+        when(recipeRepository.findById(1L)).thenReturn(Optional.of(recipe));
+        when(ingredientRepository.findAllByLowerNameIn(any())).thenReturn(List.of());
+        when(ingredientRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(recipeRepository.save(recipe)).thenReturn(recipe);
+        when(recipeMapper.toRecipeDto(recipe)).thenReturn(mappedResult);
+
+        RecipeDto result = recipeService.adminUpdateRecipe(1L, update);
+
+        assertEquals("New name", result.getName());
+        assertEquals("New name", recipe.getName());
+        assertEquals("New description", recipe.getDescription());
+        assertEquals("25 min", recipe.getTimeToPrepare());
+        assertEquals(List.of("Prep", "Cook"), recipe.getInstructions());
+        assertEquals(400.0, recipe.getNutritionCalories());
+        assertEquals(20.0, recipe.getNutritionProtein());
+        assertEquals(30.0, recipe.getNutritionCarbs());
+        assertEquals(10.0, recipe.getNutritionFats());
     }
 }

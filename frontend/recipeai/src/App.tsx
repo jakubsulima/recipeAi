@@ -19,9 +19,29 @@ const Register = lazy(() => import("./pages/Register"));
 const MePage = lazy(() => import("./pages/UserPreferencesPage.tsx"));
 const AdminPage = lazy(() => import("./pages/AdminPage"));
 const ShoppingList = lazy(() => import("./pages/ShoppingList"));
-import { AuthProvider } from "./context/context"; // Add import for AuthProvider
+const BlogIndexPage = lazy(() =>
+  import("./pages/BlogPage").then((module) => ({
+    default: module.BlogIndexPage,
+  })),
+);
+const BlogPostPage = lazy(() =>
+  import("./pages/BlogPage").then((module) => ({
+    default: module.BlogPostPage,
+  })),
+);
+const PrivacyPolicyPage = lazy(() =>
+  import("./pages/LegalPage").then((module) => ({
+    default: module.PrivacyPolicyPage,
+  })),
+);
+const TermsOfServicePage = lazy(() =>
+  import("./pages/LegalPage").then((module) => ({
+    default: module.TermsOfServicePage,
+  })),
+);
+import { AuthProvider } from "./context/context";
 import { AnalyticsConsentProvider } from "./context/analyticsConsentContext";
-import { FridgeProvider } from "./context/fridgeContext.tsx"; // Add import for FridgeProvider
+import { FridgeProvider } from "./context/fridgeContext.tsx";
 import { GuestRoute, ProtectedRoute } from "./components/RouteGuards";
 import ErrorPage from "./pages/ErrorPage";
 import { RouteShell } from "./components/RouteShell";
@@ -93,6 +113,10 @@ function App() {
         />
         <Route path="/Recipe/:id" element={withSuspense(<RecipePage />)} />
         <Route path="/myRecipes" element={<Navigate to="/Recipes" replace />} />
+        <Route path="/privacy" element={withSuspense(<PrivacyPolicyPage />)} />
+        <Route path="/terms" element={withSuspense(<TermsOfServicePage />)} />
+        <Route path="/blog" element={withSuspense(<BlogIndexPage />)} />
+        <Route path="/blog/:slug" element={withSuspense(<BlogPostPage />)} />
         <Route
           path="/admin"
           element={withSuspense(

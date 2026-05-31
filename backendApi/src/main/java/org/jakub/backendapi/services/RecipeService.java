@@ -165,6 +165,9 @@ public class RecipeService {
 
         recipe.setName(recipeDto.getName());
         recipe.setDescription(recipeDto.getDescription());
+        recipe.setTimeToPrepare(recipeDto.getTimeToPrepare());
+        recipe.setInstructions(recipeDto.getInstructions() == null ? List.of() : recipeDto.getInstructions());
+        applyNutrition(recipeDto, recipe);
 
         List<RecipeIngredient> updatedIngredients = getRecipeIngredients(recipeDto, recipe);
 
@@ -173,6 +176,21 @@ public class RecipeService {
         recipeIngredientRepository.saveAll(updatedIngredients);
 
         return recipeMapper.toRecipeDto(recipeRepository.save(recipe));
+    }
+
+    private void applyNutrition(RecipeDto recipeDto, Recipe recipe) {
+        if (recipeDto.getNutrition() == null) {
+            recipe.setNutritionCalories(null);
+            recipe.setNutritionProtein(null);
+            recipe.setNutritionCarbs(null);
+            recipe.setNutritionFats(null);
+            return;
+        }
+
+        recipe.setNutritionCalories(recipeDto.getNutrition().getCalories());
+        recipe.setNutritionProtein(recipeDto.getNutrition().getProtein());
+        recipe.setNutritionCarbs(recipeDto.getNutrition().getCarbs());
+        recipe.setNutritionFats(recipeDto.getNutrition().getFats());
     }
 
     public RecipeDto adminUpdateRecipe(Long id, RecipeDto recipeDto) {
