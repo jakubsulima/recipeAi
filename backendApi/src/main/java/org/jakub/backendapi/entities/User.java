@@ -6,6 +6,7 @@ import org.jakub.backendapi.entities.Enums.AuthMethod;
 import org.jakub.backendapi.entities.Enums.Role;
 import org.jakub.backendapi.entities.Enums.SubscriptionPlan;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 
@@ -39,6 +40,18 @@ public class User {
 
     @Column(name = "last_recipe_reset_date")
     private java.time.LocalDate lastRecipeResetDate;
+
+    @Column(name = "terms_accepted_at")
+    private LocalDateTime termsAcceptedAt;
+
+    @Column(name = "privacy_accepted_at")
+    private LocalDateTime privacyAcceptedAt;
+
+    @Column(name = "terms_version")
+    private String termsVersion;
+
+    @Column(name = "privacy_version")
+    private String privacyVersion;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Recipe> recipes;
@@ -148,6 +161,38 @@ public class User {
 
     public void setLastRecipeResetDate(java.time.LocalDate lastRecipeResetDate) {
         this.lastRecipeResetDate = lastRecipeResetDate;
+    }
+
+    public LocalDateTime getTermsAcceptedAt() {
+        return termsAcceptedAt;
+    }
+
+    public void setTermsAcceptedAt(LocalDateTime termsAcceptedAt) {
+        this.termsAcceptedAt = termsAcceptedAt;
+    }
+
+    public LocalDateTime getPrivacyAcceptedAt() {
+        return privacyAcceptedAt;
+    }
+
+    public void setPrivacyAcceptedAt(LocalDateTime privacyAcceptedAt) {
+        this.privacyAcceptedAt = privacyAcceptedAt;
+    }
+
+    public String getTermsVersion() {
+        return termsVersion;
+    }
+
+    public void setTermsVersion(String termsVersion) {
+        this.termsVersion = termsVersion;
+    }
+
+    public String getPrivacyVersion() {
+        return privacyVersion;
+    }
+
+    public void setPrivacyVersion(String privacyVersion) {
+        this.privacyVersion = privacyVersion;
     }
 
     @Override

@@ -1,8 +1,11 @@
+import { blogPosts, getBlogPost } from "./blogPosts";
+
 interface SeoConfig {
 	title: string;
 	description: string;
 	canonicalPath: string;
 	noindex?: boolean;
+	ogType?: "website" | "article";
 	structuredData?: Record<string, unknown>;
 }
 
@@ -114,7 +117,7 @@ export const applySeo = (config: SeoConfig) => {
 
 	ensureMetaTag('meta[property="og:type"]', {
 		property: "og:type",
-		content: config.structuredData ? "website" : "article",
+		content: config.ogType ?? "website",
 	});
 
 	ensureMetaTag('meta[name="twitter:card"]', {
@@ -176,6 +179,78 @@ export const getSeoConfig = (pathname: string): SeoConfig => {
 				"Open a public recipe on Dish Genie to view its ingredients, steps, and cooking time.",
 			canonicalPath: decodedPath,
 		};
+	}
+
+	if (decodedPath === "/privacy") {
+		return {
+			title: "Privacy Policy | Dish Genie",
+			description:
+				"Read the Dish Genie Privacy Policy to understand what information the app collects, how it is used, and how analytics choices work.",
+			canonicalPath: "/privacy",
+		};
+	}
+
+	if (decodedPath === "/terms") {
+		return {
+			title: "Terms of Service | Dish Genie",
+			description:
+				"Read the Dish Genie Terms of Service, including acceptable use, AI recipe output guidance, and service rules.",
+			canonicalPath: "/terms",
+		};
+	}
+
+	if (decodedPath === "/blog") {
+		return {
+			title: "Dish Genie Blog | Practical cooking and AI recipe tips",
+			description:
+				"Read practical Dish Genie guides on meal planning, fridge organization, AI recipe generation, and cooking from ingredients you already have.",
+			canonicalPath: "/blog",
+			structuredData: {
+				"@context": "https://schema.org",
+				"@type": "Blog",
+				name: "Dish Genie Blog",
+				url: toAbsoluteUrl("/blog"),
+				description:
+					"Practical guides on meal planning, fridge organization, and AI recipe generation.",
+				blogPost: blogPosts.map((post) => ({
+					"@type": "BlogPosting",
+					headline: post.title,
+					description: post.description,
+					datePublished: post.publishedAt,
+					url: toAbsoluteUrl(`/blog/${post.slug}`),
+				})),
+			},
+		};
+	}
+
+	if (decodedPath.startsWith("/blog/")) {
+		const slug = decodedPath.replace("/blog/", "");
+		const post = getBlogPost(slug);
+
+		if (post) {
+			return {
+				title: `${post.title} | Dish Genie Blog`,
+				description: post.description,
+				canonicalPath: `/blog/${post.slug}`,
+				ogType: "article",
+				structuredData: {
+					"@context": "https://schema.org",
+					"@type": "BlogPosting",
+					headline: post.title,
+					description: post.description,
+					datePublished: post.publishedAt,
+					author: {
+						"@type": "Organization",
+						name: SITE_NAME,
+					},
+					publisher: {
+						"@type": "Organization",
+						name: SITE_NAME,
+					},
+					mainEntityOfPage: toAbsoluteUrl(`/blog/${post.slug}`),
+				},
+			};
+		}
 	}
 
 	const noindexTitle = NOINDEX_ROUTE_TITLES[decodedPath];

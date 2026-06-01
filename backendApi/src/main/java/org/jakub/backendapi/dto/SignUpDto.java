@@ -12,6 +12,8 @@ public class SignUpDto {
     private String email;
     @NotEmpty
     private char[] password;
+    private boolean acceptedTerms;
+    private boolean acceptedPrivacy;
 
     public SignUpDto() {
     }
@@ -19,6 +21,13 @@ public class SignUpDto {
     public SignUpDto(String email, char[] password) {
         this.email = email;
         this.password = password;
+    }
+
+    public SignUpDto(String email, char[] password, boolean acceptedTerms, boolean acceptedPrivacy) {
+        this.email = email;
+        this.password = password;
+        this.acceptedTerms = acceptedTerms;
+        this.acceptedPrivacy = acceptedPrivacy;
     }
 
     public String getEmail() {
@@ -37,18 +46,39 @@ public class SignUpDto {
         this.password = password;
     }
 
+    public boolean isAcceptedTerms() {
+        return acceptedTerms;
+    }
+
+    public void setAcceptedTerms(boolean acceptedTerms) {
+        this.acceptedTerms = acceptedTerms;
+    }
+
+    public boolean isAcceptedPrivacy() {
+        return acceptedPrivacy;
+    }
+
+    public void setAcceptedPrivacy(boolean acceptedPrivacy) {
+        this.acceptedPrivacy = acceptedPrivacy;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         SignUpDto signUpDto = (SignUpDto) o;
-        return Objects.equals(email, signUpDto.email) && Arrays.equals(password, signUpDto.password);
+        return acceptedTerms == signUpDto.acceptedTerms
+                && acceptedPrivacy == signUpDto.acceptedPrivacy
+                && Objects.equals(email, signUpDto.email)
+                && Arrays.equals(password, signUpDto.password);
     }
 
     @Override
     public int hashCode() {
         int result = Objects.hash(email);
         result = 31 * result + Arrays.hashCode(password);
+        result = 31 * result + Boolean.hashCode(acceptedTerms);
+        result = 31 * result + Boolean.hashCode(acceptedPrivacy);
         return result;
     }
 
@@ -56,7 +86,8 @@ public class SignUpDto {
     public String toString() {
         return "SignUpDto{" +
                 "email='" + email + '\'' +
-                ", password=" + Arrays.toString(password) +
+                ", acceptedTerms=" + acceptedTerms +
+                ", acceptedPrivacy=" + acceptedPrivacy +
                 '}';
     }
 }

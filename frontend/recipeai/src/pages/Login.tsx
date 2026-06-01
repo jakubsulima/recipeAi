@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useUser, type UserProps } from "../context/context";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import ErrorAlert from "../components/ErrorAlert";
 import { captureEvent } from "../lib/posthog";
 import {
@@ -139,10 +139,12 @@ const Login = () => {
       try {
         const userData = await apiClient<UserProps>("oauth/google", true, {
           idToken: response.credential,
+          acceptedTerms: true,
+          acceptedPrivacy: true,
         });
         handleAuthSuccess(userData, "google");
-      } catch {
-        setError(GOOGLE_SIGN_IN_ERROR_MESSAGE);
+      } catch (error: unknown) {
+        setError(getErrorMessage(error, GOOGLE_SIGN_IN_ERROR_MESSAGE));
       } finally {
         setIsSubmitting(false);
       }
@@ -294,6 +296,27 @@ const Login = () => {
                 }`}
               />
             </div>
+            <p className="mt-3 text-center text-xs leading-5 text-text/50">
+              If this creates a new account, you agree to the{" "}
+              <Link
+                to="/terms"
+                target="_blank"
+                rel="noreferrer"
+                className="font-semibold text-text hover:text-accent"
+              >
+                Terms
+              </Link>{" "}
+              and acknowledge the{" "}
+              <Link
+                to="/privacy"
+                target="_blank"
+                rel="noreferrer"
+                className="font-semibold text-text hover:text-accent"
+              >
+                Privacy Policy
+              </Link>
+              .
+            </p>
           </div>
 
           {/* Divider */}

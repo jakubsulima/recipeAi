@@ -5,6 +5,7 @@ import org.jakub.backendapi.dto.UserDto;
 import org.jakub.backendapi.entities.Enums.Diet;
 import org.jakub.backendapi.entities.Enums.Role;
 import org.jakub.backendapi.entities.User;
+import org.jakub.backendapi.exceptions.AppException;
 import org.jakub.backendapi.mappers.UserMapper;
 import org.jakub.backendapi.repositories.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,7 +45,7 @@ public class UserServiceTest {
     @Test
     void register_shouldCreateUserWithDefaultPreferences() {
         // Given
-        SignUpDto signUpDto = new SignUpDto("test@example.com", "password".toCharArray());
+        SignUpDto signUpDto = new SignUpDto("test@example.com", "password".toCharArray(), true, true);
         User user = new User();
         user.setEmail(signUpDto.getEmail());
 
@@ -82,5 +83,51 @@ public class UserServiceTest {
         assertEquals(Diet.NONE, capturedUser.getUserPreferences().getDiet());
         assertEquals(java.util.List.of(Diet.NONE), capturedUser.getUserPreferences().getDiets());
         assertEquals(capturedUser, capturedUser.getUserPreferences().getUser());
+        assertNotNull(capturedUser.getTermsAcceptedAt());
+        assertNotNull(capturedUser.getPrivacyAcceptedAt());
+        assertEquals(UserService.TERMS_VERSION, capturedUser.getTermsVersion());
+        assertEquals(UserService.PRIVACY_VERSION, capturedUser.getPrivacyVersion());
+    }
+
+    @Test
+    void register_shouldRejectMissingPolicyAcceptance() {
+        SignUpDto signUpDto = new SignUpDto("test@example.com", "password".toCharArray(), false, true);
+
+        AppException exception = assertThrows(AppException.class, () -> userService.register(signUpDto));
+
+        assertEquals(
+                "You must accept the Terms of Service and acknowledge the Privacy Policy to create an account.",
+                exception.getMessage()
+        );
+    }
+
+    @Test
+    void updateUserRole_shouldRejectRemovingLastAdmin() {
+        User admin = new User();
+        admin.setId(1L);
+        admin.setEmail("admin@example.com");
+        admin.setRole(Role.ADMIN);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(admin));
+        when(userRepository.countByRole(Role.ADMIN)).thenReturn(1L);
+
+        AppException exception = assertThrows(AppException.class, () -> userService.updateUserRole(1L, Role.USER));
+
+        assertEquals("Cannot remove the last admin user.", exception.getMessage());
+    }
+
+    @Test
+    void deleteUser_shouldRejectDeletingLastAdmin() {
+        User admin = new User();
+        admin.setId(1L);
+        admin.setEmail("admin@example.com");
+        admin.setRole(Role.ADMIN);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(admin));
+        when(userRepository.countByRole(Role.ADMIN)).thenReturn(1L);
+
+        AppException exception = assertThrows(AppException.class, () -> userService.deleteUser(1L));
+
+        assertEquals("Cannot delete the last admin user.", exception.getMessage());
     }
 }

@@ -32,16 +32,18 @@ public class OAuthService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final UserService userService;
 
     @Value("${oauth.google.client-id:}")
     private String googleClientId;
 
-    public OAuthService(UserRepository userRepository, UserMapper userMapper) {
+    public OAuthService(UserRepository userRepository, UserMapper userMapper, UserService userService) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
+        this.userService = userService;
     }
 
-    public UserDto authenticateGoogle(String idTokenString) {
+    public UserDto authenticateGoogle(String idTokenString, boolean acceptedTerms, boolean acceptedPrivacy) {
         try {
             GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
                     new NetHttpTransport(), GsonFactory.getDefaultInstance())
@@ -63,7 +65,7 @@ public class OAuthService {
                 throw new AppException(GENERIC_GOOGLE_AUTH_FAILURE_MESSAGE, HttpStatus.BAD_REQUEST);
             }
 
-            return findOrCreateOAuthUser(email, AuthMethod.GOOGLE);
+            return findOrCreateOAuthUser(email, AuthMethod.GOOGLE, acceptedTerms, acceptedPrivacy);
         } catch (AppException e) {
             throw e;
         } catch (Exception e) {
@@ -72,18 +74,25 @@ public class OAuthService {
         }
     }
 
-    private UserDto findOrCreateOAuthUser(String email, AuthMethod authMethod) {
+    private UserDto findOrCreateOAuthUser(
+            String email,
+            AuthMethod authMethod,
+            boolean acceptedTerms,
+            boolean acceptedPrivacy) {
         Optional<User> existingUser = userRepository.findByEmail(email);
 
         if (existingUser.isPresent()) {
             return userMapper.toUserDto(existingUser.get());
         }
 
+        userService.assertPoliciesAccepted(acceptedTerms, acceptedPrivacy);
+
         User user = new User();
         user.setEmail(email);
         user.setPassword(null);
         user.setRole(Role.USER);
         user.setAuthMethod(authMethod);
+        userService.markPoliciesAccepted(user);
 
         UserPreferences userPreferences = new UserPreferences();
         userPreferences.setDiets(List.of(Diet.NONE));

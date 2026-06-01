@@ -1,59 +1,71 @@
-import React, { useCallback, useEffect, useState, useContext } from "react";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { AuthContext } from "../context/context";
 import { apiClient, deleteClient, putClient } from "../lib/hooks";
 import AdminRecipesPanel from "../components/AdminRecipesPanel";
 import { AdminDashboardSkeleton } from "../components/Skeleton";
 import ErrorAlert from "../components/ErrorAlert";
 import PaginationControls from "../components/PaginationControls";
+import type {
+  AdminRole,
+  AdminUser,
+  PageResponse,
+  SubscriptionPlan,
+  UserRecipeFilter,
+} from "../lib/adminTypes";
 
-type SubscriptionPlan = "FREE" | "PAID";
+const PAGE_SIZE = 20;
 
-interface User {
-  id: number;
-  email: string;
-  role: string;
-  subscriptionPlan?: SubscriptionPlan;
-}
+const rolePermissions: Record<AdminRole, string[]> = {
+  USER: [
+    "Create and manage own recipes",
+    "Generate recipes within plan limits",
+    "Manage own preferences",
+  ],
+  ADMIN: [
+    "All user permissions",
+    "Manage users, roles, and plans",
+    "View, edit, and delete recipes",
+    "Bypass daily recipe generation limits",
+  ],
+};
 
 const AdminPage: React.FC = () => {
-  const PAGE_SIZE = 20;
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [updatingPlanUserId, setUpdatingPlanUserId] = useState<number | null>(
-    null,
-  );
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [updatingUserId, setUpdatingUserId] = useState<number | null>(null);
+  const [selectedUserRecipes, setSelectedUserRecipes] =
+    useState<UserRecipeFilter | null>(null);
   const authContext = useContext(AuthContext);
 
-  const fetchUsers = useCallback(
-    async (pageNum: number = currentPage) => {
-      setLoading(true);
-      try {
-        const data = await apiClient(
-          `admin/users?page=${pageNum}&size=${PAGE_SIZE}`,
-        );
-        const pagedData =
-          data && typeof data === "object"
-            ? (data as { content?: User[]; totalPages?: number })
-            : undefined;
-        setUsers(Array.isArray(pagedData?.content) ? pagedData.content : []);
-        setTotalPages(
-          typeof pagedData?.totalPages === "number" ? pagedData.totalPages : 1,
-        );
-        setError(null);
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "An unknown error occurred",
-        );
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [currentPage],
-  );
+  const fetchUsers = useCallback(async (pageNum: number = currentPage) => {
+    setLoading(true);
+    try {
+      const data = await apiClient<PageResponse<AdminUser>>(
+        `admin/users?page=${pageNum}&size=${PAGE_SIZE}`,
+      );
+      setUsers(Array.isArray(data.content) ? data.content : []);
+      setTotalPages(typeof data.totalPages === "number" ? data.totalPages : 1);
+      setTotalUsers(
+        typeof data.totalElements === "number" ? data.totalElements : 0,
+      );
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to load users");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage]);
 
   useEffect(() => {
     if (authContext?.user?.role === "ADMIN") {
@@ -61,44 +73,60 @@ const AdminPage: React.FC = () => {
     }
   }, [authContext?.user?.role, currentPage, fetchUsers]);
 
-  const handleDeleteUser = async (userId: number) => {
-    if (window.confirm("Are you sure you want to delete this user?")) {
-      try {
-        await deleteClient(`admin/users/delete/${userId}`);
-        if (users.length === 1 && currentPage > 0) {
-          setCurrentPage((prev) => prev - 1);
-        } else {
-          fetchUsers(currentPage);
-        }
-      } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : "An unknown error occurred while deleting user",
-        );
-        console.error(err);
+  const visibleStats = useMemo(() => {
+    const admins = users.filter((user) => user.role === "ADMIN").length;
+    const paid = users.filter((user) => user.subscriptionPlan === "PAID").length;
+    return {
+      admins,
+      users: users.length - admins,
+      paid,
+      free: users.length - paid,
+    };
+  }, [users]);
+
+  const handleDeleteUser = async (user: AdminUser) => {
+    if (
+      !window.confirm(
+        `Delete ${user.email}? Their account and owned data will be removed.`,
+      )
+    ) {
+      return;
+    }
+
+    setUpdatingUserId(user.id);
+    setError(null);
+    try {
+      await deleteClient(`admin/users/delete/${user.id}`);
+      if (selectedUserRecipes?.id === user.id) {
+        setSelectedUserRecipes(null);
       }
+      if (users.length === 1 && currentPage > 0) {
+        setCurrentPage((prev) => prev - 1);
+      } else {
+        await fetchUsers(currentPage);
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "An unknown error occurred while deleting user",
+      );
+      console.error(err);
+    } finally {
+      setUpdatingUserId(null);
     }
   };
 
-  const handlePlanChange = async (userId: number, plan: SubscriptionPlan) => {
-    setUpdatingPlanUserId(userId);
+  const handlePlanChange = async (user: AdminUser, plan: SubscriptionPlan) => {
+    setUpdatingUserId(user.id);
     setError(null);
     try {
-      const updatedUser: User = await putClient(`admin/users/${userId}/plan`, {
+      const updatedUser = (await putClient(`admin/users/${user.id}/plan`, {
         plan,
+      })) as AdminUser;
+      updateUserInState(user.id, {
+        subscriptionPlan: updatedUser.subscriptionPlan || plan,
       });
-      setUsers((prevUsers) =>
-        prevUsers.map((user) =>
-          user.id === userId
-            ? {
-                ...user,
-                subscriptionPlan: (updatedUser.subscriptionPlan ||
-                  plan) as SubscriptionPlan,
-              }
-            : user,
-        ),
-      );
     } catch (err) {
       setError(
         err instanceof Error
@@ -107,100 +135,228 @@ const AdminPage: React.FC = () => {
       );
       console.error(err);
     } finally {
-      setUpdatingPlanUserId(null);
+      setUpdatingUserId(null);
     }
   };
 
+  const handleRoleChange = async (user: AdminUser, role: AdminRole) => {
+    if (user.role === role) {
+      return;
+    }
+
+    if (
+      role !== "ADMIN" &&
+      !window.confirm(`Remove admin permissions from ${user.email}?`)
+    ) {
+      return;
+    }
+
+    setUpdatingUserId(user.id);
+    setError(null);
+    try {
+      const updatedUser = (await putClient(
+        `admin/users/${user.id}/role`,
+        role,
+      )) as AdminUser;
+      updateUserInState(user.id, { role: updatedUser.role || role });
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "An unknown error occurred while updating the user role",
+      );
+      console.error(err);
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
+  const updateUserInState = (userId: number, patch: Partial<AdminUser>) => {
+    setUsers((prevUsers) =>
+      prevUsers.map((user) =>
+        user.id === userId ? { ...user, ...patch } : user,
+      ),
+    );
+  };
+
   if (authContext?.loading || loading) {
-    return <AdminDashboardSkeleton rows={PAGE_SIZE} columns={5} />;
+    return <AdminDashboardSkeleton rows={PAGE_SIZE} columns={6} />;
   }
 
   if (!authContext || authContext.user?.role !== "ADMIN") {
     return (
-      <div className="container mx-auto p-4 bg-background min-h-screen text-accent">
-        Access Denied. You must be an admin to view this page.
+      <div className="min-h-screen bg-background p-4 text-accent">
+        Access denied. You must be an admin to view this page.
       </div>
     );
   }
 
   return (
-    <div className="mobile-page-enter container mx-auto p-4 bg-background min-h-screen">
-      <h1 className="text-3xl font-bold mb-6 text-text">Admin Dashboard</h1>
-      <ErrorAlert
-        message={error}
-        className="mb-6"
-        onAutoHide={() => setError(null)}
-      />
-
-      <div className="mb-12">
-        <h2 className="text-2xl font-semibold mb-4 text-text">
-          User Management
-        </h2>
-        {users.length === 0 && !error ? (
-          <p className="text-text/70">No users found.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-secondary shadow-md rounded-lg">
-              <thead className="bg-primary/10 text-text">
-                <tr>
-                  <th className="py-3 px-4 text-left">ID</th>
-                  <th className="py-3 px-4 text-left">Email</th>
-                  <th className="py-3 px-4 text-left">Role</th>
-                  <th className="py-3 px-4 text-left">Plan</th>
-                  <th className="py-3 px-4 text-left">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="text-text">
-                {users.map((user) => (
-                  <tr
-                    key={user.id}
-                    className="border-b border-primary/20 hover:bg-primary/5 transition-colors"
-                  >
-                    <td className="py-3 px-4">{user.id}</td>
-                    <td className="py-3 px-4">{user.email}</td>
-                    <td className="py-3 px-4">{user.role}</td>
-                    <td className="py-3 px-4">
-                      <select
-                        value={user.subscriptionPlan || "FREE"}
-                        onChange={(e) =>
-                          handlePlanChange(
-                            user.id,
-                            e.target.value as SubscriptionPlan,
-                          )
-                        }
-                        className="rounded border border-primary/30 bg-background px-2 py-1 text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent"
-                        disabled={updatingPlanUserId === user.id}
-                      >
-                        <option value="FREE">FREE</option>
-                        <option value="PAID">PAID</option>
-                      </select>
-                    </td>
-                    <td className="py-3 px-4">
-                      <button
-                        onClick={() => handleDeleteUser(user.id)}
-                        className="mobile-soft-press bg-accent hover:bg-accent/80 text-background font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={user.email === authContext.user?.email} // Prevent admin from deleting themselves
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+    <div className="mobile-page-enter min-h-screen bg-background px-4 py-6 text-text">
+      <div className="mx-auto max-w-7xl">
+        <header className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+            <p className="mt-1 text-sm text-text/70">
+              Manage users, permissions, plans, and recipes.
+            </p>
           </div>
-        )}
-        <PaginationControls
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
+          <div className="text-sm text-text/70">
+            Signed in as{" "}
+            <span className="font-semibold text-text">
+              {authContext.user.email}
+            </span>
+          </div>
+        </header>
+
+        <ErrorAlert
+          message={error}
+          className="mb-6"
+          onAutoHide={() => setError(null)}
+        />
+
+        <section className="mb-8 grid gap-3 md:grid-cols-4">
+          <SummaryStat label="Total users" value={totalUsers} />
+          <SummaryStat label="Visible admins" value={visibleStats.admins} />
+          <SummaryStat label="Visible paid plans" value={visibleStats.paid} />
+          <SummaryStat label="Visible free plans" value={visibleStats.free} />
+        </section>
+
+        <section className="mb-10">
+          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold">Users & Permissions</h2>
+              <p className="mt-1 text-sm text-text/70">
+                Roles are enforced by the backend. The API blocks deleting or
+                demoting the final admin.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => fetchUsers(currentPage)}
+              className="mobile-soft-press w-fit rounded bg-secondary px-4 py-2 text-sm font-semibold text-text transition-colors hover:bg-primary/10"
+            >
+              Refresh
+            </button>
+          </div>
+
+          {users.length === 0 && !error ? (
+            <p className="text-text/70">No users found.</p>
+          ) : (
+            <div className="overflow-x-auto rounded border border-primary/20">
+              <table className="min-w-full bg-secondary">
+                <thead className="bg-primary/10 text-sm text-text">
+                  <tr>
+                    <th className="px-4 py-3 text-left">ID</th>
+                    <th className="px-4 py-3 text-left">Email</th>
+                    <th className="px-4 py-3 text-left">Role</th>
+                    <th className="px-4 py-3 text-left">Plan</th>
+                    <th className="px-4 py-3 text-left">Permissions</th>
+                    <th className="px-4 py-3 text-left">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="text-sm text-text">
+                  {users.map((user) => {
+                    const isSelf = user.email === authContext.user?.email;
+                    const disabled = updatingUserId === user.id;
+
+                    return (
+                      <tr
+                        key={user.id}
+                        className="border-t border-primary/15 align-top transition-colors hover:bg-primary/5"
+                      >
+                        <td className="px-4 py-3">{user.id}</td>
+                        <td className="px-4 py-3 font-medium">{user.email}</td>
+                        <td className="px-4 py-3">
+                          <select
+                            value={user.role}
+                            onChange={(event) =>
+                              handleRoleChange(user, event.target.value as AdminRole)
+                            }
+                            className="rounded border border-primary/30 bg-background px-2 py-1 text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent"
+                            disabled={disabled || isSelf}
+                            title={
+                              isSelf
+                                ? "Use another admin account to change your own role"
+                                : "Change user role"
+                            }
+                          >
+                            <option value="USER">USER</option>
+                            <option value="ADMIN">ADMIN</option>
+                          </select>
+                        </td>
+                        <td className="px-4 py-3">
+                          <select
+                            value={user.subscriptionPlan || "FREE"}
+                            onChange={(event) =>
+                              handlePlanChange(
+                                user,
+                                event.target.value as SubscriptionPlan,
+                              )
+                            }
+                            className="rounded border border-primary/30 bg-background px-2 py-1 text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent"
+                            disabled={disabled}
+                          >
+                            <option value="FREE">FREE</option>
+                            <option value="PAID">PAID</option>
+                          </select>
+                        </td>
+                        <td className="max-w-md px-4 py-3 text-text/75">
+                          {rolePermissions[user.role].join(" · ")}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setSelectedUserRecipes({
+                                  id: user.id,
+                                  email: user.email,
+                                })
+                              }
+                              className="mobile-soft-press rounded bg-background px-3 py-2 text-sm font-semibold text-text transition-colors hover:bg-primary/10"
+                            >
+                              Recipes
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteUser(user)}
+                              className="mobile-soft-press rounded bg-accent px-3 py-2 text-sm font-semibold text-background transition-colors hover:bg-accent/80 disabled:cursor-not-allowed disabled:opacity-50"
+                              disabled={disabled || isSelf}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        </section>
+
+        <AdminRecipesPanel
+          userFilter={selectedUserRecipes}
+          onClearUserFilter={() => setSelectedUserRecipes(null)}
         />
       </div>
-
-      {/* Recipe Management Panel */}
-      <AdminRecipesPanel />
     </div>
   );
 };
+
+const SummaryStat = ({ label, value }: { label: string; value: number }) => (
+  <div className="rounded border border-primary/20 bg-secondary p-4">
+    <div className="text-sm text-text/65">{label}</div>
+    <div className="mt-1 text-2xl font-bold text-text">{value}</div>
+  </div>
+);
 
 export default AdminPage;

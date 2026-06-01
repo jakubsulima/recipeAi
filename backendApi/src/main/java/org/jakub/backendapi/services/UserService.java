@@ -20,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.nio.CharBuffer;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -27,6 +28,9 @@ import java.util.stream.Collectors;
 
 @Service
 public class UserService {
+    public static final String TERMS_VERSION = "2026-05-30";
+    public static final String PRIVACY_VERSION = "2026-05-30";
+
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
@@ -96,6 +100,8 @@ public class UserService {
     }
 
     public UserDto register(SignUpDto signUpDto) {
+        assertPoliciesAccepted(signUpDto.isAcceptedTerms(), signUpDto.isAcceptedPrivacy());
+
         Optional<User> optionalUser = userRepository.findByEmail(signUpDto.getEmail());
         if (optionalUser.isPresent()) {
             throw new AppException("User already exists", HttpStatus.BAD_REQUEST);
@@ -103,6 +109,7 @@ public class UserService {
         User user = userMapper.signUpToUser(signUpDto);
         user.setPassword(passwordEncoder.encode(CharBuffer.wrap(signUpDto.getPassword())));
         user.setRole(Role.USER);
+        markPoliciesAccepted(user);
 
         UserPreferences userPreferences = new UserPreferences();
         userPreferences.setDiets(List.of(Diet.NONE));
@@ -111,6 +118,20 @@ public class UserService {
         User savedUser = userRepository.save(user);
 
         return userMapper.toUserDto(savedUser);
+    }
+
+    public void assertPoliciesAccepted(boolean acceptedTerms, boolean acceptedPrivacy) {
+        if (!acceptedTerms || !acceptedPrivacy) {
+            throw new AppException("You must accept the Terms of Service and acknowledge the Privacy Policy to create an account.", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    public void markPoliciesAccepted(User user) {
+        LocalDateTime acceptedAt = LocalDateTime.now();
+        user.setTermsAcceptedAt(acceptedAt);
+        user.setPrivacyAcceptedAt(acceptedAt);
+        user.setTermsVersion(TERMS_VERSION);
+        user.setPrivacyVersion(PRIVACY_VERSION);
     }
 
     public UserDto getUserById(Long id) {
@@ -133,6 +154,12 @@ public class UserService {
 
     public UserDto updateUserRole(Long id, Role role) {
         User user = userRepository.findById(id).orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
+        if (role == null) {
+            throw new AppException("Role is required.", HttpStatus.BAD_REQUEST);
+        }
+        if (user.getRole() == Role.ADMIN && role != Role.ADMIN && userRepository.countByRole(Role.ADMIN) <= 1) {
+            throw new AppException("Cannot remove the last admin user.", HttpStatus.BAD_REQUEST);
+        }
         user.setRole(role);
         User updatedUser = userRepository.save(user);
         return userMapper.toUserDto(updatedUser);
@@ -147,9 +174,11 @@ public class UserService {
 
     public void deleteUser(Long id) {
         User user = userRepository.findById(id).orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
+        if (user.getRole() == Role.ADMIN && userRepository.countByRole(Role.ADMIN) <= 1) {
+            throw new AppException("Cannot delete the last admin user.", HttpStatus.BAD_REQUEST);
+        }
         userRepository.delete(user);
     }
 
 
 }
-

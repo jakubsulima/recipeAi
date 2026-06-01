@@ -47,6 +47,9 @@ describe("Register Component", () => {
     expect(
       screen.getByRole("button", { name: "Create account" }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText(/By creating an account or continuing with Google/i),
+    ).toBeInTheDocument();
   });
 
   test("shows mismatch validation for passwords", async () => {
@@ -106,6 +109,8 @@ describe("Register Component", () => {
 
     await waitFor(() => {
       expect(apiClient).toHaveBeenCalledWith("register", true, {
+        acceptedPrivacy: true,
+        acceptedTerms: true,
         email: "test@example.com",
         password: "Password123!",
         confirmPassword: "Password123!",
